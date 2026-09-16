@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      VAULT_URL: ${VAULT_URL:-http://host.docker.internal:8080}
+      VAULT_APIKEY: ${VAULT_APIKEY:?VAULT_APIKEY must be set (copy .env.example to .env)}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - sqlite_data:/app/data
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  sqlite_data:

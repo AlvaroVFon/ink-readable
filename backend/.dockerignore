@@ -1,0 +1,32 @@
+# Build artifact (rebuilt inside the image)
+ink-readable
+
+# Git
+.git
+.gitignore
+
+# Environment / secrets
+.env
+.env.*
+
+# Local data (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Test / coverage output
+*.test
+*.out
+coverage.html
+
+# Docs
+*.md
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+
+# Build cache
+bin/
