@@ -1,17 +1,35 @@
 services:
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: migrate
+    volumes:
+      - ./backend/migrations:/migrations:ro
+      - sqlite_data:/app/data
+    command:
+      - "-path=/migrations"
+      - "-database=sqlite:///app/data/ink-readable.db"
+      - "up"
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "8082:8082"
+      target: app
+    env_file:
+      - ./backend/.env
     environment:
       VAULT_URL: ${VAULT_URL:-http://host.docker.internal:8080}
-      VAULT_APIKEY: ${VAULT_APIKEY:?VAULT_APIKEY must be set (copy .env.example to .env)}
+    ports:
+      - "8082:8082"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - sqlite_data:/app/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/health"]
