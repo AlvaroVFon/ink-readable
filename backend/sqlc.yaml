@@ -1,12 +1,2 @@
 version: "2"
-sql:
-  - engine: "sqlite"
-    schema: "migrations"
-    queries: "queries/users"
-    gen:
-      go:
-        package: "users"
-        out: "internal/db/users"
-        sql_package: "database/sql"
-        emit_json_tags: true
-        emit_empty_slices: true
+sql: []
