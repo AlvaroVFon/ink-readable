@@ -1,2 +1,11 @@
 version: "2"
-sql: []
+
+sql:
+  - engine: "sqlite"
+    queries:
+      - "internal/sqlc/queries/vaults"
+    schema: "migrations"
+    gen:
+      go:
+        package: "vaults"
+        out: "internal/sqlc/generated/vaults"
