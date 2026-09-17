@@ -19,12 +19,11 @@ type ResourceType string
 const (
 	VaultResourceType    ResourceType = "vault"
 	DocumentResourceType ResourceType = "document"
-	FolderResourceType   ResourceType = "folder"
 )
 
 func (rt ResourceType) isValid() bool {
 	switch rt {
-	case VaultResourceType, DocumentResourceType, FolderResourceType:
+	case VaultResourceType, DocumentResourceType:
 		return true
 	default:
 		return false
