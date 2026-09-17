@@ -4,6 +4,7 @@ sql:
   - engine: "sqlite"
     queries:
       - "internal/sqlc/queries/vaults"
+      - "internal/sqlc/queries/trashs"
     schema: "migrations"
     gen:
       go:
