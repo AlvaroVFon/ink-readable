@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.31.1
 
-package vaults
+package sqlc
 
 import (
 	"context"

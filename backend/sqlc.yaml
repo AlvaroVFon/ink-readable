@@ -7,5 +7,5 @@ sql:
     schema: "migrations"
     gen:
       go:
-        package: "vaults"
-        out: "internal/sqlc/generated/vaults"
+        package: "sqlc"
+        out: "internal/sqlc/generated"

@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: create_vault.sql
 
-package vaults
+package sqlc
 
 import (
 	"context"
