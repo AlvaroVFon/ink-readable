@@ -39,7 +39,8 @@ func newTestRepository(t *testing.T) (*VaultsRepository, *sql.DB) {
 func getVault(t *testing.T, db *sql.DB, id string) (name string, deleted int64, createdAt, updatedAt string) {
 	t.Helper()
 
-	err := db.QueryRowContext(context.Background(),
+	err := db.QueryRowContext(
+		context.Background(),
 		"SELECT name, deleted, created_at, updated_at FROM vaults WHERE id = ?", id,
 	).Scan(&name, &deleted, &createdAt, &updatedAt)
 	if err != nil {
