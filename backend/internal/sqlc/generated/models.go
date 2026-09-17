@@ -12,7 +12,6 @@ type Document struct {
 	ID        string
 	Name      string
 	VaultID   string
-	FolderID  sql.NullString
 	Path      string
 	Content   string
 	Deleted   int64
@@ -23,16 +22,6 @@ type Document struct {
 type DocumentLink struct {
 	DocumentAID string
 	DocumentBID string
-}
-
-type Folder struct {
-	ID        string
-	Name      string
-	VaultID   string
-	ParentID  sql.NullString
-	Deleted   int64
-	CreatedAt string
-	UpdatedAt string
 }
 
 type TrashItem struct {
