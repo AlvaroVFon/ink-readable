@@ -5,6 +5,8 @@ MIGRATIONS_DIR=backend/migrations
 DB_PATH?=backend/data/ink-readable.db
 DATABASE_URL=sqlite://$(DB_PATH)
 
+.PHONY: build run test sqlc-generate sqlc-vet migrate-create migrate-up migrate-down migrate-down-all migrate-version migrate-force db-reset up up-prod up-dev down down-dev
+
 build:
 	go -C backend build -o ../${BINARY_NAME} ./cmd/main.go
 
@@ -40,5 +42,16 @@ migrate-force:
 
 db-reset: migrate-down-all migrate-up
 
-up:
+up: up-prod
+
+up-prod:
 	docker compose -f ./docker-compose.yml up -d --build
+
+up-dev:
+	docker compose -f ./docker-compose.dev.yml up --build
+
+down:
+	docker compose -f ./docker-compose.yml down
+
+down-dev:
+	docker compose -f ./docker-compose.dev.yml down

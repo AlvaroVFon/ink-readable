@@ -6,31 +6,32 @@ services:
       target: migrate
     volumes:
       - ./backend/migrations:/migrations:ro
-      - sqlite_data:/app/data
+      - sqlite_data_dev:/app/data
     command:
       - "-path=/migrations"
       - "-database=sqlite:///app/data/ink-readable.db"
       - "up"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: app
+    image: golang:1.26
+    working_dir: /workspace
     env_file:
       - ./backend/.env
     environment:
       VAULT_URL: ${VAULT_URL:-http://host.docker.internal:8080}
+    command: go run ./cmd
+    volumes:
+      - ./backend:/workspace
+      - go_modules:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      - sqlite_data_dev:/app/data
     ports:
       - "8082:8082"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - sqlite_data:/app/data
     depends_on:
       migrate:
         condition: service_completed_successfully
-
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/health"]
       interval: 10s
@@ -39,15 +40,24 @@ services:
       start_period: 5s
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: app
+    image: node:24-alpine
+    working_dir: /workspace
+    command: sh -c "npm install --global pnpm@12.4.2 && pnpm install --frozen-lockfile && pnpm dev --host 0.0.0.0"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8082
+    volumes:
+      - ./frontend:/workspace
+      - frontend_node_modules:/workspace/node_modules
+      - pnpm_store:/root/.local/share/pnpm/store
     ports:
-      - "3000:80"
+      - "5173:5173"
     depends_on:
       backend:
         condition: service_healthy
 
 volumes:
-  sqlite_data:
+  frontend_node_modules:
+  go_build_cache:
+  go_modules:
+  pnpm_store:
+  sqlite_data_dev:
