@@ -73,14 +73,6 @@ func (r *VaultsRepository) Rename(ctx context.Context, id, name string) error {
 			return fmt.Errorf("update document paths: %w", err)
 		}
 
-		if err := q.UpdateTrashItemPaths(ctx, sqlc.UpdateTrashItemPathsParams{
-			NewPath: newPath,
-			OldPath: oldPath,
-			VaultID: id,
-		}); err != nil {
-			return fmt.Errorf("update trash item paths: %w", err)
-		}
-
 		if err := q.UpdateVaultName(ctx, sqlc.UpdateVaultNameParams{
 			ID:        id,
 			Name:      name,
@@ -107,9 +99,6 @@ func (r *VaultsRepository) Delete(ctx context.Context, id string) error {
 			VaultID_2: id,
 		}); err != nil {
 			return fmt.Errorf("delete document links: %w", err)
-		}
-		if err := q.DeleteTrashItemsByVault(ctx, id); err != nil {
-			return fmt.Errorf("delete trash items: %w", err)
 		}
 		if err := q.DeleteDocumentsByVault(ctx, id); err != nil {
 			return fmt.Errorf("delete documents: %w", err)
