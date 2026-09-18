@@ -101,6 +101,65 @@ func TestDocumentsRepository_Create(t *testing.T) {
 	}
 }
 
+func TestDocumentsRepository_FindActiveAndDeleted(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	active, err := NewDocument("Active", "vault-id", "/active.md", "active content")
+	if err != nil {
+		t.Fatalf("unexpected error creating active document: %v", err)
+	}
+	deleted, err := NewDocument("Deleted", "vault-id", "/deleted.md", "deleted content")
+	if err != nil {
+		t.Fatalf("unexpected error creating deleted document: %v", err)
+	}
+	otherVault, err := NewDocument("Other", "other-vault", "/other.md", "other content")
+	if err != nil {
+		t.Fatalf("unexpected error creating other document: %v", err)
+	}
+
+	for _, document := range []*Document{active, deleted, otherVault} {
+		if err := repo.Create(ctx, *document); err != nil {
+			t.Fatalf("unexpected error creating document: %v", err)
+		}
+	}
+	if err := repo.Delete(ctx, deleted.ID); err != nil {
+		t.Fatalf("unexpected error deleting document: %v", err)
+	}
+
+	activeDocuments, err := repo.FindActive(ctx, "vault-id")
+	if err != nil {
+		t.Fatalf("find active documents: %v", err)
+	}
+	deletedDocuments, err := repo.FindDeleted(ctx, "vault-id")
+	if err != nil {
+		t.Fatalf("find deleted documents: %v", err)
+	}
+
+	if len(activeDocuments) != 1 || activeDocuments[0].ID != active.ID {
+		t.Errorf("expected only active document %q, got %+v", active.ID, activeDocuments)
+	}
+	if len(deletedDocuments) != 1 || deletedDocuments[0].ID != deleted.ID || !deletedDocuments[0].Deleted {
+		t.Errorf("expected only deleted document %q, got %+v", deleted.ID, deletedDocuments)
+	}
+
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM documents").Scan(&count); err != nil {
+		t.Fatalf("count documents: %v", err)
+	}
+	if count != 3 {
+		t.Errorf("expected all documents to remain persisted, got %d", count)
+	}
+}
+
+func TestDocumentsRepository_FindActive_EmptyVaultID(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if _, err := repo.FindActive(context.Background(), ""); !errors.Is(err, ErrInvalidEmptyArgument) {
+		t.Fatalf("expected ErrInvalidEmptyArgument, got %v", err)
+	}
+}
+
 func TestDocumentsRepository_UpdateDocumentContent(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()

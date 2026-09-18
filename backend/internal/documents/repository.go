@@ -35,6 +35,58 @@ func (r *DocumentsRepository) Create(ctx context.Context, document Document) err
 	return r.Store.CreateDocument(ctx, *createDocumentParams)
 }
 
+func (r *DocumentsRepository) FindActive(ctx context.Context, vaultID string) ([]Document, error) {
+	return r.findByDeleted(ctx, vaultID, false)
+}
+
+func (r *DocumentsRepository) FindDeleted(ctx context.Context, vaultID string) ([]Document, error) {
+	return r.findByDeleted(ctx, vaultID, true)
+}
+
+func (r *DocumentsRepository) findByDeleted(ctx context.Context, vaultID string, deleted bool) ([]Document, error) {
+	if vaultID == "" {
+		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "vaultID")
+	}
+
+	deletedValue := int64(0)
+	if deleted {
+		deletedValue = 1
+	}
+
+	rows, err := r.Store.ListDocumentsByDeleted(ctx, sqlc.ListDocumentsByDeletedParams{
+		VaultID: vaultID,
+		Deleted: deletedValue,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	documents := make([]Document, 0, len(rows))
+	for _, row := range rows {
+		createdAt, err := time.Parse(time.RFC3339Nano, row.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("parse document created_at: %w", err)
+		}
+		updatedAt, err := time.Parse(time.RFC3339Nano, row.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("parse document updated_at: %w", err)
+		}
+
+		documents = append(documents, Document{
+			ID:        row.ID,
+			Name:      row.Name,
+			VauldID:   row.VaultID,
+			Path:      row.Path,
+			Content:   row.Content,
+			Deleted:   row.Deleted != 0,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		})
+	}
+
+	return documents, nil
+}
+
 func (r *DocumentsRepository) UpdateDocumentContent(ctx context.Context, id, content string) error {
 	if id == "" {
 		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
