@@ -43,6 +43,25 @@ func (r *DocumentsRepository) FindDeleted(ctx context.Context, vaultID string) (
 	return r.findByDeleted(ctx, vaultID, true)
 }
 
+func (r *DocumentsRepository) Rename(ctx context.Context, id, name, path string) error {
+	if id == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
+	}
+	if name == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "name")
+	}
+	if path == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "path")
+	}
+
+	return r.Store.RenameDocument(ctx, sqlc.RenameDocumentParams{
+		ID:        id,
+		Name:      name,
+		Path:      path,
+		UpdatedAt: time.Now().Format(time.RFC3339Nano),
+	})
+}
+
 func (r *DocumentsRepository) findByDeleted(ctx context.Context, vaultID string, deleted bool) ([]Document, error) {
 	if vaultID == "" {
 		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "vaultID")

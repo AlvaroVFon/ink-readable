@@ -6,6 +6,7 @@ type repository interface {
 	Create(ctx context.Context, document Document) error
 	FindActive(ctx context.Context, vaultID string) ([]Document, error)
 	FindDeleted(ctx context.Context, vaultID string) ([]Document, error)
+	Rename(ctx context.Context, id, name, path string) error
 	UpdateDocumentContent(ctx context.Context, id, content string) error
 	Delete(ctx context.Context, id string) error
 	Restore(ctx context.Context, id string) error
@@ -29,6 +30,10 @@ func (s *DocumentsService) FindActive(ctx context.Context, vaultID string) ([]Do
 
 func (s *DocumentsService) FindDeleted(ctx context.Context, vaultID string) ([]Document, error) {
 	return s.documentsRepository.FindDeleted(ctx, vaultID)
+}
+
+func (s *DocumentsService) Rename(ctx context.Context, id, name, path string) error {
+	return s.documentsRepository.Rename(ctx, id, name, path)
 }
 
 func (s *DocumentsService) UpdateContent(ctx context.Context, id, content string) error {

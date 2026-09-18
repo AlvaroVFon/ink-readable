@@ -160,6 +160,58 @@ func TestDocumentsRepository_FindActive_EmptyVaultID(t *testing.T) {
 	}
 }
 
+func TestDocumentsRepository_Rename(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	document, err := NewDocument("Old name", "vault-id", "/old-name.md", "content")
+	if err != nil {
+		t.Fatalf("unexpected error creating document: %v", err)
+	}
+	if err := repo.Create(ctx, *document); err != nil {
+		t.Fatalf("unexpected error creating document: %v", err)
+	}
+
+	if err := repo.Rename(ctx, document.ID, "New name", "/new-name.md"); err != nil {
+		t.Fatalf("unexpected rename error: %v", err)
+	}
+
+	name, _, path, _, _, _, updatedAt := getDocument(t, db, document.ID)
+	if name != "New name" {
+		t.Errorf("expected name %q, got %q", "New name", name)
+	}
+	if path != "/new-name.md" {
+		t.Errorf("expected path %q, got %q", "/new-name.md", path)
+	}
+	if updatedAt == document.UpdatedAt.Format(time.RFC3339Nano) {
+		t.Error("expected updated_at to change")
+	}
+}
+
+func TestDocumentsRepository_Rename_EmptyArgument(t *testing.T) {
+	repo, _ := newTestRepository(t)
+	ctx := context.Background()
+
+	tests := []struct {
+		name  string
+		id    string
+		title string
+		path  string
+	}{
+		{name: "empty id", id: "", title: "New name", path: "/new-name.md"},
+		{name: "empty name", id: "document-id", title: "", path: "/new-name.md"},
+		{name: "empty path", id: "document-id", title: "New name", path: ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := repo.Rename(ctx, test.id, test.title, test.path); !errors.Is(err, ErrInvalidEmptyArgument) {
+				t.Fatalf("expected ErrInvalidEmptyArgument, got %v", err)
+			}
+		})
+	}
+}
+
 func TestDocumentsRepository_UpdateDocumentContent(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()
