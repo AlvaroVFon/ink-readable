@@ -11,8 +11,12 @@ import (
 	"github.com/joho/godotenv"
 
 	health "ink-readable/internal"
+	"ink-readable/internal/api"
 	"ink-readable/internal/config"
 	"ink-readable/internal/database"
+	"ink-readable/internal/documents"
+	sqlc "ink-readable/internal/sqlc/generated"
+	"ink-readable/internal/vaults"
 )
 
 const defaultVaultURL = "http://localhost:8080"
@@ -43,10 +47,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	queries := sqlc.New(db)
+	vaultsService := vaults.NewVaultsService(vaults.NewVaultRepository(*queries, db))
+	documentsService := documents.NewDocumentsService(documents.NewDocumentsRepository(*queries, db))
 
 	startedAt := time.Now()
 	mux := http.NewServeMux()
 	mux.Handle("/health", health.NewHandler(db, startedAt))
+	mux.Handle("/", api.NewHandler(vaultsService, documentsService))
 
 	addr := fmt.Sprintf("%s:%s", cfg.AppConfig.BaseURL, cfg.AppConfig.Port)
 	log.Printf("API listening on http://%s", addr)
