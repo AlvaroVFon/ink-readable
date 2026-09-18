@@ -93,12 +93,30 @@ func (r *VaultsRepository) Rename(ctx context.Context, id, name string) error {
 	})
 }
 
-// Delete perform a logic deletion
 func (r *VaultsRepository) Delete(ctx context.Context, id string) error {
-	updatedAt := time.Now().String()
+	if id == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
+	}
+	if r.DB == nil {
+		return fmt.Errorf("database is required for vault deletion")
+	}
 
-	return r.Store.DeleteVault(ctx, sqlc.DeleteVaultParams{
-		ID:        id,
-		UpdatedAt: updatedAt,
+	return database.WithTransaction(ctx, r.DB, func(q *sqlc.Queries) error {
+		if err := q.DeleteDocumentLinksByVault(ctx, sqlc.DeleteDocumentLinksByVaultParams{
+			VaultID:   id,
+			VaultID_2: id,
+		}); err != nil {
+			return fmt.Errorf("delete document links: %w", err)
+		}
+		if err := q.DeleteTrashItemsByVault(ctx, id); err != nil {
+			return fmt.Errorf("delete trash items: %w", err)
+		}
+		if err := q.DeleteDocumentsByVault(ctx, id); err != nil {
+			return fmt.Errorf("delete documents: %w", err)
+		}
+		if err := q.DeleteVaultPermanently(ctx, id); err != nil {
+			return fmt.Errorf("delete vault: %w", err)
+		}
+		return nil
 	})
 }
