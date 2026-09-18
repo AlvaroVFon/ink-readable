@@ -9,7 +9,7 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-type Database *sql.DB
+type Database = *sql.DB
 
 func NewDatabase(cfg config.DatabaseConfig) (Database, error) {
 	db, err := sql.Open("sqlite", cfg.URI)
