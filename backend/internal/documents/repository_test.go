@@ -36,7 +36,15 @@ func newTestRepository(t *testing.T) (*DocumentsRepository, *sql.DB) {
 		t.Fatalf("create table: %v", err)
 	}
 
-	return NewDocumentsRepository(*sqlc.New(db)), db
+	if _, err := db.Exec(`CREATE TABLE document_links (
+		document_a_id TEXT NOT NULL,
+		document_b_id TEXT NOT NULL,
+		PRIMARY KEY (document_a_id, document_b_id)
+	)`); err != nil {
+		t.Fatalf("create document_links table: %v", err)
+	}
+
+	return NewDocumentsRepository(*sqlc.New(db), db), db
 }
 
 func getDocument(t *testing.T, db *sql.DB, id string) (name, vaultID, path, content string, deleted int64, createdAt, updatedAt string) {
@@ -209,6 +217,58 @@ func TestDocumentsRepository_Rename_EmptyArgument(t *testing.T) {
 				t.Fatalf("expected ErrInvalidEmptyArgument, got %v", err)
 			}
 		})
+	}
+}
+
+func TestDocumentsRepository_FindByID_MoveAndDeletePermanently(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	first, err := NewDocument("First", "vault-id", "/first.md", "first")
+	if err != nil {
+		t.Fatalf("unexpected error creating first document: %v", err)
+	}
+	second, err := NewDocument("Second", "vault-id", "/second.md", "second")
+	if err != nil {
+		t.Fatalf("unexpected error creating second document: %v", err)
+	}
+	if err := repo.Create(ctx, *first); err != nil {
+		t.Fatalf("create first document: %v", err)
+	}
+	if err := repo.Create(ctx, *second); err != nil {
+		t.Fatalf("create second document: %v", err)
+	}
+	if _, err := db.Exec("INSERT INTO document_links (document_a_id, document_b_id) VALUES (?, ?)", first.ID, second.ID); err != nil {
+		t.Fatalf("create document link: %v", err)
+	}
+
+	if err := repo.Move(ctx, first.ID, "/folder/first.md"); err != nil {
+		t.Fatalf("move document: %v", err)
+	}
+	moved, err := repo.FindByID(ctx, first.ID)
+	if err != nil {
+		t.Fatalf("find moved document: %v", err)
+	}
+	if moved.Path != "/folder/first.md" {
+		t.Errorf("expected moved path %q, got %q", "/folder/first.md", moved.Path)
+	}
+
+	if err := repo.DeletePermanently(ctx, first.ID); err != nil {
+		t.Fatalf("delete document permanently: %v", err)
+	}
+	var exists int
+	if err := db.QueryRow("SELECT COUNT(*) FROM documents WHERE id = ?", first.ID).Scan(&exists); err != nil {
+		t.Fatalf("check deleted document: %v", err)
+	}
+	if exists != 0 {
+		t.Fatal("expected document to be deleted")
+	}
+	var links int
+	if err := db.QueryRow("SELECT COUNT(*) FROM document_links").Scan(&links); err != nil {
+		t.Fatalf("count document links: %v", err)
+	}
+	if links != 0 {
+		t.Errorf("expected document links to be deleted, got %d", links)
 	}
 }
 

@@ -126,6 +126,58 @@ func TestVaultsRepository_Create_DeletedVault(t *testing.T) {
 	}
 }
 
+func TestVaultsRepository_FindActiveDeletedAndByID(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	active, err := NewVault("Active")
+	if err != nil {
+		t.Fatalf("unexpected error creating active vault: %v", err)
+	}
+	deleted, err := NewVault("Deleted")
+	if err != nil {
+		t.Fatalf("unexpected error creating deleted vault: %v", err)
+	}
+	deleted.Deleted = true
+	if err := repo.Create(ctx, *active); err != nil {
+		t.Fatalf("create active vault: %v", err)
+	}
+	if err := repo.Create(ctx, *deleted); err != nil {
+		t.Fatalf("create deleted vault: %v", err)
+	}
+
+	activeVaults, err := repo.FindActive(ctx)
+	if err != nil {
+		t.Fatalf("find active vaults: %v", err)
+	}
+	deletedVaults, err := repo.FindDeleted(ctx)
+	if err != nil {
+		t.Fatalf("find deleted vaults: %v", err)
+	}
+	found, err := repo.FindByID(ctx, active.ID)
+	if err != nil {
+		t.Fatalf("find vault by id: %v", err)
+	}
+
+	if len(activeVaults) != 1 || activeVaults[0].ID != active.ID {
+		t.Errorf("expected active vault %q, got %+v", active.ID, activeVaults)
+	}
+	if len(deletedVaults) != 1 || deletedVaults[0].ID != deleted.ID || !deletedVaults[0].Deleted {
+		t.Errorf("expected deleted vault %q, got %+v", deleted.ID, deletedVaults)
+	}
+	if found.Name != active.Name {
+		t.Errorf("expected vault name %q, got %q", active.Name, found.Name)
+	}
+
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM vaults").Scan(&count); err != nil {
+		t.Fatalf("count vaults: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("expected both vaults to remain persisted, got %d", count)
+	}
+}
+
 func TestVaultsRepository_Rename(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()

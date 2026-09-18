@@ -42,6 +42,66 @@ func (r *VaultsRepository) Create(ctx context.Context, vault Vault) error {
 	return r.Store.CreateVault(ctx, createVaultParams)
 }
 
+func (r *VaultsRepository) FindActive(ctx context.Context) ([]Vault, error) {
+	return r.findByDeleted(ctx, false)
+}
+
+func (r *VaultsRepository) FindDeleted(ctx context.Context) ([]Vault, error) {
+	return r.findByDeleted(ctx, true)
+}
+
+func (r *VaultsRepository) findByDeleted(ctx context.Context, deleted bool) ([]Vault, error) {
+	deletedValue := int64(0)
+	if deleted {
+		deletedValue = 1
+	}
+
+	rows, err := r.Store.ListVaultsByDeleted(ctx, deletedValue)
+	if err != nil {
+		return nil, err
+	}
+
+	vaults := make([]Vault, 0, len(rows))
+	for _, row := range rows {
+		vault, err := toVault(row)
+		if err != nil {
+			return nil, err
+		}
+		vaults = append(vaults, *vault)
+	}
+	return vaults, nil
+}
+
+func (r *VaultsRepository) FindByID(ctx context.Context, id string) (*Vault, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
+	}
+
+	row, err := r.Store.GetVault(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return toVault(row)
+}
+
+func toVault(row sqlc.Vault) (*Vault, error) {
+	createdAt, err := time.Parse(time.RFC3339Nano, row.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("parse vault created_at: %w", err)
+	}
+	updatedAt, err := time.Parse(time.RFC3339Nano, row.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("parse vault updated_at: %w", err)
+	}
+	return &Vault{
+		ID:        row.ID,
+		Name:      row.Name,
+		Deleted:   row.Deleted != 0,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	}, nil
+}
+
 func (r *VaultsRepository) Rename(ctx context.Context, id, name string) error {
 	if id == "" {
 		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
