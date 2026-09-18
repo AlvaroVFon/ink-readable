@@ -18,15 +18,6 @@ CREATE TABLE vaults (
 	deleted    INTEGER NOT NULL,
 	created_at TEXT NOT NULL,
 	updated_at TEXT NOT NULL
-);
-CREATE TABLE trash_items (
-	id            TEXT PRIMARY KEY,
-	vault_id      TEXT NOT NULL,
-	resource_id   TEXT NOT NULL,
-	resource_type TEXT NOT NULL,
-	path          TEXT NOT NULL,
-	parent_id     TEXT,
-	deleted_at    TEXT NOT NULL
 );`
 
 func newTransactionTestDB(t *testing.T) *sql.DB {
@@ -55,17 +46,6 @@ func createVaultParams(id string) sqlc.CreateVaultParams {
 	}
 }
 
-func createTrashItemParams(id, vaultID string) sqlc.CreateTrashItemParams {
-	return sqlc.CreateTrashItemParams{
-		ID:           id,
-		VaultID:      vaultID,
-		ResourceID:   "resource-id",
-		ResourceType: "vault",
-		Path:         "/notes",
-		DeletedAt:    "2026-01-01T00:00:00Z",
-	}
-}
-
 func countRows(t *testing.T, db *sql.DB, table string) int {
 	t.Helper()
 
@@ -82,10 +62,7 @@ func TestWithTransaction_CommitsOnSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	err := WithTransaction(ctx, db, func(q *sqlc.Queries) error {
-		if err := q.CreateVault(ctx, createVaultParams("vault-id")); err != nil {
-			return err
-		}
-		return q.CreateTrashItem(ctx, createTrashItemParams("trash-id", "vault-id"))
+		return q.CreateVault(ctx, createVaultParams("vault-id"))
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -93,9 +70,6 @@ func TestWithTransaction_CommitsOnSuccess(t *testing.T) {
 
 	if count := countRows(t, db, "vaults"); count != 1 {
 		t.Errorf("expected 1 vault, got %d", count)
-	}
-	if count := countRows(t, db, "trash_items"); count != 1 {
-		t.Errorf("expected 1 trash item, got %d", count)
 	}
 }
 

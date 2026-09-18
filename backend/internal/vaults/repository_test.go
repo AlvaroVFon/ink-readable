@@ -44,17 +44,6 @@ func newTestRepository(t *testing.T) (*VaultsRepository, *sql.DB) {
 	)`); err != nil {
 		t.Fatalf("create documents table: %v", err)
 	}
-	if _, err := db.Exec(`CREATE TABLE trash_items (
-		id TEXT PRIMARY KEY,
-		vault_id TEXT NOT NULL,
-		resource_id TEXT NOT NULL,
-		resource_type TEXT NOT NULL,
-		path TEXT NOT NULL,
-		parent_id TEXT,
-		deleted_at TEXT NOT NULL
-	)`); err != nil {
-		t.Fatalf("create trash_items table: %v", err)
-	}
 	if _, err := db.Exec(`CREATE TABLE document_links (
 		document_a_id TEXT NOT NULL,
 		document_b_id TEXT NOT NULL,
@@ -202,27 +191,16 @@ func TestVaultsRepository_Rename_UpdatesChildren(t *testing.T) {
 	if err != nil {
 		t.Fatalf("insert document: %v", err)
 	}
-	_, err = db.Exec(`INSERT INTO trash_items
-		(id, vault_id, resource_id, resource_type, path, deleted_at)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		"trash-id", vault.ID, "document-id", "document", "/notes/deleted.md", "now")
-	if err != nil {
-		t.Fatalf("insert trash item: %v", err)
-	}
-
 	if err := repo.Rename(ctx, vault.ID, "archive"); err != nil {
 		t.Fatalf("unexpected rename error: %v", err)
 	}
 
-	var vaultName, documentPath, trashPath string
+	var vaultName, documentPath string
 	if err := db.QueryRow("SELECT name FROM vaults WHERE id = ?", vault.ID).Scan(&vaultName); err != nil {
 		t.Fatalf("read vault: %v", err)
 	}
 	if err := db.QueryRow("SELECT path FROM documents WHERE id = ?", "document-id").Scan(&documentPath); err != nil {
 		t.Fatalf("read document: %v", err)
-	}
-	if err := db.QueryRow("SELECT path FROM trash_items WHERE id = ?", "trash-id").Scan(&trashPath); err != nil {
-		t.Fatalf("read trash item: %v", err)
 	}
 
 	if vaultName != "archive" {
@@ -230,9 +208,6 @@ func TestVaultsRepository_Rename_UpdatesChildren(t *testing.T) {
 	}
 	if documentPath != "/archive/note.md" {
 		t.Errorf("expected document path %q, got %q", "/archive/note.md", documentPath)
-	}
-	if trashPath != "/archive/deleted.md" {
-		t.Errorf("expected trash path %q, got %q", "/archive/deleted.md", trashPath)
 	}
 }
 
@@ -296,18 +271,12 @@ func TestVaultsRepository_Delete(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO document_links (document_a_id, document_b_id) VALUES (?, ?)`, "document-a", "document-b"); err != nil {
 		t.Fatalf("insert document link: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO trash_items
-		(id, vault_id, resource_id, resource_type, path, deleted_at)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		"trash-id", vault.ID, "document-a", "document", "/Reading/a.md", "now"); err != nil {
-		t.Fatalf("insert trash item: %v", err)
-	}
 
 	if err := repo.Delete(ctx, vault.ID); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	for _, table := range []string{"document_links", "trash_items", "documents", "vaults"} {
+	for _, table := range []string{"document_links", "documents", "vaults"} {
 		if count := countTableRows(t, db, table); count != 0 {
 			t.Errorf("expected %s to be empty, got %d rows", table, count)
 		}
