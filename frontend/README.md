@@ -60,3 +60,17 @@ try {
 }
 ```
 
+- `src/lib/api` — resource-agnostic `ApiClient` built on top of the axios
+  instance. It exposes the HTTP verbs plus optional zod validation and knows
+  nothing about vaults or documents; the concrete operations (`listDeleted`,
+  `restore`, ...) belong in custom hooks per resource built on top of it.
+
+```ts
+import { apiClient } from '@/lib/api'
+import { vaultSchema } from '@/lib/types'
+import { z } from 'zod'
+
+const vaults = await apiClient.get('/vaults', { schema: z.array(vaultSchema) })
+await apiClient.delete(`/vaults/${id}`)
+```
+
