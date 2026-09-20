@@ -19,6 +19,7 @@ services:
       - ./backend/.env
     environment:
       VAULT_URL: ${VAULT_URL:-http://host.docker.internal:8080}
+      ENV: development
     command: go run ./cmd
     volumes:
       - ./backend:/workspace

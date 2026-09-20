@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"testing"
 )
 
@@ -215,4 +216,61 @@ func secretsToData(secrets map[string]string) []Secret {
 		data = append(data, Secret{Key: key, Value: value})
 	}
 	return data
+}
+
+func setValidEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("APP_BASE_URL", "localhost")
+	t.Setenv("APP_PORT", "8080")
+	t.Setenv("DATABASE_URI", "/app/data/ink-readable.db")
+	t.Setenv("DATABASE_HOST", "localhost")
+	t.Setenv("DATABASE_PORT", "5432")
+	t.Setenv("DATABASE_NAME", "ink-readable")
+	t.Setenv("DATABASE_USER", "admin")
+	t.Setenv("DATABASE_PASSWORD", "s3cret")
+}
+
+func TestLoadEnvConfig(t *testing.T) {
+	setValidEnv(t)
+
+	cfg, err := LoadEnvConfig()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := Config{
+		AppConfig: AppConfig{BaseURL: "localhost", Port: "8080"},
+		DatabaseConfig: DatabaseConfig{
+			URI:        "/app/data/ink-readable.db",
+			DBHost:     "localhost",
+			DBPort:     "5432",
+			DBName:     "ink-readable",
+			DBUser:     "admin",
+			DBPassword: "s3cret",
+		},
+	}
+	if *cfg != want {
+		t.Errorf("expected %+v, got %+v", want, *cfg)
+	}
+}
+
+func TestLoadEnvConfig_EveryVarRequired(t *testing.T) {
+	required := []string{
+		"APP_BASE_URL", "APP_PORT",
+		"DATABASE_URI", "DATABASE_HOST", "DATABASE_PORT",
+		"DATABASE_NAME", "DATABASE_USER", "DATABASE_PASSWORD",
+	}
+
+	for _, missing := range required {
+		t.Run("missing "+missing, func(t *testing.T) {
+			setValidEnv(t)
+			if err := os.Unsetenv(missing); err != nil {
+				t.Fatalf("unexpected error unsetting %q: %v", missing, err)
+			}
+
+			if _, err := LoadEnvConfig(); !errors.Is(err, ErrMissingEnvVar) {
+				t.Fatalf("expected ErrMissingEnvVar, got %v", err)
+			}
+		})
+	}
 }

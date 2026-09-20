@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"ink-readable/internal/api"
+	"ink-readable/internal/config"
+	"ink-readable/internal/database"
+	"ink-readable/internal/documents"
+	"ink-readable/internal/vaults"
 	"log"
 	"net/http"
 	"os"
@@ -11,12 +16,8 @@ import (
 	"github.com/joho/godotenv"
 
 	health "ink-readable/internal"
-	"ink-readable/internal/api"
-	"ink-readable/internal/config"
-	"ink-readable/internal/database"
-	"ink-readable/internal/documents"
+
 	sqlc "ink-readable/internal/sqlc/generated"
-	"ink-readable/internal/vaults"
 )
 
 const defaultVaultURL = "http://localhost:8080"
@@ -33,15 +34,27 @@ func main() {
 		vaultURL = defaultVaultURL
 	}
 
-	client, err := config.NewVaultClient(vaultURL, os.Getenv("VAULT_APIKEY"))
-	if err != nil {
-		log.Fatal(err)
+	var cfg *config.Config
+	if os.Getenv("ENV") == config.EnvDev {
+		c, err := config.LoadEnvConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg = c
+	} else {
+		client, err := config.NewVaultClient(vaultURL, os.Getenv("VAULT_APIKEY"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		c, err := config.LoadConfig(ctx, client)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg = c
 	}
 
-	cfg, err := config.LoadConfig(ctx, client)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println(*cfg)
 
 	db, err := database.NewDatabase(cfg.DatabaseConfig)
 	if err != nil {
