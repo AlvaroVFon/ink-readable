@@ -70,10 +70,8 @@ func TestNewDocument_EmptyArguments(t *testing.T) {
 		path    string
 		content string
 	}{
-		{name: "empty name", docName: "", vaultID: "vault-id", path: "/notes/doc.md", content: "hello"},
 		{name: "empty vaultID", docName: "My note", vaultID: "", path: "/notes/doc.md", content: "hello"},
 		{name: "empty path", docName: "My note", vaultID: "vault-id", path: "", content: "hello"},
-		{name: "empty content", docName: "My note", vaultID: "vault-id", path: "/notes/doc.md", content: ""},
 	}
 
 	for _, tt := range tests {
@@ -87,6 +85,20 @@ func TestNewDocument_EmptyArguments(t *testing.T) {
 				t.Errorf("expected nil document, got %+v", document)
 			}
 		})
+	}
+}
+
+func TestNewDocument_DefaultsEmptyName(t *testing.T) {
+	document, err := NewDocument("", "vault-id", "/notes/doc.md", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if document.Name != DefaultName {
+		t.Errorf("expected Name %q, got %q", DefaultName, document.Name)
+	}
+	if document.Content != "" {
+		t.Errorf("expected empty Content, got %q", document.Content)
 	}
 }
 

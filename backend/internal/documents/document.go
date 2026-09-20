@@ -11,6 +11,8 @@ import (
 
 var ErrInvalidEmptyArgument = errors.New("invalid empty argument")
 
+const DefaultName = "Untitled"
+
 type Document struct {
 	ID        string
 	Name      string
@@ -24,16 +26,13 @@ type Document struct {
 
 func NewDocument(name, vaultID, path, content string) (*Document, error) {
 	if name == "" {
-		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "name")
+		name = DefaultName
 	}
 	if vaultID == "" {
 		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "vaultID")
 	}
 	if path == "" {
 		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "path")
-	}
-	if content == "" {
-		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "content")
 	}
 
 	id := uuid.New().String()
