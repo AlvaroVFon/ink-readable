@@ -148,9 +148,6 @@ func (r *DocumentsRepository) UpdateDocumentContent(ctx context.Context, id, con
 	if id == "" {
 		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")
 	}
-	if content == "" {
-		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "content")
-	}
 
 	updatedAt := time.Now()
 	return r.Store.UpdateDocumentContent(ctx, sqlc.UpdateDocumentContentParams{

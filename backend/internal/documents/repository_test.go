@@ -318,7 +318,7 @@ func TestDocumentsRepository_UpdateDocumentContent_EmptyID(t *testing.T) {
 	}
 }
 
-func TestDocumentsRepository_UpdateDocumentContent_EmptyContent(t *testing.T) {
+func TestDocumentsRepository_UpdateDocumentContent_AllowsEmptyContent(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()
 
@@ -330,12 +330,12 @@ func TestDocumentsRepository_UpdateDocumentContent_EmptyContent(t *testing.T) {
 		t.Fatalf("unexpected error creating document: %v", err)
 	}
 
-	if err := repo.UpdateDocumentContent(ctx, document.ID, ""); !errors.Is(err, ErrInvalidEmptyArgument) {
-		t.Fatalf("expected ErrInvalidEmptyArgument, got %v", err)
+	if err := repo.UpdateDocumentContent(ctx, document.ID, ""); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, _, _, content, _, _, _ := getDocument(t, db, document.ID); content != "old content" {
-		t.Errorf("expected content to remain %q, got %q", "old content", content)
+	if _, _, _, content, _, _, _ := getDocument(t, db, document.ID); content != "" {
+		t.Errorf("expected empty content, got %q", content)
 	}
 }
 
