@@ -23,5 +23,16 @@
     "typescript/no-unsafe-assignment": "error",
     "typescript/no-unsafe-member-access": "error",
     "typescript/no-unsafe-return": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/components/ui/**", "src/hooks/use-mobile.ts"],
+      "rules": {
+        "no-shadow": "off",
+        "react/only-export-components": "off",
+        "react/set-state-in-effect": "off",
+        "typescript/no-unsafe-type-assertion": "off"
+      }
+    }
+  ]
 }
