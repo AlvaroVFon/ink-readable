@@ -74,3 +74,12 @@ const vaults = await apiClient.get('/vaults', { schema: z.array(vaultSchema) })
 await apiClient.delete(`/vaults/${id}`)
 ```
 
+- `src/lib/vault` — frontend counterpart of the backend `VaultClient`. It reads
+  the resolved secrets from the backend `/config` proxy, so the vault API key
+  never reaches the browser, and validates the payload before use.
+
+```ts
+import { vaultClient } from '@/lib/vault'
+
+const port = await vaultClient.getSecret('app.port')
+```
