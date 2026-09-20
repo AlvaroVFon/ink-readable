@@ -62,24 +62,28 @@ try {
 
 - `src/lib/api` — resource-agnostic `ApiClient` built on top of the axios
   instance. It exposes the HTTP verbs plus optional zod validation and knows
-  nothing about vaults or documents; the concrete operations (`listDeleted`,
-  `restore`, ...) belong in custom hooks per resource built on top of it.
+  nothing about vaults or documents. Concrete operations live next to it as
+  plain functions and, when they need React state, as hooks on top.
 
 ```ts
-import { apiClient } from '@/lib/api'
+import { apiClient, fetchSecrets } from '@/lib/api'
 import { vaultSchema } from '@/lib/types'
 import { z } from 'zod'
 
 const vaults = await apiClient.get('/vaults', { schema: z.array(vaultSchema) })
 await apiClient.delete(`/vaults/${id}`)
+
+// /config is just another resource
+const secrets = await fetchSecrets()
 ```
 
-- `src/lib/vault` — frontend counterpart of the backend `VaultClient`. It reads
-  the resolved secrets from the backend `/config` proxy, so the vault API key
-  never reaches the browser, and validates the payload before use.
+- `src/hooks/use-secrets` — React binding for `fetchSecrets`. It caches the
+  in-flight request at module level so every consumer shares it, and exposes
+  `refetch` to invalidate it. The browser never talks to the vault directly:
+  the API key stays on the backend `/config` proxy.
 
 ```ts
-import { vaultClient } from '@/lib/vault'
+import { useSecrets } from '@/hooks/use-secrets'
 
-const port = await vaultClient.getSecret('app.port')
+const { secrets, isLoading, error, refetch } = useSecrets()
 ```

@@ -1,19 +1,19 @@
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { ApiClient } from '@/lib/api'
 import { createHttpClient } from '@/lib/http'
 
-import { CONFIG_PATH, VaultClient } from './vault-client'
+import { ApiClient } from './api-client'
+import { CONFIG_PATH, fetchSecrets } from './config'
 
-describe('VaultClient', () => {
-  let client: VaultClient
+describe('fetchSecrets', () => {
+  let client: ApiClient
   let mock: MockAdapter
 
   beforeEach(() => {
     const httpClient = createHttpClient()
     mock = new MockAdapter(httpClient)
-    client = new VaultClient(new ApiClient(httpClient))
+    client = new ApiClient(httpClient)
   })
 
   afterEach(() => {
@@ -26,34 +26,22 @@ describe('VaultClient', () => {
       'app.port': '8080',
     })
 
-    const secrets = await client.getSecrets()
+    const secrets = await fetchSecrets(client)
 
     expect(secrets).toEqual({ 'app.baseURL': 'localhost', 'app.port': '8080' })
     expect(mock.history.get[0]?.url).toBe(CONFIG_PATH)
   })
 
-  it('returns a single secret by key', async () => {
-    mock.onGet(CONFIG_PATH).reply(200, { 'app.port': '8080' })
-
-    await expect(client.getSecret('app.port')).resolves.toBe('8080')
-  })
-
-  it('returns undefined for an unknown key', async () => {
-    mock.onGet(CONFIG_PATH).reply(200, { 'app.port': '8080' })
-
-    await expect(client.getSecret('missing')).resolves.toBeUndefined()
-  })
-
   it('rejects when the proxy payload does not match the schema', async () => {
     mock.onGet(CONFIG_PATH).reply(200, { 'app.port': 8080 })
 
-    await expect(client.getSecrets()).rejects.toThrow()
+    await expect(fetchSecrets(client)).rejects.toThrow()
   })
 
   it('propagates the normalized ApiError', async () => {
     mock.onGet(CONFIG_PATH).reply(500, { error: 'vault unavailable' })
 
-    await expect(client.getSecrets()).rejects.toMatchObject({
+    await expect(fetchSecrets(client)).rejects.toMatchObject({
       name: 'ApiError',
       status: 500,
       message: 'vault unavailable',
