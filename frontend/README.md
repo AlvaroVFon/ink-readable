@@ -43,3 +43,20 @@ import { vaultSchema, type Vault } from '@/lib/types'
 const vault = vaultSchema.parse(payload)
 ```
 
+- `src/lib/http` — shared axios instance. It centralizes the base URL
+  (`/api/v1` by default, overridable with `VITE_API_BASE_URL`), the timeout and
+  the JSON headers, and normalizes every failure into an `ApiError` so the UI
+  only deals with one error shape.
+
+```ts
+import { ApiError, http } from '@/lib/http'
+
+try {
+  const { data } = await http.get('/vaults')
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error(error.status, error.message)
+  }
+}
+```
+
