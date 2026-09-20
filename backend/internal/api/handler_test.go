@@ -3,13 +3,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"ink-readable/internal/config"
+	"ink-readable/internal/documents"
+	"ink-readable/internal/vaults"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"ink-readable/internal/documents"
-	"ink-readable/internal/vaults"
 )
 
 type fakeVaultService struct {
@@ -42,9 +42,11 @@ func (f *fakeDocumentService) Create(context.Context, documents.Document) error 
 func (f *fakeDocumentService) FindActive(context.Context, string) ([]documents.Document, error) {
 	return nil, nil
 }
+
 func (f *fakeDocumentService) FindDeleted(context.Context, string) ([]documents.Document, error) {
 	return nil, nil
 }
+
 func (f *fakeDocumentService) FindByID(context.Context, string) (*documents.Document, error) {
 	return nil, nil
 }
@@ -55,9 +57,13 @@ func (f *fakeDocumentService) Delete(context.Context, string) error             
 func (f *fakeDocumentService) DeletePermanently(context.Context, string) error      { return nil }
 func (f *fakeDocumentService) Restore(context.Context, string) error                { return nil }
 
+type fakeConfigService struct{}
+
+func (f fakeConfigService) ListFrontSecrets(context.Context) *config.FrontConfig { return nil }
+
 func TestHandler_CreateAndListVaults(t *testing.T) {
 	vaultService := &fakeVaultService{}
-	handler := NewHandler(vaultService, &fakeDocumentService{})
+	handler := NewHandler(vaultService, &fakeDocumentService{}, fakeConfigService{})
 
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/vaults", strings.NewReader(`{"name":"Notes"}`))
 	createResponse := httptest.NewRecorder()
@@ -95,7 +101,7 @@ func TestHandler_CreateAndListVaults(t *testing.T) {
 }
 
 func TestHandler_InvalidJSON(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/vaults", strings.NewReader(`{"name":`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -106,7 +112,7 @@ func TestHandler_InvalidJSON(t *testing.T) {
 }
 
 func TestHandler_Options(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodOptions, "/api/v1/vaults", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)

@@ -17,6 +17,7 @@ var (
 type Config struct {
 	AppConfig      AppConfig
 	DatabaseConfig DatabaseConfig
+	FrontConfig    FrontConfig
 }
 
 type AppConfig struct {
@@ -32,6 +33,8 @@ type DatabaseConfig struct {
 	DBUser     string `json:"dbUser"`
 	DBPassword string `json:"dbPassword"`
 }
+
+type FrontConfig struct{}
 
 func LoadConfig(ctx context.Context, client *VaultClient) (*Config, error) {
 	secrets, err := client.GetSecrets(ctx)
@@ -89,6 +92,18 @@ func loadDatabaseConfig(secrets map[string]string) (*DatabaseConfig, error) {
 	}, nil
 }
 
+func loadFrontConfig(secrets map[string]string) (*FrontConfig, error) {
+	frontKeys := []string{}
+	for _, key := range frontKeys {
+		_, ok := secrets[key]
+		if !ok {
+			return nil, fmt.Errorf("%w: %q", ErrConfigNotFoundForKey, key)
+		}
+	}
+
+	return &FrontConfig{}, nil
+}
+
 func LoadEnvConfig() (*Config, error) {
 	appConfig, err := loadAppConfigFromEnv()
 	if err != nil {
@@ -100,9 +115,15 @@ func LoadEnvConfig() (*Config, error) {
 		return nil, err
 	}
 
+	frontConfig, err := loadFrontConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		AppConfig:      *appConfig,
 		DatabaseConfig: *dbConfig,
+		FrontConfig:    *frontConfig,
 	}, nil
 }
 
@@ -139,4 +160,15 @@ func loadDatabaseConfigFromEnv() (*DatabaseConfig, error) {
 		DBUser:     os.Getenv("DATABASE_USER"),
 		DBPassword: os.Getenv("DATABASE_PASSWORD"),
 	}, nil
+}
+
+func loadFrontConfigFromEnv() (*FrontConfig, error) {
+	keys := []string{}
+	for _, key := range keys {
+		if _, ok := os.LookupEnv(key); !ok {
+			return nil, fmt.Errorf("%w: %q", ErrMissingEnvVar, key)
+		}
+	}
+
+	return &FrontConfig{}, nil
 }

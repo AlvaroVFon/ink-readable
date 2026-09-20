@@ -1,10 +1,9 @@
 package api
 
 import (
-	"net/http"
-
 	"ink-readable/internal/documents"
 	"ink-readable/internal/httpx"
+	"net/http"
 )
 
 type documentResponse struct {
@@ -143,6 +142,12 @@ func (h *Handler) deleteDocumentPermanently(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	httpx.NoContent(w)
+}
+
+func (h *Handler) ListFrontSecrets(w http.ResponseWriter, r *http.Request) {
+	secrets := h.config.ListFrontSecrets(r.Context())
+
+	httpx.JSON(w, http.StatusOK, secrets)
 }
 
 func mapDocuments(items []documents.Document) []documentResponse {

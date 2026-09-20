@@ -63,11 +63,12 @@ func main() {
 	queries := sqlc.New(db)
 	vaultsService := vaults.NewVaultsService(vaults.NewVaultRepository(*queries, db))
 	documentsService := documents.NewDocumentsService(documents.NewDocumentsRepository(*queries, db))
+	configService := config.NewConfigService(cfg)
 
 	startedAt := time.Now()
 	mux := http.NewServeMux()
 	mux.Handle("/health", health.NewHandler(db, startedAt))
-	mux.Handle("/", api.NewHandler(vaultsService, documentsService))
+	mux.Handle("/", api.NewHandler(vaultsService, documentsService, configService))
 
 	addr := fmt.Sprintf("%s:%s", cfg.AppConfig.BaseURL, cfg.AppConfig.Port)
 	log.Printf("API listening on http://%s", addr)

@@ -4,14 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"net/http"
-
+	"ink-readable/internal/config"
 	"ink-readable/internal/documents"
 	"ink-readable/internal/httpx"
 	"ink-readable/internal/vaults"
+	"net/http"
 )
 
 type (
+	configService interface {
+		ListFrontSecrets(ctx context.Context) *config.FrontConfig
+	}
+
 	vaultService interface {
 		Create(context.Context, vaults.Vault) error
 		FindActive(context.Context) ([]vaults.Vault, error)
@@ -35,12 +39,13 @@ type (
 )
 
 type Handler struct {
+	config    configService
 	vaults    vaultService
 	documents documentService
 }
 
-func NewHandler(vaultsService vaultService, documentsService documentService) http.Handler {
-	handler := &Handler{vaults: vaultsService, documents: documentsService}
+func NewHandler(vaultsService vaultService, documentsService documentService, configService configService) http.Handler {
+	handler := &Handler{vaults: vaultsService, documents: documentsService, config: configService}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/vaults", handler.listVaults)
@@ -61,6 +66,8 @@ func NewHandler(vaultsService vaultService, documentsService documentService) ht
 	mux.HandleFunc("DELETE /api/v1/documents/{id}", handler.deleteDocument)
 	mux.HandleFunc("POST /api/v1/documents/{id}/restore", handler.restoreDocument)
 	mux.HandleFunc("DELETE /api/v1/documents/{id}/permanent", handler.deleteDocumentPermanently)
+
+	mux.HandleFunc("GET /api/v1/config", handler.ListFrontSecrets)
 
 	return httpx.CORS(mux)
 }
