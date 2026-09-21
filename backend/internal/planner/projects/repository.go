@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -33,7 +34,7 @@ func (r *ProjectsRepository) Create(ctx context.Context, project Project) error 
 }
 
 func (r *ProjectsRepository) List(ctx context.Context) ([]Project, error) {
-	rows, err := r.Store.ListProjects(ctx)
+	rows, err := r.Store.ListActiveProjects(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -114,10 +115,11 @@ func (r *ProjectsRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgumentError, "id")
 	}
 
-	updatedAt := time.Now().UTC().UTC().Format(time.RFC3339Nano)
+	now := time.Now().UTC().Format(time.RFC3339Nano)
 	params := sqlc.DeleteProjectParams{
 		ID:        id,
-		UpdatedAt: updatedAt,
+		UpdatedAt: now,
+		DeletedAt: sql.NullString{String: now, Valid: true},
 	}
 
 	return r.Store.DeleteProject(ctx, params)

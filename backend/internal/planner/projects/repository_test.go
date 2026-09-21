@@ -159,14 +159,19 @@ func TestProjectsRepository_List_Empty(t *testing.T) {
 	}
 }
 
-func TestProjectsRepository_List_ParsesDeletedAt(t *testing.T) {
+func TestProjectsRepository_List_ExcludesDeleted(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()
 
+	createdAt := time.Now().UTC().Add(-time.Hour)
+	if err := repo.Create(ctx, Project{ID: "active-id", Name: "Active", CreatedAt: createdAt, UpdatedAt: createdAt}); err != nil {
+		t.Fatalf("create active project: %v", err)
+	}
+
 	deletedAt := time.Now().UTC().Add(-time.Minute)
 	if _, err := db.Exec(`INSERT INTO projects (id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?)`,
-		"project-id", "Reading", deletedAt.Format(time.RFC3339Nano), deletedAt.Format(time.RFC3339Nano), deletedAt.Format(time.RFC3339Nano)); err != nil {
-		t.Fatalf("insert project: %v", err)
+		"deleted-id", "Deleted", createdAt.Format(time.RFC3339Nano), createdAt.Format(time.RFC3339Nano), deletedAt.Format(time.RFC3339Nano)); err != nil {
+		t.Fatalf("insert deleted project: %v", err)
 	}
 
 	projects, err := repo.List(ctx)
@@ -174,10 +179,10 @@ func TestProjectsRepository_List_ParsesDeletedAt(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(projects) != 1 {
-		t.Fatalf("expected 1 project, got %d", len(projects))
+		t.Fatalf("expected 1 active project, got %d", len(projects))
 	}
-	if !projects[0].DeletedAt.Equal(deletedAt) {
-		t.Errorf("expected deleted_at %v, got %v", deletedAt, projects[0].DeletedAt)
+	if projects[0].ID != "active-id" {
+		t.Errorf("expected project %q, got %q", "active-id", projects[0].ID)
 	}
 }
 
@@ -186,19 +191,17 @@ func TestProjectsRepository_List_InvalidTimestamp(t *testing.T) {
 		name      string
 		createdAt string
 		updatedAt string
-		deletedAt string
 	}{
 		{name: "invalid created_at", createdAt: "not-a-time", updatedAt: time.Now().UTC().Format(time.RFC3339Nano)},
 		{name: "invalid updated_at", createdAt: time.Now().UTC().Format(time.RFC3339Nano), updatedAt: "not-a-time"},
-		{name: "invalid deleted_at", createdAt: time.Now().UTC().Format(time.RFC3339Nano), updatedAt: time.Now().UTC().Format(time.RFC3339Nano), deletedAt: "not-a-time"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo, db := newTestRepository(t)
 
-			if _, err := db.Exec(`INSERT INTO projects (id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?)`,
-				"project-id", "Reading", tt.createdAt, tt.updatedAt, tt.deletedAt); err != nil {
+			if _, err := db.Exec(`INSERT INTO projects (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)`,
+				"project-id", "Reading", tt.createdAt, tt.updatedAt); err != nil {
 				t.Fatalf("insert project: %v", err)
 			}
 
@@ -297,12 +300,18 @@ func TestProjectsRepository_Delete(t *testing.T) {
 		t.Fatalf("expected project to remain persisted, got %d rows", count)
 	}
 
-	_, _, updatedAt, _ := getProject(t, db, project.ID)
+	_, _, updatedAt, deletedAt := getProject(t, db, project.ID)
 	if updatedAt == createdAt.Format(time.RFC3339Nano) {
 		t.Error("expected updated_at to be refreshed")
 	}
 	if _, err := time.Parse(time.RFC3339Nano, updatedAt); err != nil {
 		t.Errorf("expected updated_at to be RFC3339Nano, got %q: %v", updatedAt, err)
+	}
+	if !deletedAt.Valid {
+		t.Error("expected deleted_at to be set")
+	}
+	if _, err := time.Parse(time.RFC3339Nano, deletedAt.String); err != nil {
+		t.Errorf("expected deleted_at to be RFC3339Nano, got %q: %v", deletedAt.String, err)
 	}
 }
 
