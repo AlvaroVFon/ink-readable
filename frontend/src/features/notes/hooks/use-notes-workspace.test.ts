@@ -5,14 +5,33 @@ import type { Document, Vault } from '@/lib/types'
 
 import { useNotesWorkspace } from './use-notes-workspace'
 
-const { listVaults, listDocuments, createDocument, createVault } = vi.hoisted(() => ({
+const {
+  listVaults,
+  listDocuments,
+  createDocument,
+  createVault,
+  renameDocument,
+  renameDocumentPath,
+  deleteDocument,
+} = vi.hoisted(() => ({
   listVaults: vi.fn<() => Promise<Vault[]>>(),
   listDocuments: vi.fn<(vaultId: string) => Promise<Document[]>>(),
   createDocument: vi.fn<(vaultId: string, input: unknown) => Promise<Document>>(),
   createVault: vi.fn<(name: string) => Promise<Vault>>(),
+  renameDocument: vi.fn<(id: string, input: unknown) => Promise<void>>(),
+  renameDocumentPath: vi.fn<(vaultId: string, input: unknown) => Promise<void>>(),
+  deleteDocument: vi.fn<(id: string) => Promise<void>>(),
 }))
 
-vi.mock('@/lib/api', () => ({ listVaults, listDocuments, createDocument, createVault }))
+vi.mock('@/lib/api', () => ({
+  listVaults,
+  listDocuments,
+  createDocument,
+  createVault,
+  renameDocument,
+  renameDocumentPath,
+  deleteDocument,
+}))
 
 const reading: Vault = { id: 'v1', name: 'Reading', deleted: false, createdAt: '', updatedAt: '' }
 
@@ -26,6 +45,9 @@ describe('useNotesWorkspace', () => {
     listDocuments.mockReset()
     createDocument.mockReset()
     createVault.mockReset()
+    renameDocument.mockReset()
+    renameDocumentPath.mockReset()
+    deleteDocument.mockReset()
     listVaults.mockResolvedValue([reading])
     listDocuments.mockResolvedValue([document('d1', 'Untitled', 'v1', '/Reading/Untitled.md')])
   })
@@ -50,7 +72,7 @@ describe('useNotesWorkspace', () => {
     })
 
     expect(createDocument).toHaveBeenCalledWith('v1', {
-      name: '',
+      name: 'Untitled 2',
       path: '/Reading/Untitled 2.md',
       content: '',
     })
@@ -67,7 +89,7 @@ describe('useNotesWorkspace', () => {
     })
 
     expect(createDocument).toHaveBeenCalledWith('v1', {
-      name: '',
+      name: 'Untitled',
       path: '/Reading/Ideas/Untitled.md',
       content: '',
     })
@@ -92,7 +114,7 @@ describe('useNotesWorkspace', () => {
 
     expect(createVault).toHaveBeenCalledWith('Work')
     expect(createDocument).toHaveBeenCalledWith('v2', {
-      name: '',
+      name: 'Untitled',
       path: '/Work/Untitled.md',
       content: '',
     })
@@ -105,5 +127,70 @@ describe('useNotesWorkspace', () => {
 
     await waitFor(() => expect(result.current.error).not.toBeNull())
     expect(result.current.error?.message).toBe('boom')
+  })
+
+  it('renames a document with a new name and path', async () => {
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const node = result.current.tree[0]?.children[0]
+    expect(node?.type).toBe('document')
+    if (node === undefined) {
+      throw new Error('expected a document node')
+    }
+
+    await act(async () => {
+      await result.current.renameNode(node, 'Daily note')
+    })
+
+    expect(renameDocument).toHaveBeenCalledWith('d1', {
+      name: 'Daily note',
+      path: '/Reading/Daily note.md',
+    })
+    expect(result.current.revision).toBe(1)
+  })
+
+  it('renames a folder by rewriting its path prefix', async () => {
+    listDocuments.mockResolvedValue([document('d1', 'Idea', 'v1', '/Reading/Ideas/Idea.md')])
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const folder = result.current.tree[0]?.children[0]
+    expect(folder?.type).toBe('folder')
+    if (folder === undefined) {
+      throw new Error('expected a folder node')
+    }
+
+    await act(async () => {
+      await result.current.renameNode(folder, 'Notes')
+    })
+
+    expect(renameDocumentPath).toHaveBeenCalledWith('v1', {
+      oldPath: '/Reading/Ideas',
+      newPath: '/Reading/Notes',
+    })
+  })
+
+  it('deletes every document below a folder', async () => {
+    listDocuments.mockResolvedValue([
+      document('d1', 'A', 'v1', '/Reading/Ideas/A.md'),
+      document('d2', 'B', 'v1', '/Reading/Ideas/B.md'),
+    ])
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const folder = result.current.tree[0]?.children[0]
+    expect(folder?.type).toBe('folder')
+    if (folder === undefined) {
+      throw new Error('expected a folder node')
+    }
+
+    await act(async () => {
+      await result.current.deleteNode(folder)
+    })
+
+    expect(deleteDocument).toHaveBeenCalledTimes(2)
+    expect(deleteDocument).toHaveBeenCalledWith('d1')
+    expect(deleteDocument).toHaveBeenCalledWith('d2')
   })
 })

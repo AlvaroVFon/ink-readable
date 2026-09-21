@@ -32,6 +32,7 @@ type (
 		FindDeleted(context.Context, string) ([]documents.Document, error)
 		FindByID(context.Context, string) (*documents.Document, error)
 		Rename(context.Context, string, string, string) error
+		RenamePath(context.Context, string, string, string) error
 		Move(context.Context, string, string) error
 		UpdateContent(context.Context, string, string) error
 		Delete(context.Context, string) error
@@ -85,6 +86,7 @@ func NewHandler(vaultsService vaultService, documentsService documentService, pr
 	mux.HandleFunc("GET /api/v1/vaults/{vaultID}/documents", handler.listDocuments)
 	mux.HandleFunc("GET /api/v1/vaults/{vaultID}/documents/deleted", handler.listDeletedDocuments)
 	mux.HandleFunc("POST /api/v1/vaults/{vaultID}/documents", handler.createDocument)
+	mux.HandleFunc("PATCH /api/v1/vaults/{vaultID}/documents/paths", handler.renameDocumentPath)
 
 	mux.HandleFunc("GET /api/v1/documents/{id}", handler.getDocument)
 	mux.HandleFunc("PATCH /api/v1/documents/{id}/rename", handler.renameDocument)

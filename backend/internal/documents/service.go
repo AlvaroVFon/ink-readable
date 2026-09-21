@@ -8,6 +8,7 @@ type repository interface {
 	FindDeleted(ctx context.Context, vaultID string) ([]Document, error)
 	FindByID(ctx context.Context, id string) (*Document, error)
 	Rename(ctx context.Context, id, name, path string) error
+	RenamePath(ctx context.Context, vaultID, oldPath, newPath string) error
 	Move(ctx context.Context, id, path string) error
 	UpdateDocumentContent(ctx context.Context, id, content string) error
 	Delete(ctx context.Context, id string) error
@@ -41,6 +42,10 @@ func (s *DocumentsService) FindByID(ctx context.Context, id string) (*Document, 
 
 func (s *DocumentsService) Rename(ctx context.Context, id, name, path string) error {
 	return s.documentsRepository.Rename(ctx, id, name, path)
+}
+
+func (s *DocumentsService) RenamePath(ctx context.Context, vaultID, oldPath, newPath string) error {
+	return s.documentsRepository.RenamePath(ctx, vaultID, oldPath, newPath)
 }
 
 func (s *DocumentsService) Move(ctx context.Context, id, path string) error {

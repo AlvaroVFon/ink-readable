@@ -5,8 +5,11 @@ import type { Document, Vault } from '@/lib/types'
 import {
   createDocument,
   createVault as createVaultRequest,
+  deleteDocument as deleteDocumentRequest,
   listDocuments,
   listVaults,
+  renameDocument as renameDocumentRequest,
+  renameDocumentPath as renameDocumentPathRequest,
 } from '@/lib/api'
 
 import type { FileTreeNode } from '../types'
@@ -14,8 +17,12 @@ import type { FileTreeNode } from '../types'
 import {
   buildFileTree,
   buildFolderPath,
+  buildNamedDocumentPath,
   buildNotePath,
+  collectDocuments,
   collectDocumentPaths,
+  nameFromPath,
+  parentPath,
   sanitizeSegment,
 } from '../lib/file-tree'
 
@@ -41,10 +48,14 @@ export type UseNotesWorkspaceResult = {
   documentsById: Map<string, Document>
   isLoading: boolean
   error: Error | null
+  /** Bumped after a metadata mutation (rename/delete) so consumers can reload. */
+  revision: number
   refresh: () => Promise<void>
   createNote: (input: CreateNoteInput) => Promise<Document>
   createFolder: (input: CreateFolderInput) => Promise<Document>
   createVault: (name: string) => Promise<Document>
+  renameNode: (node: FileTreeNode, name: string) => Promise<void>
+  deleteNode: (node: FileTreeNode) => Promise<void>
 }
 
 function toError(cause: unknown): Error {
@@ -71,6 +82,7 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
   const [documentsByVault, setDocumentsByVault] = useState<Record<string, Document[]>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [revision, setRevision] = useState(0)
 
   const applyWorkspace = useCallback((workspace: LoadedWorkspace) => {
     setVaults(workspace.vaults)
@@ -108,9 +120,10 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
   const createNote = useCallback(
     async ({ vaultId, basePath }: CreateNoteInput) => {
       const existingPaths = collectDocumentPaths(tree)
+      const path = buildNotePath(basePath, existingPaths)
       const document = await createDocument(vaultId, {
-        name: '',
-        path: buildNotePath(basePath, existingPaths),
+        name: nameFromPath(path),
+        path,
         content: '',
       })
       await refresh()
@@ -122,9 +135,10 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
   const createFolder = useCallback(
     async ({ vaultId, basePath, name }: CreateFolderInput) => {
       const existingPaths = collectDocumentPaths(tree)
+      const path = buildNotePath(buildFolderPath(basePath, name), existingPaths)
       const document = await createDocument(vaultId, {
-        name: '',
-        path: buildNotePath(buildFolderPath(basePath, name), existingPaths),
+        name: nameFromPath(path),
+        path,
         content: '',
       })
       await refresh()
@@ -136,13 +150,54 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
   const createVault = useCallback(
     async (name: string) => {
       const vault = await createVaultRequest(name)
+      const path = buildNotePath(`/${sanitizeSegment(name)}`, new Set())
       const document = await createDocument(vault.id, {
-        name: '',
-        path: buildNotePath(`/${sanitizeSegment(name)}`, new Set()),
+        name: nameFromPath(path),
+        path,
         content: '',
       })
       await refresh()
       return document
+    },
+    [refresh],
+  )
+
+  const renameNode = useCallback(
+    async (node: FileTreeNode, name: string) => {
+      const trimmed = name.trim()
+      if (trimmed === '') {
+        throw new Error('Name cannot be empty')
+      }
+
+      if (node.type === 'document') {
+        const path = buildNamedDocumentPath(parentPath(node.path), trimmed)
+        if (path === node.path) {
+          return
+        }
+        await renameDocumentRequest(node.id, { name: nameFromPath(path), path })
+      } else {
+        const path = buildFolderPath(parentPath(node.path), trimmed)
+        if (path === node.path) {
+          return
+        }
+        await renameDocumentPathRequest(node.vaultId, { oldPath: node.path, newPath: path })
+      }
+
+      await refresh()
+      setRevision((value) => value + 1)
+    },
+    [refresh],
+  )
+
+  const deleteNode = useCallback(
+    async (node: FileTreeNode) => {
+      const documents = collectDocuments(node)
+      if (documents.length === 0) {
+        return
+      }
+      await Promise.all(documents.map((document) => deleteDocumentRequest(document.id)))
+      await refresh()
+      setRevision((value) => value + 1)
     },
     [refresh],
   )
@@ -153,9 +208,12 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     documentsById,
     isLoading,
     error,
+    revision,
     refresh,
     createNote,
     createFolder,
     createVault,
+    renameNode,
+    deleteNode,
   }
 }

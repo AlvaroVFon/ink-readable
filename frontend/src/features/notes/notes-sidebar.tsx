@@ -11,16 +11,19 @@ import {
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar'
 
+import type { FileTreeNode } from './types'
+
 import { InlineNameForm } from './components/inline-name-form'
 import { NotesNewMenu, type NewAction } from './components/notes-new-menu'
 import { NotesTree } from './components/notes-tree'
-import { useNotesWorkspace } from './hooks/use-notes-workspace'
 import {
   collectDocumentPaths,
+  collectDocuments,
   collectFolderPaths,
   filterTree,
   resolveCreateScope,
 } from './lib/file-tree'
+import { useNotesWorkspaceContext } from './notes-workspace-context'
 
 type PendingAction = 'folder' | 'vault' | null
 
@@ -29,8 +32,18 @@ function toMessage(cause: unknown): string {
 }
 
 export function NotesSidebar() {
-  const { tree, vaults, documentsById, isLoading, error, createNote, createFolder, createVault } =
-    useNotesWorkspace()
+  const {
+    tree,
+    vaults,
+    documentsById,
+    isLoading,
+    error,
+    createNote,
+    createFolder,
+    createVault,
+    renameNode,
+    deleteNode,
+  } = useNotesWorkspaceContext()
   const match = useMatch('/notes/:documentId')
   const activeDocumentId = match?.params.documentId
   const navigate = useNavigate()
@@ -115,6 +128,36 @@ export function NotesSidebar() {
   const cancelForm = () => {
     setPendingAction(null)
     setActionError(null)
+  }
+
+  const isAffectedSelection = (node: FileTreeNode): boolean =>
+    selectedFolderPath !== null &&
+    (selectedFolderPath === node.path || selectedFolderPath.startsWith(`${node.path}/`))
+
+  const handleRename = async (node: FileTreeNode, name: string) => {
+    setActionError(null)
+    await renameNode(node, name)
+    if (isAffectedSelection(node)) {
+      setSelectedFolderPath(null)
+    }
+  }
+
+  const handleDelete = async (node: FileTreeNode) => {
+    setActionError(null)
+    try {
+      const deletedActiveDocument =
+        activeDocumentId !== undefined &&
+        collectDocuments(node).some((document) => document.id === activeDocumentId)
+      await deleteNode(node)
+      if (isAffectedSelection(node)) {
+        setSelectedFolderPath(null)
+      }
+      if (deletedActiveDocument) {
+        void navigate('/')
+      }
+    } catch (cause) {
+      setActionError(toMessage(cause))
+    }
   }
 
   const hasVaults = vaults.length > 0
@@ -215,6 +258,8 @@ export function NotesSidebar() {
             activeDocumentId={activeDocumentId}
             forceExpandedPaths={forceExpandedPaths}
             nodes={filteredTree}
+            onDelete={handleDelete}
+            onRename={handleRename}
             onSelectFolder={setSelectedFolderPath}
             selectedFolderPath={selectedFolderPath}
           />

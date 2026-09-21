@@ -39,7 +39,9 @@ func (f *fakeVaultService) FindByID(context.Context, string) (*vaults.Vault, err
 func (f *fakeVaultService) Rename(context.Context, string, string) error { return nil }
 func (f *fakeVaultService) Delete(context.Context, string) error         { return nil }
 
-type fakeDocumentService struct{}
+type fakeDocumentService struct {
+	renamedPaths [][3]string
+}
 
 func (f *fakeDocumentService) Create(context.Context, documents.Document) error { return nil }
 func (f *fakeDocumentService) FindActive(context.Context, string) ([]documents.Document, error) {
@@ -54,11 +56,15 @@ func (f *fakeDocumentService) FindByID(context.Context, string) (*documents.Docu
 	return nil, nil
 }
 func (f *fakeDocumentService) Rename(context.Context, string, string, string) error { return nil }
-func (f *fakeDocumentService) Move(context.Context, string, string) error           { return nil }
-func (f *fakeDocumentService) UpdateContent(context.Context, string, string) error  { return nil }
-func (f *fakeDocumentService) Delete(context.Context, string) error                 { return nil }
-func (f *fakeDocumentService) DeletePermanently(context.Context, string) error      { return nil }
-func (f *fakeDocumentService) Restore(context.Context, string) error                { return nil }
+func (f *fakeDocumentService) RenamePath(_ context.Context, vaultID, oldPath, newPath string) error {
+	f.renamedPaths = append(f.renamedPaths, [3]string{vaultID, oldPath, newPath})
+	return nil
+}
+func (f *fakeDocumentService) Move(context.Context, string, string) error          { return nil }
+func (f *fakeDocumentService) UpdateContent(context.Context, string, string) error { return nil }
+func (f *fakeDocumentService) Delete(context.Context, string) error                { return nil }
+func (f *fakeDocumentService) DeletePermanently(context.Context, string) error     { return nil }
+func (f *fakeDocumentService) Restore(context.Context, string) error               { return nil }
 
 type fakeConfigService struct{}
 
@@ -334,6 +340,29 @@ func TestHandler_GetTask(t *testing.T) {
 	}
 	if got.ID != "task-1" || got.ProjectID != "project-1" || got.Status != string(tasks.StatusTodo) {
 		t.Fatalf("unexpected task: %+v", got)
+	}
+}
+
+func TestHandler_RenameDocumentPath(t *testing.T) {
+	documentService := &fakeDocumentService{}
+	handler := NewHandler(&fakeVaultService{}, documentService, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+
+	request := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/v1/vaults/vault-1/documents/paths",
+		strings.NewReader(`{"oldPath":"/vault/folder","newPath":"/vault/renamed"}`),
+	)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+	if len(documentService.renamedPaths) != 1 {
+		t.Fatalf("expected one rename path call, got %d", len(documentService.renamedPaths))
+	}
+	if got := documentService.renamedPaths[0]; got != [3]string{"vault-1", "/vault/folder", "/vault/renamed"} {
+		t.Fatalf("unexpected rename path call: %+v", got)
 	}
 }
 

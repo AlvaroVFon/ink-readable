@@ -220,6 +220,67 @@ func TestDocumentsRepository_Rename_EmptyArgument(t *testing.T) {
 	}
 }
 
+func TestDocumentsRepository_RenamePath(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	inside, err := NewDocument("Inside", "vault-id", "/vault/folder/inside.md", "inside")
+	if err != nil {
+		t.Fatalf("unexpected error creating document: %v", err)
+	}
+	nested, err := NewDocument("Nested", "vault-id", "/vault/folder/nested/deep.md", "nested")
+	if err != nil {
+		t.Fatalf("unexpected error creating document: %v", err)
+	}
+	outside, err := NewDocument("Outside", "vault-id", "/vault/other.md", "outside")
+	if err != nil {
+		t.Fatalf("unexpected error creating document: %v", err)
+	}
+	for _, document := range []*Document{inside, nested, outside} {
+		if err := repo.Create(ctx, *document); err != nil {
+			t.Fatalf("unexpected error creating document: %v", err)
+		}
+	}
+
+	if err := repo.RenamePath(ctx, "vault-id", "/vault/folder", "/vault/renamed"); err != nil {
+		t.Fatalf("unexpected rename path error: %v", err)
+	}
+
+	if _, _, path, _, _, _, _ := getDocument(t, db, inside.ID); path != "/vault/renamed/inside.md" {
+		t.Errorf("expected inside path %q, got %q", "/vault/renamed/inside.md", path)
+	}
+	if _, _, path, _, _, _, _ := getDocument(t, db, nested.ID); path != "/vault/renamed/nested/deep.md" {
+		t.Errorf("expected nested path %q, got %q", "/vault/renamed/nested/deep.md", path)
+	}
+	if _, _, path, _, _, _, _ := getDocument(t, db, outside.ID); path != "/vault/other.md" {
+		t.Errorf("expected outside path to remain %q, got %q", "/vault/other.md", path)
+	}
+}
+
+func TestDocumentsRepository_RenamePath_EmptyArgument(t *testing.T) {
+	repo, _ := newTestRepository(t)
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		vaultID string
+		oldPath string
+		newPath string
+	}{
+		{name: "empty vault id", vaultID: "", oldPath: "/a", newPath: "/b"},
+		{name: "empty old path", vaultID: "vault-id", oldPath: "", newPath: "/b"},
+		{name: "empty new path", vaultID: "vault-id", oldPath: "/a", newPath: ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := repo.RenamePath(ctx, test.vaultID, test.oldPath, test.newPath); !errors.Is(err, ErrInvalidEmptyArgument) {
+				t.Fatalf("expected ErrInvalidEmptyArgument, got %v", err)
+			}
+		})
+	}
+}
+
 func TestDocumentsRepository_FindByID_MoveAndDeletePermanently(t *testing.T) {
 	repo, db := newTestRepository(t)
 	ctx := context.Background()

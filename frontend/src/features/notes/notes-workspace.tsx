@@ -1,8 +1,10 @@
+import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router'
 
 import { useDocument } from '@/hooks/use-document'
 
 import { NotesEditor } from './notes-editor'
+import { useNotesWorkspaceContext } from './notes-workspace-context'
 
 function NotesPlaceholder() {
   return (
@@ -29,7 +31,17 @@ function NotesStatus({ message, tone = 'muted' }: { message: string; tone?: 'mut
 
 export function NotesWorkspace() {
   const { documentId } = useParams()
-  const { document, isLoading, error } = useDocument(documentId)
+  const { revision } = useNotesWorkspaceContext()
+  const { document, isLoading, error, reload } = useDocument(documentId)
+  const lastRevision = useRef(revision)
+
+  useEffect(() => {
+    if (lastRevision.current === revision) {
+      return
+    }
+    lastRevision.current = revision
+    reload()
+  }, [revision, reload])
 
   if (documentId === undefined) {
     return <NotesPlaceholder />
