@@ -536,8 +536,9 @@ function InlineRename({
 
   return (
     <form
-      className='flex flex-col gap-1'
+      className='flex min-w-0 flex-col gap-1'
       onSubmit={handleSubmit}
+      style={{ paddingLeft }}
     >
       <Input
         autoFocus
@@ -549,7 +550,6 @@ function InlineRename({
           setValue(event.target.value)
         }}
         onKeyDown={handleKeyDown}
-        style={{ marginLeft: paddingLeft }}
         value={value}
       />
       {error !== null && <p className='px-2 text-xs text-destructive'>{error}</p>}
@@ -598,8 +598,9 @@ function InlineCreateFolder({ paddingLeft, onSubmit, onCancel }: InlineCreateFol
 
   return (
     <form
-      className='flex flex-col gap-1'
+      className='flex min-w-0 flex-col gap-1'
       onSubmit={handleSubmit}
+      style={{ paddingLeft }}
     >
       <Input
         autoFocus
@@ -612,7 +613,6 @@ function InlineCreateFolder({ paddingLeft, onSubmit, onCancel }: InlineCreateFol
         }}
         onKeyDown={handleKeyDown}
         placeholder='Folder name'
-        style={{ marginLeft: paddingLeft }}
         value={value}
       />
       {error !== null && <p className='px-2 text-xs text-destructive'>{error}</p>}
