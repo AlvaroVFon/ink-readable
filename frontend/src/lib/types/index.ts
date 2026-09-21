@@ -1,10 +1,12 @@
 export {
   documentSchema,
+  editorConfigSchema,
   secretsSchema,
   vaultSchema,
   type CreateDocumentInput,
   type CreateVaultInput,
   type Document,
+  type EditorConfig,
   type MoveDocumentInput,
   type RenameDocumentInput,
   type RenameVaultInput,

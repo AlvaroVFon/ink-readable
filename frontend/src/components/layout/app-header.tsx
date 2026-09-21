@@ -1,3 +1,4 @@
+import { EditorConfigPopover } from '@/components/editor-config/editor-config-popover'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
@@ -9,6 +10,7 @@ export function AppHeader() {
       <SidebarTrigger />
       <SectionNav />
       <div className='ml-auto flex items-center gap-1'>
+        <EditorConfigPopover />
         <ThemeToggle />
       </div>
     </header>

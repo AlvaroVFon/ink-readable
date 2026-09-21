@@ -10,4 +10,10 @@ export {
   renameDocumentPath,
   updateDocumentContent,
 } from './documents'
+export {
+  EDITOR_CONFIG_PATH,
+  fetchEditorConfig,
+  updateEditorConfigDarkTheme,
+  updateEditorConfigVimMotion,
+} from './editor-config'
 export { createVault, deleteVault, listVaults, renameVault } from './vaults'

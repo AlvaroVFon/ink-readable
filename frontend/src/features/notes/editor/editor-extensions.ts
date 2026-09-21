@@ -1,4 +1,4 @@
-import type { Extension } from '@codemirror/state'
+import type { Compartment, Extension } from '@codemirror/state'
 
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { syntaxHighlighting } from '@codemirror/language'
@@ -12,6 +12,16 @@ import { editorTheme, markdownHighlightStyle } from './editor-theme'
 type CreateEditorExtensionsOptions = {
   onChange: (value: string) => void
   onSave: () => void
+  vimCompartment: Compartment
+  vimEnabled: boolean
+}
+
+/**
+ * Vim bindings, toggled through a `Compartment` so the editor can switch them
+ * on and off at runtime without being recreated.
+ */
+export function vimExtension(enabled: boolean): Extension {
+  return enabled ? vim({ status: true }) : []
 }
 
 /**
@@ -25,9 +35,11 @@ type CreateEditorExtensionsOptions = {
 export function createEditorExtensions({
   onChange,
   onSave,
+  vimCompartment,
+  vimEnabled,
 }: CreateEditorExtensionsOptions): Extension[] {
   return [
-    vim({ status: true }),
+    vimCompartment.of(vimExtension(vimEnabled)),
     basicSetup,
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     syntaxHighlighting(markdownHighlightStyle),
