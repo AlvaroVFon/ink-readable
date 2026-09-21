@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"ink-readable/internal/config"
-	"ink-readable/internal/documents"
+	"ink-readable/internal/editor/documents"
+	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/httpx"
 	"ink-readable/internal/planner/projects"
 	"ink-readable/internal/planner/tasks"
-	"ink-readable/internal/vaults"
 	"net/http"
 )
 

@@ -1,10 +1,9 @@
 package api
 
 import (
-	"net/http"
-
+	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/httpx"
-	"ink-readable/internal/vaults"
+	"net/http"
 )
 
 type vaultResponse struct {
