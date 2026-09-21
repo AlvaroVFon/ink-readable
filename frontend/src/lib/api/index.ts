@@ -14,6 +14,7 @@ export {
   EDITOR_CONFIG_PATH,
   fetchEditorConfig,
   updateEditorConfigDarkTheme,
+  updateEditorConfigFormatOnSave,
   updateEditorConfigVimMotion,
 } from './editor-config'
 export { createVault, deleteVault, listVaults, renameVault } from './vaults'

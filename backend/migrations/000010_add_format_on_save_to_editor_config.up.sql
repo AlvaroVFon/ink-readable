@@ -1,0 +1,1 @@
+ALTER TABLE editor_config ADD COLUMN format_on_save INTEGER NOT NULL DEFAULT 1

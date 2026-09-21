@@ -5,6 +5,7 @@ import type { EditorConfig } from '@/lib/types'
 import {
   fetchEditorConfig,
   updateEditorConfigDarkTheme,
+  updateEditorConfigFormatOnSave,
   updateEditorConfigVimMotion,
 } from '@/lib/api'
 
@@ -14,6 +15,7 @@ export type UseEditorConfigResult = {
   error: Error | null
   updateDarkTheme: (darkTheme: boolean) => Promise<void>
   updateVimMotion: (vimMotion: boolean) => Promise<void>
+  updateFormatOnSave: (formatOnSave: boolean) => Promise<void>
   reload: () => void
 }
 
@@ -72,9 +74,27 @@ export function useEditorConfig(): UseEditorConfigResult {
     }
   }, [])
 
+  const updateFormatOnSave = useCallback(async (formatOnSave: boolean) => {
+    try {
+      await updateEditorConfigFormatOnSave(formatOnSave)
+      setConfig((current) => (current === null ? current : { ...current, formatOnSave }))
+      setError(null)
+    } catch (cause) {
+      setError(toError(cause))
+    }
+  }, [])
+
   const reload = useCallback(() => {
     refresh()
   }, [refresh])
 
-  return { config, isLoading, error, updateDarkTheme, updateVimMotion, reload }
+  return {
+    config,
+    isLoading,
+    error,
+    updateDarkTheme,
+    updateVimMotion,
+    updateFormatOnSave,
+    reload,
+  }
 }

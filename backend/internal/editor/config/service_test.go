@@ -8,9 +8,10 @@ import (
 )
 
 type fakeRepository struct {
-	get             func(context.Context) (*EditorConfig, error)
-	updateDarkTheme func(context.Context, bool) error
-	updateVimMotion func(context.Context, bool) error
+	get                func(context.Context) (*EditorConfig, error)
+	updateDarkTheme    func(context.Context, bool) error
+	updateVimMotion    func(context.Context, bool) error
+	updateFormatOnSave func(context.Context, bool) error
 }
 
 func (f *fakeRepository) Get(ctx context.Context) (*EditorConfig, error) {
@@ -23,6 +24,10 @@ func (f *fakeRepository) UpdateDarkTheme(ctx context.Context, darkTheme bool) er
 
 func (f *fakeRepository) UpdateVimMotion(ctx context.Context, vimMotion bool) error {
 	return f.updateVimMotion(ctx, vimMotion)
+}
+
+func (f *fakeRepository) UpdateFormatOnSave(ctx context.Context, formatOnSave bool) error {
+	return f.updateFormatOnSave(ctx, formatOnSave)
 }
 
 func TestEditorConfigService_Get_ReturnsRepositoryResult(t *testing.T) {
@@ -79,12 +84,31 @@ func TestEditorConfigService_UpdateVimMotion_Delegates(t *testing.T) {
 	}
 }
 
+func TestEditorConfigService_UpdateFormatOnSave_Delegates(t *testing.T) {
+	var got bool
+
+	service := NewEditorConfigService(&fakeRepository{
+		updateFormatOnSave: func(_ context.Context, formatOnSave bool) error {
+			got = formatOnSave
+			return nil
+		},
+	})
+
+	if err := service.UpdateFormatOnSave(context.Background(), false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got {
+		t.Errorf("expected format on save false, got true")
+	}
+}
+
 func TestEditorConfigService_PropagatesRepositoryErrors(t *testing.T) {
 	wantErr := errors.New("boom")
 	service := NewEditorConfigService(&fakeRepository{
-		get:             func(context.Context) (*EditorConfig, error) { return nil, wantErr },
-		updateDarkTheme: func(context.Context, bool) error { return wantErr },
-		updateVimMotion: func(context.Context, bool) error { return wantErr },
+		get:                func(context.Context) (*EditorConfig, error) { return nil, wantErr },
+		updateDarkTheme:    func(context.Context, bool) error { return wantErr },
+		updateVimMotion:    func(context.Context, bool) error { return wantErr },
+		updateFormatOnSave: func(context.Context, bool) error { return wantErr },
 	})
 	ctx := context.Background()
 
@@ -96,5 +120,8 @@ func TestEditorConfigService_PropagatesRepositoryErrors(t *testing.T) {
 	}
 	if err := service.UpdateVimMotion(ctx, true); !errors.Is(err, wantErr) {
 		t.Errorf("UpdateVimMotion: expected %v, got %v", wantErr, err)
+	}
+	if err := service.UpdateFormatOnSave(ctx, true); !errors.Is(err, wantErr) {
+		t.Errorf("UpdateFormatOnSave: expected %v, got %v", wantErr, err)
 	}
 }

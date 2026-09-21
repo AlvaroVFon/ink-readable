@@ -15,7 +15,7 @@ type UseAutosaveOptions = {
 export type UseAutosaveResult = {
   status: SaveStatus
   isDirty: boolean
-  saveNow: () => Promise<void>
+  saveNow: (content?: string) => Promise<void>
 }
 
 /**
@@ -41,8 +41,8 @@ export function useAutosave({
     documentIdRef.current = documentId
   })
 
-  const saveNow = useCallback(async () => {
-    const value = contentRef.current
+  const saveNow = useCallback(async (contentOverride?: string) => {
+    const value = contentOverride ?? contentRef.current
     if (value === savedContentRef.current) {
       return
     }

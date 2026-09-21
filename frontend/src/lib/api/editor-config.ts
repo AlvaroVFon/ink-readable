@@ -36,3 +36,13 @@ export function updateEditorConfigVimMotion(
 ): Promise<void> {
   return client.patch(`${EDITOR_CONFIG_PATH}/vim-motion`, { vimMotion })
 }
+
+/**
+ * Persists the format-on-save preference.
+ */
+export function updateEditorConfigFormatOnSave(
+  formatOnSave: boolean,
+  client: ApiClient = apiClient,
+): Promise<void> {
+  return client.patch(`${EDITOR_CONFIG_PATH}/format-on-save`, { formatOnSave })
+}

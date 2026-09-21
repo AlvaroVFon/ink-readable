@@ -36,7 +36,8 @@ function SettingRow({ label, description, checked, disabled, onCheckedChange }: 
  * editor preferences (`dark_theme` and `vim_motion`).
  */
 export function EditorConfigPopover() {
-  const { config, isLoading, error, updateDarkTheme, updateVimMotion } = useEditorConfigContext()
+  const { config, isLoading, error, updateDarkTheme, updateVimMotion, updateFormatOnSave } =
+    useEditorConfigContext()
   const disabled = config === null || isLoading
 
   return (
@@ -69,6 +70,15 @@ export function EditorConfigPopover() {
             label='Vim motion'
             onCheckedChange={(checked) => {
               void updateVimMotion(checked)
+            }}
+          />
+          <SettingRow
+            checked={config?.formatOnSave ?? false}
+            description='Format markdown when you save (Cmd/Ctrl+S)'
+            disabled={disabled}
+            label='Format on save'
+            onCheckedChange={(checked) => {
+              void updateFormatOnSave(checked)
             }}
           />
         </div>

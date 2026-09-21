@@ -7,19 +7,29 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 )
 
 const getEditorConfig = `-- name: GetEditorConfig :one
-SELECT id, dark_theme, vim_motion, updated_at FROM editor_config WHERE id = ?
+SELECT id, dark_theme, vim_motion, format_on_save, updated_at FROM editor_config WHERE id = ?
 `
 
-func (q *Queries) GetEditorConfig(ctx context.Context, id string) (EditorConfig, error) {
+type GetEditorConfigRow struct {
+	ID           string
+	DarkTheme    int64
+	VimMotion    int64
+	FormatOnSave int64
+	UpdatedAt    sql.NullString
+}
+
+func (q *Queries) GetEditorConfig(ctx context.Context, id string) (GetEditorConfigRow, error) {
 	row := q.db.QueryRowContext(ctx, getEditorConfig, id)
-	var i EditorConfig
+	var i GetEditorConfigRow
 	err := row.Scan(
 		&i.ID,
 		&i.DarkTheme,
 		&i.VimMotion,
+		&i.FormatOnSave,
 		&i.UpdatedAt,
 	)
 	return i, err

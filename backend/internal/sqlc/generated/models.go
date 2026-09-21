@@ -26,10 +26,11 @@ type DocumentLink struct {
 }
 
 type EditorConfig struct {
-	ID        string
-	DarkTheme int64
-	VimMotion int64
-	UpdatedAt sql.NullString
+	ID           string
+	DarkTheme    int64
+	VimMotion    int64
+	UpdatedAt    sql.NullString
+	FormatOnSave int64
 }
 
 type Project struct {

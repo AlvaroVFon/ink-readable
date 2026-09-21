@@ -47,6 +47,7 @@ export const editorConfigSchema = z.object({
   id: z.string(),
   darkTheme: z.boolean(),
   vimMotion: z.boolean(),
+  formatOnSave: z.boolean(),
 })
 
 export type EditorConfig = z.infer<typeof editorConfigSchema>
