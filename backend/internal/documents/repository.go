@@ -78,6 +78,25 @@ func (r *DocumentsRepository) Rename(ctx context.Context, id, name, path string)
 	})
 }
 
+func (r *DocumentsRepository) RenamePath(ctx context.Context, vaultID, oldPath, newPath string) error {
+	if vaultID == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "vaultID")
+	}
+	if oldPath == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "oldPath")
+	}
+	if newPath == "" {
+		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "newPath")
+	}
+
+	return r.Store.UpdateDocumentPaths(ctx, sqlc.UpdateDocumentPathsParams{
+		NewPath:   newPath,
+		OldPath:   oldPath,
+		UpdatedAt: time.Now().Format(time.RFC3339Nano),
+		VaultID:   vaultID,
+	})
+}
+
 func (r *DocumentsRepository) Move(ctx context.Context, id, path string) error {
 	if id == "" {
 		return fmt.Errorf("%w: %q", ErrInvalidEmptyArgument, "id")

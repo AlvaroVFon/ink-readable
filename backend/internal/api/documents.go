@@ -32,6 +32,11 @@ type pathRequest struct {
 	Path string `json:"path"`
 }
 
+type renameDocumentPathRequest struct {
+	OldPath string `json:"oldPath"`
+	NewPath string `json:"newPath"`
+}
+
 type contentRequest struct {
 	Content string `json:"content"`
 }
@@ -88,6 +93,19 @@ func (h *Handler) renameDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.documents.Rename(r.Context(), r.PathValue("id"), request.Name, request.Path); err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	httpx.NoContent(w)
+}
+
+func (h *Handler) renameDocumentPath(w http.ResponseWriter, r *http.Request) {
+	var request renameDocumentPathRequest
+	if err := httpx.DecodeJSON(r, &request); err != nil {
+		httpx.Error(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := h.documents.RenamePath(r.Context(), r.PathValue("vaultID"), request.OldPath, request.NewPath); err != nil {
 		writeServiceError(w, err)
 		return
 	}

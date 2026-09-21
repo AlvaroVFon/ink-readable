@@ -74,6 +74,36 @@ export function buildFolderPath(basePath: string, name: string): string {
 }
 
 /**
+ * Builds a document path for an explicit (user-provided) name. A trailing
+ * `.md` is stripped so renaming to "todo.md" does not produce "todo.md.md".
+ */
+export function buildNamedDocumentPath(basePath: string, name: string): string {
+  const segment = sanitizeSegment(name).replace(/\.md$/i, '')
+  return `${normalizeBasePath(basePath)}/${segment}${MARKDOWN_EXTENSION}`
+}
+
+/**
+ * Returns the display name of a document path: its last segment without the
+ * markdown extension.
+ */
+export function nameFromPath(path: string): string {
+  const segments = path.split(PATH_SEPARATOR).filter(Boolean)
+  const last = segments.at(-1) ?? ''
+  return last.replace(/\.md$/i, '')
+}
+
+/**
+ * Returns every document in the subtree rooted at `node`, so a folder can be
+ * deleted or inspected through its descendant documents.
+ */
+export function collectDocuments(node: FileTreeNode): FileTreeNode[] {
+  if (node.type === 'document') {
+    return [node]
+  }
+  return node.children.flatMap((child) => collectDocuments(child))
+}
+
+/**
  * Returns the folder that contains `path`, or the normalized base when the path
  * has a single segment.
  */

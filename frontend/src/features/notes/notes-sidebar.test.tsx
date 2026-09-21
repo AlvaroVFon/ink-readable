@@ -11,9 +11,9 @@ import type { FileTreeNode } from './types'
 
 import { NotesSidebar } from './notes-sidebar'
 
-const { useNotesWorkspace } = vi.hoisted(() => ({ useNotesWorkspace: vi.fn() }))
+const { useNotesWorkspaceContext } = vi.hoisted(() => ({ useNotesWorkspaceContext: vi.fn() }))
 
-vi.mock('./hooks/use-notes-workspace', () => ({ useNotesWorkspace }))
+vi.mock('./notes-workspace-context', () => ({ useNotesWorkspaceContext }))
 
 const reading: Vault = { id: 'v1', name: 'Reading', deleted: false, createdAt: '', updatedAt: '' }
 
@@ -59,16 +59,19 @@ const tree: FileTreeNode[] = [
 type WorkspaceOverrides = Partial<UseNotesWorkspaceResult>
 
 function mockWorkspace(overrides: WorkspaceOverrides = {}) {
-  useNotesWorkspace.mockReturnValue({
+  useNotesWorkspaceContext.mockReturnValue({
     tree,
     vaults: [reading],
     documentsById: new Map(),
     isLoading: false,
     error: null,
+    revision: 0,
     refresh: vi.fn(),
     createNote: vi.fn(),
     createFolder: vi.fn(),
     createVault: vi.fn(),
+    renameNode: vi.fn(),
+    deleteNode: vi.fn(),
     ...overrides,
   })
 }
@@ -85,7 +88,7 @@ function renderSidebar() {
 
 describe('NotesSidebar', () => {
   beforeEach(() => {
-    useNotesWorkspace.mockReset()
+    useNotesWorkspaceContext.mockReset()
   })
 
   it('renders the documents tree', () => {
