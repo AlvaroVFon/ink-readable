@@ -91,6 +91,29 @@ export function buildNamedDocumentPath(basePath: string, name: string): string {
 }
 
 /**
+ * Builds a document path under `basePath` keeping the given name, but appends
+ * a counter when that path already exists (`note.md`, `note 2.md`, ...). Used
+ * when moving a document into a folder that already has a file with that name.
+ */
+export function buildUniqueDocumentPath(
+  basePath: string,
+  name: string,
+  existingPaths: ReadonlySet<string>,
+): string {
+  const base = normalizeBasePath(basePath)
+  const segment = sanitizeSegment(name).replace(/\.md$/i, '')
+  let index = 1
+  let candidate = segment
+
+  while (existingPaths.has(`${base}/${candidate}${MARKDOWN_EXTENSION}`)) {
+    index += 1
+    candidate = `${segment} ${index}`
+  }
+
+  return `${base}/${candidate}${MARKDOWN_EXTENSION}`
+}
+
+/**
  * Returns the display name of a document path: its last segment without the
  * markdown extension.
  */

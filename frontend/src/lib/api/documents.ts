@@ -4,6 +4,7 @@ import {
   documentSchema,
   type CreateDocumentInput,
   type Document,
+  type MoveDocumentInput,
   type RenameDocumentInput,
 } from '@/lib/types'
 
@@ -87,6 +88,18 @@ export function renameDocumentPath(
   client: ApiClient = apiClient,
 ): Promise<void> {
   return client.patch(`/vaults/${vaultId}/documents/paths`, input)
+}
+
+/**
+ * Moves a document to a new path (its new folder). The backend only rewrites
+ * the path of that document, so a move always stays within the same vault.
+ */
+export function moveDocument(
+  id: string,
+  input: MoveDocumentInput,
+  client: ApiClient = apiClient,
+): Promise<void> {
+  return client.patch(`/documents/${id}/move`, input)
 }
 
 /**

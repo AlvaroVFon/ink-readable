@@ -64,6 +64,7 @@ export function NotesSidebar() {
     renameVault,
     deleteVault,
     renameNode,
+    moveNode,
     deleteNode,
   } = useNotesWorkspaceContext()
   const match = useMatch('/notes/:documentId')
@@ -184,6 +185,15 @@ export function NotesSidebar() {
     }
     if (isAffectedSelection(node)) {
       setSelectedFolderPath(null)
+    }
+  }
+
+  const handleMove = async (node: FileTreeNode, targetFolderPath: string) => {
+    setActionError(null)
+    try {
+      await moveNode(node, targetFolderPath)
+    } catch (cause) {
+      setActionError(toMessage(cause))
     }
   }
 
@@ -334,6 +344,7 @@ export function NotesSidebar() {
             onCreateFolder={handleCreateFolderAt}
             onCreateNote={handleCreateNoteAt}
             onDelete={handleDelete}
+            onMove={handleMove}
             onRename={handleRename}
             onSelectFolder={setSelectedFolderPath}
             selectedFolderPath={selectedFolderPath}

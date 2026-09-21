@@ -2,6 +2,7 @@ import { ChevronRight, Database, FileText, Folder, FolderOpen } from 'lucide-rea
 import {
   useEffect,
   useState,
+  type DragEvent as ReactDragEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -28,6 +29,7 @@ type NotesTreeProps = {
   onDelete: (node: FileTreeNode) => Promise<void>
   onCreateNote: (node: FileTreeNode) => Promise<void>
   onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
+  onMove: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
 }
 
 type NotesTreeNodeProps = {
@@ -39,6 +41,8 @@ type NotesTreeNodeProps = {
   collapsedPaths: ReadonlySet<string>
   renamingPath: string | null
   creatingFolderPath: string | null
+  draggingNode: FileTreeNode | null
+  dragOverPath: string | null
   onSelectFolder: (path: string) => void
   onRename: (node: FileTreeNode, name: string) => Promise<void>
   onToggle: (path: string) => void
@@ -46,6 +50,12 @@ type NotesTreeNodeProps = {
   onFinishRename: () => void
   onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
   onFinishCreateFolder: () => void
+  canDropOn: (folder: FileTreeNode) => boolean
+  onDragStart: (node: FileTreeNode) => void
+  onDragEnd: () => void
+  onDragOverFolder: (folder: FileTreeNode) => void
+  onDragLeaveFolder: (path: string) => void
+  onDropOnFolder: (folder: FileTreeNode) => void
 }
 
 const MENU_ITEM_CLASS =
@@ -58,6 +68,8 @@ const MENU_ITEM_CLASS =
  * ancestors are force-expanded through `forceExpandedPaths`. Right-clicking a
  * node opens a context menu with creation, rename and delete. Rename happens
  * inline, and a new folder is named through an inline field below its parent.
+ *
+ * Documents can be dragged onto a folder of the same vault to move them.
  */
 export function NotesTree({
   nodes,
@@ -69,10 +81,13 @@ export function NotesTree({
   onDelete,
   onCreateNote,
   onCreateFolder,
+  onMove,
 }: NotesTreeProps) {
   const [collapsedPaths, setCollapsedPaths] = useState<ReadonlySet<string>>(new Set())
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [creatingFolderPath, setCreatingFolderPath] = useState<string | null>(null)
+  const [draggingNode, setDraggingNode] = useState<FileTreeNode | null>(null)
+  const [dragOverPath, setDragOverPath] = useState<string | null>(null)
   const [menu, setMenu] = useState<{ node: FileTreeNode; x: number; y: number } | null>(null)
 
   const toggle = (path: string) => {
@@ -91,6 +106,33 @@ export function NotesTree({
     setMenu({ node, ...position })
   }
 
+  // A document can only move into a folder of its own vault, and never into the
+  // folder it already lives in.
+  const canDropOn = (folder: FileTreeNode): boolean =>
+    draggingNode !== null &&
+    draggingNode.type === 'document' &&
+    folder.type === 'folder' &&
+    draggingNode.vaultId === folder.vaultId &&
+    parentPath(draggingNode.path) !== folder.path
+
+  const handleDragStart = (node: FileTreeNode) => {
+    setDraggingNode(node)
+  }
+
+  const handleDragEnd = () => {
+    setDraggingNode(null)
+    setDragOverPath(null)
+  }
+
+  const handleDropOnFolder = (folder: FileTreeNode) => {
+    if (draggingNode === null || !canDropOn(folder)) {
+      return
+    }
+    const node = draggingNode
+    handleDragEnd()
+    void onMove(node, folder.path)
+  }
+
   return (
     <>
       <ul className='flex w-full min-w-0 flex-col gap-0.5'>
@@ -98,13 +140,25 @@ export function NotesTree({
           <NotesTreeNode
             key={node.id}
             activeDocumentId={activeDocumentId}
+            canDropOn={canDropOn}
             collapsedPaths={collapsedPaths}
             creatingFolderPath={creatingFolderPath}
             depth={0}
+            draggingNode={draggingNode}
+            dragOverPath={dragOverPath}
             forceExpandedPaths={forceExpandedPaths}
             node={node}
             onContextMenu={openMenu}
             onCreateFolder={onCreateFolder}
+            onDragEnd={handleDragEnd}
+            onDragLeaveFolder={(path) => {
+              setDragOverPath((current) => (current === path ? null : current))
+            }}
+            onDragOverFolder={(folder) => {
+              setDragOverPath(folder.path)
+            }}
+            onDragStart={handleDragStart}
+            onDropOnFolder={handleDropOnFolder}
             onFinishCreateFolder={() => {
               setCreatingFolderPath(null)
             }}
@@ -163,6 +217,8 @@ function NotesTreeNode({
   forceExpandedPaths,
   renamingPath,
   creatingFolderPath,
+  draggingNode,
+  dragOverPath,
   onToggle,
   onContextMenu,
   onFinishRename,
@@ -170,14 +226,51 @@ function NotesTreeNode({
   onRename,
   onCreateFolder,
   onSelectFolder,
+  canDropOn,
+  onDragStart,
+  onDragEnd,
+  onDragOverFolder,
+  onDragLeaveFolder,
+  onDropOnFolder,
 }: NotesTreeNodeProps) {
   const indent = depth * 12
   const isRenaming = renamingPath === node.path
+  const isDragging = draggingNode?.id === node.id
 
   const handleContextMenu = (event: ReactMouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
     onContextMenu(node, { x: event.clientX, y: event.clientY })
+  }
+
+  const handleDragStart = (event: ReactDragEvent) => {
+    if (node.type !== 'document') {
+      return
+    }
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', node.id)
+    }
+    onDragStart(node)
+  }
+
+  const handleFolderDragOver = (event: ReactDragEvent) => {
+    if (!canDropOn(node)) {
+      return
+    }
+    event.preventDefault()
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+    onDragOverFolder(node)
+  }
+
+  const handleFolderDrop = (event: ReactDragEvent) => {
+    if (!canDropOn(node)) {
+      return
+    }
+    event.preventDefault()
+    onDropOnFolder(node)
   }
 
   const renameForm = isRenaming ? (
@@ -197,7 +290,13 @@ function NotesTreeNode({
 
   if (node.type === 'document') {
     return (
-      <li onContextMenu={handleContextMenu}>
+      <li
+        className={cn(isDragging && 'opacity-50')}
+        draggable
+        onContextMenu={handleContextMenu}
+        onDragEnd={onDragEnd}
+        onDragStart={handleDragStart}
+      >
         {renameForm ?? (
           <SidebarMenuButton
             isActive={node.id === activeDocumentId}
@@ -215,31 +314,41 @@ function NotesTreeNode({
   const isCreatingFolder = creatingFolderPath === node.path
   const isExpanded =
     isCreatingFolder || forceExpandedPaths.has(node.path) || !collapsedPaths.has(node.path)
+  const isDropTarget = dragOverPath === node.path
 
   return (
     <li onContextMenu={handleContextMenu}>
       {renameForm ?? (
-        <SidebarMenuButton
-          isActive={node.path === selectedFolderPath}
-          onClick={() => {
-            onToggle(node.path)
-            onSelectFolder(node.path)
+        <div
+          className={cn('rounded-lg', isDropTarget && 'bg-accent ring-1 ring-ring/50 ring-inset')}
+          onDragLeave={() => {
+            onDragLeaveFolder(node.path)
           }}
-          style={{ paddingLeft: indent + 8 }}
+          onDragOver={handleFolderDragOver}
+          onDrop={handleFolderDrop}
         >
-          <ChevronRight
-            aria-hidden='true'
-            className={cn('transition-transform', isExpanded && 'rotate-90')}
-          />
-          {isVaultRoot(node) ? (
-            <Database aria-hidden='true' />
-          ) : isExpanded ? (
-            <FolderOpen aria-hidden='true' />
-          ) : (
-            <Folder aria-hidden='true' />
-          )}
-          <span>{node.name}</span>
-        </SidebarMenuButton>
+          <SidebarMenuButton
+            isActive={node.path === selectedFolderPath}
+            onClick={() => {
+              onToggle(node.path)
+              onSelectFolder(node.path)
+            }}
+            style={{ paddingLeft: indent + 8 }}
+          >
+            <ChevronRight
+              aria-hidden='true'
+              className={cn('transition-transform', isExpanded && 'rotate-90')}
+            />
+            {isVaultRoot(node) ? (
+              <Database aria-hidden='true' />
+            ) : isExpanded ? (
+              <FolderOpen aria-hidden='true' />
+            ) : (
+              <Folder aria-hidden='true' />
+            )}
+            <span>{node.name}</span>
+          </SidebarMenuButton>
+        </div>
       )}
       {isExpanded && (node.children.length > 0 || isCreatingFolder) && (
         <ul className='flex flex-col gap-0.5'>
@@ -259,13 +368,21 @@ function NotesTreeNode({
             <NotesTreeNode
               key={child.id}
               activeDocumentId={activeDocumentId}
+              canDropOn={canDropOn}
               collapsedPaths={collapsedPaths}
               creatingFolderPath={creatingFolderPath}
               depth={depth + 1}
+              draggingNode={draggingNode}
+              dragOverPath={dragOverPath}
               forceExpandedPaths={forceExpandedPaths}
               node={child}
               onContextMenu={onContextMenu}
               onCreateFolder={onCreateFolder}
+              onDragEnd={onDragEnd}
+              onDragLeaveFolder={onDragLeaveFolder}
+              onDragOverFolder={onDragOverFolder}
+              onDragStart={onDragStart}
+              onDropOnFolder={onDropOnFolder}
               onFinishCreateFolder={onFinishCreateFolder}
               onFinishRename={onFinishRename}
               onRename={onRename}
