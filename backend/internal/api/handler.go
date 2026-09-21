@@ -7,6 +7,8 @@ import (
 	"ink-readable/internal/config"
 	"ink-readable/internal/documents"
 	"ink-readable/internal/httpx"
+	"ink-readable/internal/planner/projects"
+	"ink-readable/internal/planner/tasks"
 	"ink-readable/internal/vaults"
 	"net/http"
 )
@@ -36,16 +38,41 @@ type (
 		DeletePermanently(context.Context, string) error
 		Restore(context.Context, string) error
 	}
+	projectService interface {
+		Create(context.Context, projects.Project) error
+		List(context.Context) ([]projects.Project, error)
+		FindByID(context.Context, string) (*projects.Project, error)
+		Rename(context.Context, string, string) error
+		Delete(context.Context, string) error
+	}
+	taskService interface {
+		Create(context.Context, tasks.Task) error
+		List(context.Context, string) ([]tasks.Task, error)
+		FindByID(context.Context, string) (*tasks.Task, error)
+		UpdateTitle(context.Context, string, string) error
+		UpdateDescription(context.Context, string, string) error
+		UpdateStatus(context.Context, string, tasks.Status) error
+		UpdatePosition(context.Context, string, int64) error
+		Delete(context.Context, string) error
+	}
 )
 
 type Handler struct {
 	config    configService
 	vaults    vaultService
 	documents documentService
+	projects  projectService
+	tasks     taskService
 }
 
-func NewHandler(vaultsService vaultService, documentsService documentService, configService configService) http.Handler {
-	handler := &Handler{vaults: vaultsService, documents: documentsService, config: configService}
+func NewHandler(vaultsService vaultService, documentsService documentService, projectsService projectService, tasksService taskService, configService configService) http.Handler {
+	handler := &Handler{
+		vaults:    vaultsService,
+		documents: documentsService,
+		projects:  projectsService,
+		tasks:     tasksService,
+		config:    configService,
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/vaults", handler.listVaults)
@@ -67,6 +94,22 @@ func NewHandler(vaultsService vaultService, documentsService documentService, co
 	mux.HandleFunc("POST /api/v1/documents/{id}/restore", handler.restoreDocument)
 	mux.HandleFunc("DELETE /api/v1/documents/{id}/permanent", handler.deleteDocumentPermanently)
 
+	mux.HandleFunc("GET /api/v1/projects", handler.listProjects)
+	mux.HandleFunc("POST /api/v1/projects", handler.createProject)
+	mux.HandleFunc("GET /api/v1/projects/{id}", handler.getProject)
+	mux.HandleFunc("PATCH /api/v1/projects/{id}", handler.renameProject)
+	mux.HandleFunc("DELETE /api/v1/projects/{id}", handler.deleteProject)
+
+	mux.HandleFunc("GET /api/v1/projects/{projectID}/tasks", handler.listTasks)
+	mux.HandleFunc("POST /api/v1/projects/{projectID}/tasks", handler.createTask)
+
+	mux.HandleFunc("GET /api/v1/tasks/{id}", handler.getTask)
+	mux.HandleFunc("PATCH /api/v1/tasks/{id}/title", handler.updateTaskTitle)
+	mux.HandleFunc("PATCH /api/v1/tasks/{id}/description", handler.updateTaskDescription)
+	mux.HandleFunc("PATCH /api/v1/tasks/{id}/status", handler.updateTaskStatus)
+	mux.HandleFunc("PATCH /api/v1/tasks/{id}/position", handler.updateTaskPosition)
+	mux.HandleFunc("DELETE /api/v1/tasks/{id}", handler.deleteTask)
+
 	mux.HandleFunc("GET /api/v1/config", handler.ListFrontSecrets)
 
 	return httpx.CORS(mux)
@@ -78,6 +121,12 @@ func writeServiceError(w http.ResponseWriter, err error) {
 		status = http.StatusNotFound
 	}
 	if errors.Is(err, vaults.ErrInvalidEmptyArgument) || errors.Is(err, documents.ErrInvalidEmptyArgument) {
+		status = http.StatusBadRequest
+	}
+	if errors.Is(err, projects.ErrInvalidEmptyArgumentError) ||
+		errors.Is(err, tasks.ErrInvalidEmptyArgumentError) ||
+		errors.Is(err, tasks.ErrInvalidStatusError) ||
+		errors.Is(err, tasks.ErrInvalidPositionError) {
 		status = http.StatusBadRequest
 	}
 	httpx.Error(w, status, err)

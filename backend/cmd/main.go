@@ -7,6 +7,8 @@ import (
 	"ink-readable/internal/config"
 	"ink-readable/internal/database"
 	"ink-readable/internal/documents"
+	"ink-readable/internal/planner/projects"
+	"ink-readable/internal/planner/tasks"
 	"ink-readable/internal/vaults"
 	"log"
 	"net/http"
@@ -63,12 +65,14 @@ func main() {
 	queries := sqlc.New(db)
 	vaultsService := vaults.NewVaultsService(vaults.NewVaultRepository(*queries, db))
 	documentsService := documents.NewDocumentsService(documents.NewDocumentsRepository(*queries, db))
+	projectsService := projects.NewProjectsService(projects.NewProjectsRepository(*queries))
+	tasksService := tasks.NewTasksService(tasks.NewTasksRepository(*queries))
 	configService := config.NewConfigService(cfg)
 
 	startedAt := time.Now()
 	mux := http.NewServeMux()
 	mux.Handle("/health", health.NewHandler(db, startedAt))
-	mux.Handle("/", api.NewHandler(vaultsService, documentsService, configService))
+	mux.Handle("/", api.NewHandler(vaultsService, documentsService, projectsService, tasksService, configService))
 
 	addr := fmt.Sprintf("%s:%s", cfg.AppConfig.BaseURL, cfg.AppConfig.Port)
 	log.Printf("API listening on http://%s", addr)
