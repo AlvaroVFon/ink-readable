@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarInput,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar'
@@ -253,7 +254,7 @@ export function NotesSidebar() {
 
   return (
     <SidebarGroup className='p-2'>
-      <div className='sticky top-0 z-10 flex flex-col gap-2 bg-sidebar pb-1 group-data-[collapsible=icon]:hidden'>
+      <div className='sticky top-0 z-10 flex flex-col gap-2 bg-sidebar pb-3 group-data-[collapsible=icon]:hidden'>
         <div className='flex items-center gap-1'>
           <SidebarInput
             ref={searchRef}
@@ -304,6 +305,8 @@ export function NotesSidebar() {
           <p className='text-xs text-destructive'>{actionError}</p>
         )}
       </div>
+
+      <SidebarGroupLabel className='mb-1'>Notes</SidebarGroupLabel>
 
       <SidebarGroupContent className='group-data-[collapsible=icon]:hidden'>
         {isLoading && (

@@ -61,6 +61,11 @@ type NotesTreeNodeProps = {
 const MENU_ITEM_CLASS =
   'flex w-full cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50'
 
+// VS Code-like rows: flat, full-width, no rounding, with a left accent bar
+// marking the active note/folder.
+const TREE_ROW_CLASS =
+  'rounded-none border-l-2 border-transparent focus-visible:ring-inset data-active:border-sidebar-primary'
+
 /**
  * Recursive vault → folder → document tree.
  *
@@ -299,6 +304,7 @@ function NotesTreeNode({
       >
         {renameForm ?? (
           <SidebarMenuButton
+            className={TREE_ROW_CLASS}
             isActive={node.id === activeDocumentId}
             render={<Link to={`/notes/${node.id}`} />}
             style={{ paddingLeft: indent + 8 }}
@@ -320,7 +326,7 @@ function NotesTreeNode({
     <li onContextMenu={handleContextMenu}>
       {renameForm ?? (
         <div
-          className={cn('rounded-lg', isDropTarget && 'bg-accent ring-1 ring-ring/50 ring-inset')}
+          className={cn('rounded-none', isDropTarget && 'bg-accent ring-1 ring-ring/50 ring-inset')}
           onDragLeave={() => {
             onDragLeaveFolder(node.path)
           }}
@@ -328,6 +334,7 @@ function NotesTreeNode({
           onDrop={handleFolderDrop}
         >
           <SidebarMenuButton
+            className={TREE_ROW_CLASS}
             isActive={node.path === selectedFolderPath}
             onClick={() => {
               onToggle(node.path)
@@ -536,8 +543,9 @@ function InlineRename({
 
   return (
     <form
-      className='flex flex-col gap-1'
+      className='flex min-w-0 flex-col gap-1'
       onSubmit={handleSubmit}
+      style={{ paddingLeft }}
     >
       <Input
         autoFocus
@@ -549,7 +557,6 @@ function InlineRename({
           setValue(event.target.value)
         }}
         onKeyDown={handleKeyDown}
-        style={{ marginLeft: paddingLeft }}
         value={value}
       />
       {error !== null && <p className='px-2 text-xs text-destructive'>{error}</p>}
@@ -598,8 +605,9 @@ function InlineCreateFolder({ paddingLeft, onSubmit, onCancel }: InlineCreateFol
 
   return (
     <form
-      className='flex flex-col gap-1'
+      className='flex min-w-0 flex-col gap-1'
       onSubmit={handleSubmit}
+      style={{ paddingLeft }}
     >
       <Input
         autoFocus
@@ -612,7 +620,6 @@ function InlineCreateFolder({ paddingLeft, onSubmit, onCancel }: InlineCreateFol
         }}
         onKeyDown={handleKeyDown}
         placeholder='Folder name'
-        style={{ marginLeft: paddingLeft }}
         value={value}
       />
       {error !== null && <p className='px-2 text-xs text-destructive'>{error}</p>}
