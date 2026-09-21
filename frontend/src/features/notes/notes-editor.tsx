@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { Document } from '@/lib/types'
 
@@ -32,7 +32,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
 
   const { config } = useEditorConfigContext()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
-  const { containerRef, scrollElement } = useCodeMirror({
+  const { containerRef, scrollElement, requestMeasure } = useCodeMirror({
     initialDoc: document.content,
     onChange: setContent,
     onSave: () => {
@@ -42,6 +42,12 @@ export function NotesEditor({ document }: NotesEditorProps) {
   })
 
   useScrollSync(scrollElement, previewRef, mode === 'split')
+
+  useEffect(() => {
+    if (mode !== 'preview') {
+      requestMeasure()
+    }
+  }, [mode, requestMeasure])
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
@@ -57,14 +63,14 @@ export function NotesEditor({ document }: NotesEditorProps) {
           mode === 'split' ? 'grid-cols-2 divide-x' : 'grid-cols-1',
         )}
       >
-        {mode !== 'preview' && (
-          <div className='min-h-0 overflow-hidden'>
-            <div
-              className='h-full'
-              ref={containerRef}
-            />
-          </div>
-        )}
+        {/* The editor stays mounted in every mode: unmounting it detaches the
+            CodeMirror DOM and leaves the pane blank when coming back. */}
+        <div className={cn('min-h-0 overflow-hidden', mode === 'preview' && 'hidden')}>
+          <div
+            className='h-full'
+            ref={containerRef}
+          />
+        </div>
         {mode !== 'edit' && (
           <div
             className='min-h-0 overflow-auto'
