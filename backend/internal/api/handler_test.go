@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"ink-readable/internal/config"
-	"ink-readable/internal/documents"
+	editorconfig "ink-readable/internal/editor/config"
+	"ink-readable/internal/editor/documents"
+	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/planner/projects"
 	"ink-readable/internal/planner/tasks"
-	"ink-readable/internal/vaults"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -69,6 +70,32 @@ func (f *fakeDocumentService) Restore(context.Context, string) error            
 type fakeConfigService struct{}
 
 func (f fakeConfigService) ListFrontSecrets(context.Context) *config.FrontConfig { return nil }
+
+type fakeEditorConfigService struct {
+	config    editorconfig.EditorConfig
+	darkTheme *bool
+	vimMotion *bool
+	getErr    error
+	updateErr error
+}
+
+func (f *fakeEditorConfigService) Get(context.Context) (*editorconfig.EditorConfig, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
+	item := f.config
+	return &item, nil
+}
+
+func (f *fakeEditorConfigService) UpdateDarkTheme(_ context.Context, darkTheme bool) error {
+	f.darkTheme = &darkTheme
+	return f.updateErr
+}
+
+func (f *fakeEditorConfigService) UpdateVimMotion(_ context.Context, vimMotion bool) error {
+	f.vimMotion = &vimMotion
+	return f.updateErr
+}
 
 type fakeProjectService struct {
 	items []projects.Project
@@ -134,7 +161,7 @@ func (f *fakeTaskService) Delete(context.Context, string) error                {
 
 func TestHandler_CreateAndListVaults(t *testing.T) {
 	vaultService := &fakeVaultService{}
-	handler := NewHandler(vaultService, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(vaultService, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/vaults", strings.NewReader(`{"name":"Notes"}`))
 	createResponse := httptest.NewRecorder()
@@ -172,7 +199,7 @@ func TestHandler_CreateAndListVaults(t *testing.T) {
 }
 
 func TestHandler_InvalidJSON(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/vaults", strings.NewReader(`{"name":`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -183,7 +210,7 @@ func TestHandler_InvalidJSON(t *testing.T) {
 }
 
 func TestHandler_Options(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodOptions, "/api/v1/vaults", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -195,7 +222,7 @@ func TestHandler_Options(t *testing.T) {
 
 func TestHandler_CreateAndListProjects(t *testing.T) {
 	projectService := &fakeProjectService{}
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, projectService, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, projectService, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/projects", strings.NewReader(`{"name":"Roadmap"}`))
 	createResponse := httptest.NewRecorder()
@@ -230,7 +257,7 @@ func TestHandler_CreateAndListProjects(t *testing.T) {
 }
 
 func TestHandler_CreateProject_InvalidName(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/projects", strings.NewReader(`{"name":""}`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -242,7 +269,7 @@ func TestHandler_CreateProject_InvalidName(t *testing.T) {
 
 func TestHandler_CreateAndListTasks(t *testing.T) {
 	taskService := &fakeTaskService{}
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, taskService, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, taskService, &fakeEditorConfigService{}, fakeConfigService{})
 
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/projects/project-1/tasks", strings.NewReader(`{"title":"Write tests"}`))
 	createResponse := httptest.NewRecorder()
@@ -277,7 +304,7 @@ func TestHandler_CreateAndListTasks(t *testing.T) {
 }
 
 func TestHandler_UpdateTaskStatus_Invalid(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/tasks/task-1/status", strings.NewReader(`{"status":"unknown"}`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -291,7 +318,7 @@ func TestHandler_GetProject(t *testing.T) {
 	projectService := &fakeProjectService{
 		items: []projects.Project{{ID: "project-1", Name: "Roadmap"}},
 	}
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, projectService, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, projectService, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/project-1", nil)
 	response := httptest.NewRecorder()
@@ -310,7 +337,7 @@ func TestHandler_GetProject(t *testing.T) {
 }
 
 func TestHandler_GetProject_NotFound(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/missing", nil)
 	response := httptest.NewRecorder()
@@ -325,7 +352,7 @@ func TestHandler_GetTask(t *testing.T) {
 	taskService := &fakeTaskService{
 		items: []tasks.Task{{ID: "task-1", ProjectID: "project-1", Title: "Write tests", Status: tasks.StatusTodo}},
 	}
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, taskService, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, taskService, &fakeEditorConfigService{}, fakeConfigService{})
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/tasks/task-1", nil)
 	response := httptest.NewRecorder()
@@ -345,7 +372,7 @@ func TestHandler_GetTask(t *testing.T) {
 
 func TestHandler_RenameDocumentPath(t *testing.T) {
 	documentService := &fakeDocumentService{}
-	handler := NewHandler(&fakeVaultService{}, documentService, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, documentService, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	request := httptest.NewRequest(
 		http.MethodPatch,
@@ -367,7 +394,7 @@ func TestHandler_RenameDocumentPath(t *testing.T) {
 }
 
 func TestHandler_GetTask_NotFound(t *testing.T) {
-	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, fakeConfigService{})
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/tasks/missing", nil)
 	response := httptest.NewRecorder()
@@ -375,5 +402,84 @@ func TestHandler_GetTask_NotFound(t *testing.T) {
 
 	if response.Code != http.StatusNotFound {
 		t.Fatalf("expected status 404, got %d", response.Code)
+	}
+}
+
+func TestHandler_GetEditorConfig(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{
+		config: editorconfig.EditorConfig{ID: editorconfig.DefaultID, DarkTheme: true, VimMotion: false},
+	}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/editor/config", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.Code)
+	}
+	var got editorConfigResponse
+	if err := json.NewDecoder(response.Body).Decode(&got); err != nil {
+		t.Fatalf("decode editor config: %v", err)
+	}
+	if got.ID != editorconfig.DefaultID || !got.DarkTheme || got.VimMotion {
+		t.Fatalf("unexpected editor config: %+v", got)
+	}
+}
+
+func TestHandler_GetEditorConfig_NotFound(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{getErr: sql.ErrNoRows}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/editor/config", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", response.Code)
+	}
+}
+
+func TestHandler_UpdateEditorConfigDarkTheme(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/editor/config/dark-theme", strings.NewReader(`{"darkTheme":false}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+	if editorConfigService.darkTheme == nil || *editorConfigService.darkTheme {
+		t.Fatalf("expected dark theme false, got %+v", editorConfigService.darkTheme)
+	}
+}
+
+func TestHandler_UpdateEditorConfigVimMotion(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/editor/config/vim-motion", strings.NewReader(`{"vimMotion":true}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+	if editorConfigService.vimMotion == nil || !*editorConfigService.vimMotion {
+		t.Fatalf("expected vim motion true, got %+v", editorConfigService.vimMotion)
+	}
+}
+
+func TestHandler_UpdateEditorConfig_InvalidJSON(t *testing.T) {
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, &fakeEditorConfigService{}, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/editor/config/dark-theme", strings.NewReader(`{"darkTheme":`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", response.Code)
 	}
 }

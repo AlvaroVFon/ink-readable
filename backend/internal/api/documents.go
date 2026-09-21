@@ -1,7 +1,7 @@
 package api
 
 import (
-	"ink-readable/internal/documents"
+	"ink-readable/internal/editor/documents"
 	"ink-readable/internal/httpx"
 	"net/http"
 )
