@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Document struct {
@@ -30,6 +31,17 @@ type Project struct {
 	CreatedAt string
 	UpdatedAt string
 	DeletedAt sql.NullString
+}
+
+type Task struct {
+	ID          string
+	ProjectID   string
+	Title       string
+	Description sql.NullString
+	Status      string
+	Position    int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Vault struct {
