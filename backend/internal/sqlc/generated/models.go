@@ -4,6 +4,10 @@
 
 package sqlc
 
+import (
+	"database/sql"
+)
+
 type Document struct {
 	ID        string
 	Name      string
@@ -18,6 +22,14 @@ type Document struct {
 type DocumentLink struct {
 	DocumentAID string
 	DocumentBID string
+}
+
+type Project struct {
+	ID        string
+	Name      string
+	CreatedAt string
+	UpdatedAt string
+	DeletedAt sql.NullString
 }
 
 type Vault struct {
