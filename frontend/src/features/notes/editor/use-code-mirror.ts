@@ -18,6 +18,10 @@ type UseCodeMirrorResult = {
   scrollElement: HTMLElement | null
   /** Re-measures the viewport, needed after the editor is shown again. */
   requestMeasure: () => void
+  /** Current document contents, read straight from the editor state. */
+  getContent: () => string
+  /** Replaces the whole document, used after formatting on save. */
+  replaceContent: (value: string) => void
 }
 
 /**
@@ -101,5 +105,15 @@ export function useCodeMirror({
     viewRef.current?.requestMeasure()
   }, [])
 
-  return { containerRef, scrollElement, requestMeasure }
+  const getContent = useCallback(() => viewRef.current?.state.doc.toString() ?? '', [])
+
+  const replaceContent = useCallback((value: string) => {
+    const view = viewRef.current
+    if (view === null || view.state.doc.toString() === value) {
+      return
+    }
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } })
+  }, [])
+
+  return { containerRef, scrollElement, requestMeasure, getContent, replaceContent }
 }

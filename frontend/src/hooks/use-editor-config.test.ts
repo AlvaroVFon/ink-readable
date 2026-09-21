@@ -7,19 +7,26 @@ const api = vi.hoisted(() => ({
   fetchEditorConfig: vi.fn<() => Promise<EditorConfig>>(),
   updateEditorConfigDarkTheme: vi.fn<(darkTheme: boolean) => Promise<void>>(),
   updateEditorConfigVimMotion: vi.fn<(vimMotion: boolean) => Promise<void>>(),
+  updateEditorConfigFormatOnSave: vi.fn<(formatOnSave: boolean) => Promise<void>>(),
 }))
 
 vi.mock('@/lib/api', () => api)
 
 import { useEditorConfig } from './use-editor-config'
 
-const config: EditorConfig = { id: 'default', darkTheme: true, vimMotion: true }
+const config: EditorConfig = {
+  id: 'default',
+  darkTheme: true,
+  vimMotion: true,
+  formatOnSave: true,
+}
 
 describe('useEditorConfig', () => {
   beforeEach(() => {
     api.fetchEditorConfig.mockReset()
     api.updateEditorConfigDarkTheme.mockReset()
     api.updateEditorConfigVimMotion.mockReset()
+    api.updateEditorConfigFormatOnSave.mockReset()
   })
 
   it('loads the editor config', async () => {
@@ -62,6 +69,22 @@ describe('useEditorConfig', () => {
     expect(api.updateEditorConfigVimMotion).toHaveBeenCalledWith(false)
     expect(result.current.config?.vimMotion).toBe(false)
     expect(result.current.config?.darkTheme).toBe(true)
+  })
+
+  it('updates the format on save preference', async () => {
+    api.fetchEditorConfig.mockResolvedValue(config)
+    api.updateEditorConfigFormatOnSave.mockResolvedValue(undefined)
+
+    const { result } = renderHook(() => useEditorConfig())
+    await waitFor(() => expect(result.current.config).not.toBeNull())
+
+    await act(async () => {
+      await result.current.updateFormatOnSave(false)
+    })
+
+    expect(api.updateEditorConfigFormatOnSave).toHaveBeenCalledWith(false)
+    expect(result.current.config?.formatOnSave).toBe(false)
+    expect(result.current.config?.vimMotion).toBe(true)
   })
 
   it('exposes the error when loading fails', async () => {

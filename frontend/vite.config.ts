@@ -13,6 +13,11 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  // Prettier is only imported dynamically (format on save); pre-bundling these
+  // subpath entries keeps the dev server from failing to resolve them on demand.
+  optimizeDeps: {
+    include: ['prettier/standalone', 'prettier/plugins/markdown'],
+  },
   server: {
     proxy: {
       '/api': {

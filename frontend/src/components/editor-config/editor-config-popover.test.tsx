@@ -11,11 +11,12 @@ import { EditorConfigPopover } from './editor-config-popover'
 
 function setup(overrides: Partial<UseEditorConfigResult> = {}): UseEditorConfigResult {
   const value: UseEditorConfigResult = {
-    config: { id: 'default', darkTheme: true, vimMotion: false },
+    config: { id: 'default', darkTheme: true, vimMotion: false, formatOnSave: true },
     isLoading: false,
     error: null,
     updateDarkTheme: vi.fn().mockResolvedValue(undefined),
     updateVimMotion: vi.fn().mockResolvedValue(undefined),
+    updateFormatOnSave: vi.fn().mockResolvedValue(undefined),
     reload: vi.fn(),
     ...overrides,
   }
@@ -39,6 +40,7 @@ describe('EditorConfigPopover', () => {
 
     expect(screen.getByRole('switch', { name: 'Dark theme' })).toBeChecked()
     expect(screen.getByRole('switch', { name: 'Vim motion' })).not.toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Format on save' })).toBeChecked()
   })
 
   it('updates the dark theme preference', () => {
@@ -57,6 +59,15 @@ describe('EditorConfigPopover', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Vim motion' }))
 
     expect(value.updateVimMotion).toHaveBeenCalledWith(true)
+  })
+
+  it('updates the format on save preference', () => {
+    const value = setup()
+    openPopover()
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Format on save' }))
+
+    expect(value.updateFormatOnSave).toHaveBeenCalledWith(false)
   })
 
   it('disables the switches while the config is loading', () => {

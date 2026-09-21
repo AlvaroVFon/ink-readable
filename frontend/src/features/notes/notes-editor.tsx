@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Document } from '@/lib/types'
 
@@ -10,6 +10,7 @@ import type { ViewMode } from './types'
 import { useCodeMirror } from './editor/use-code-mirror'
 import { useAutosave } from './hooks/use-autosave'
 import { useScrollSync } from './hooks/use-scroll-sync'
+import { formatMarkdown } from './lib/format-markdown'
 import { NotesToolbar } from './notes-toolbar'
 import { MarkdownPreview } from './preview/markdown-preview'
 
@@ -32,14 +33,39 @@ export function NotesEditor({ document }: NotesEditorProps) {
 
   const { config } = useEditorConfigContext()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
-  const { containerRef, scrollElement, requestMeasure } = useCodeMirror({
-    initialDoc: document.content,
-    onChange: setContent,
-    onSave: () => {
-      void saveNow()
+  const { containerRef, scrollElement, requestMeasure, getContent, replaceContent } = useCodeMirror(
+    {
+      initialDoc: document.content,
+      onChange: setContent,
+      onSave: () => {
+        void handleSave()
+      },
+      vimEnabled: config?.vimMotion ?? true,
     },
-    vimEnabled: config?.vimMotion ?? true,
-  })
+  )
+
+  const formatOnSave = config?.formatOnSave ?? false
+
+  // Explicit save (Cmd/Ctrl+S or vim `:w`): format first when enabled, push the
+  // result back into the editor and persist it in one go.
+  const handleSave = useCallback(async () => {
+    const current = getContent()
+    let value = current
+
+    if (formatOnSave) {
+      try {
+        value = await formatMarkdown(current)
+      } catch {
+        value = current
+      }
+    }
+
+    if (value !== current) {
+      replaceContent(value)
+    }
+
+    await saveNow(value)
+  }, [formatOnSave, getContent, replaceContent, saveNow])
 
   useScrollSync(scrollElement, previewRef, mode === 'split')
 

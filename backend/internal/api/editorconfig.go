@@ -7,9 +7,10 @@ import (
 )
 
 type editorConfigResponse struct {
-	ID        string `json:"id"`
-	DarkTheme bool   `json:"darkTheme"`
-	VimMotion bool   `json:"vimMotion"`
+	ID           string `json:"id"`
+	DarkTheme    bool   `json:"darkTheme"`
+	VimMotion    bool   `json:"vimMotion"`
+	FormatOnSave bool   `json:"formatOnSave"`
 }
 
 type darkThemeRequest struct {
@@ -18,6 +19,10 @@ type darkThemeRequest struct {
 
 type vimMotionRequest struct {
 	VimMotion bool `json:"vimMotion"`
+}
+
+type formatOnSaveRequest struct {
+	FormatOnSave bool `json:"formatOnSave"`
 }
 
 func (h *Handler) getEditorConfig(w http.ResponseWriter, r *http.Request) {
@@ -55,10 +60,24 @@ func (h *Handler) updateEditorConfigVimMotion(w http.ResponseWriter, r *http.Req
 	httpx.NoContent(w)
 }
 
+func (h *Handler) updateEditorConfigFormatOnSave(w http.ResponseWriter, r *http.Request) {
+	var request formatOnSaveRequest
+	if err := httpx.DecodeJSON(r, &request); err != nil {
+		httpx.Error(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := h.editorConfig.UpdateFormatOnSave(r.Context(), request.FormatOnSave); err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	httpx.NoContent(w)
+}
+
 func mapEditorConfig(item editorconfig.EditorConfig) editorConfigResponse {
 	return editorConfigResponse{
-		ID:        item.ID,
-		DarkTheme: item.DarkTheme,
-		VimMotion: item.VimMotion,
+		ID:           item.ID,
+		DarkTheme:    item.DarkTheme,
+		VimMotion:    item.VimMotion,
+		FormatOnSave: item.FormatOnSave,
 	}
 }

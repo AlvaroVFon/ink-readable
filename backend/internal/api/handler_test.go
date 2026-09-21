@@ -72,11 +72,12 @@ type fakeConfigService struct{}
 func (f fakeConfigService) ListFrontSecrets(context.Context) *config.FrontConfig { return nil }
 
 type fakeEditorConfigService struct {
-	config    editorconfig.EditorConfig
-	darkTheme *bool
-	vimMotion *bool
-	getErr    error
-	updateErr error
+	config       editorconfig.EditorConfig
+	darkTheme    *bool
+	vimMotion    *bool
+	formatOnSave *bool
+	getErr       error
+	updateErr    error
 }
 
 func (f *fakeEditorConfigService) Get(context.Context) (*editorconfig.EditorConfig, error) {
@@ -94,6 +95,11 @@ func (f *fakeEditorConfigService) UpdateDarkTheme(_ context.Context, darkTheme b
 
 func (f *fakeEditorConfigService) UpdateVimMotion(_ context.Context, vimMotion bool) error {
 	f.vimMotion = &vimMotion
+	return f.updateErr
+}
+
+func (f *fakeEditorConfigService) UpdateFormatOnSave(_ context.Context, formatOnSave bool) error {
+	f.formatOnSave = &formatOnSave
 	return f.updateErr
 }
 
@@ -407,7 +413,7 @@ func TestHandler_GetTask_NotFound(t *testing.T) {
 
 func TestHandler_GetEditorConfig(t *testing.T) {
 	editorConfigService := &fakeEditorConfigService{
-		config: editorconfig.EditorConfig{ID: editorconfig.DefaultID, DarkTheme: true, VimMotion: false},
+		config: editorconfig.EditorConfig{ID: editorconfig.DefaultID, DarkTheme: true, VimMotion: false, FormatOnSave: true},
 	}
 	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
 
@@ -422,7 +428,7 @@ func TestHandler_GetEditorConfig(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&got); err != nil {
 		t.Fatalf("decode editor config: %v", err)
 	}
-	if got.ID != editorconfig.DefaultID || !got.DarkTheme || got.VimMotion {
+	if got.ID != editorconfig.DefaultID || !got.DarkTheme || got.VimMotion || !got.FormatOnSave {
 		t.Fatalf("unexpected editor config: %+v", got)
 	}
 }
@@ -469,6 +475,22 @@ func TestHandler_UpdateEditorConfigVimMotion(t *testing.T) {
 	}
 	if editorConfigService.vimMotion == nil || !*editorConfigService.vimMotion {
 		t.Fatalf("expected vim motion true, got %+v", editorConfigService.vimMotion)
+	}
+}
+
+func TestHandler_UpdateEditorConfigFormatOnSave(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/editor/config/format-on-save", strings.NewReader(`{"formatOnSave":false}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+	if editorConfigService.formatOnSave == nil || *editorConfigService.formatOnSave {
+		t.Fatalf("expected format on save false, got %+v", editorConfigService.formatOnSave)
 	}
 }
 

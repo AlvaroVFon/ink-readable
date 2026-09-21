@@ -61,6 +61,7 @@ type (
 		Get(context.Context) (*editorconfig.EditorConfig, error)
 		UpdateDarkTheme(context.Context, bool) error
 		UpdateVimMotion(context.Context, bool) error
+		UpdateFormatOnSave(context.Context, bool) error
 	}
 )
 
@@ -125,6 +126,7 @@ func NewHandler(vaultsService vaultService, documentsService documentService, pr
 	mux.HandleFunc("GET /api/v1/editor/config", handler.getEditorConfig)
 	mux.HandleFunc("PATCH /api/v1/editor/config/dark-theme", handler.updateEditorConfigDarkTheme)
 	mux.HandleFunc("PATCH /api/v1/editor/config/vim-motion", handler.updateEditorConfigVimMotion)
+	mux.HandleFunc("PATCH /api/v1/editor/config/format-on-save", handler.updateEditorConfigFormatOnSave)
 
 	return httpx.CORS(mux)
 }

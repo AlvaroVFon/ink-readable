@@ -94,4 +94,25 @@ describe('useAutosave', () => {
 
     expect(updateDocumentContent).toHaveBeenCalledWith('doc-1', 'changed')
   })
+
+  it('saves an explicit content override', async () => {
+    const { result } = renderAutosave({ content: 'initial' })
+
+    await act(async () => {
+      await result.current.saveNow('formatted')
+    })
+
+    expect(updateDocumentContent).toHaveBeenCalledWith('doc-1', 'formatted')
+    expect(result.current.status).toBe('saved')
+  })
+
+  it('skips the override when it matches the saved content', async () => {
+    const { result } = renderAutosave({ content: 'initial' })
+
+    await act(async () => {
+      await result.current.saveNow('initial')
+    })
+
+    expect(updateDocumentContent).not.toHaveBeenCalled()
+  })
 })

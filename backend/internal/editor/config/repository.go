@@ -25,9 +25,10 @@ func (r *EditorConfigRepository) Get(ctx context.Context) (*EditorConfig, error)
 	}
 
 	return &EditorConfig{
-		ID:        row.ID,
-		DarkTheme: row.DarkTheme != 0,
-		VimMotion: row.VimMotion != 0,
+		ID:           row.ID,
+		DarkTheme:    row.DarkTheme != 0,
+		VimMotion:    row.VimMotion != 0,
+		FormatOnSave: row.FormatOnSave != 0,
 	}, nil
 }
 
@@ -44,6 +45,14 @@ func (r *EditorConfigRepository) UpdateVimMotion(ctx context.Context, vimMotion 
 		VimMotion: boolToInt64(vimMotion),
 		UpdatedAt: timestamp(),
 		ID:        DefaultID,
+	})
+}
+
+func (r *EditorConfigRepository) UpdateFormatOnSave(ctx context.Context, formatOnSave bool) error {
+	return r.Store.UpdateEditorConfigFormatOnSave(ctx, sqlc.UpdateEditorConfigFormatOnSaveParams{
+		FormatOnSave: boolToInt64(formatOnSave),
+		UpdatedAt:    timestamp(),
+		ID:           DefaultID,
 	})
 }
 
