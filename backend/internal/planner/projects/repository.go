@@ -50,6 +50,19 @@ func (r *ProjectsRepository) List(ctx context.Context) ([]Project, error) {
 	return projects, nil
 }
 
+func (r *ProjectsRepository) FindByID(ctx context.Context, id string) (*Project, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgumentError, "id")
+	}
+
+	row, err := r.Store.GetProject(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return toProject(row)
+}
+
 func toProject(row sqlc.Project) (*Project, error) {
 	createdAt, err := time.Parse(time.RFC3339Nano, row.CreatedAt)
 	if err != nil {

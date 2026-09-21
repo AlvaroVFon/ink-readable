@@ -59,6 +59,20 @@ func (r *TasksRepository) List(ctx context.Context, projectID string) ([]Task, e
 	return tasks, nil
 }
 
+func (r *TasksRepository) FindByID(ctx context.Context, id string) (*Task, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%w: %q", ErrInvalidEmptyArgumentError, "id")
+	}
+
+	row, err := r.Store.GetTask(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	task := toTask(row)
+	return &task, nil
+}
+
 func toTask(row sqlc.Task) Task {
 	return Task{
 		ID:          row.ID,

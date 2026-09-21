@@ -416,3 +416,86 @@ func TestTasksRepository_Delete_EmptyID(t *testing.T) {
 		t.Fatalf("expected ErrInvalidEmptyArgumentError, got %v", err)
 	}
 }
+
+func TestTasksRepository_FindByID(t *testing.T) {
+	repo, _ := newTestRepository(t)
+	ctx := context.Background()
+
+	createdAt := time.Now().UTC().Add(-time.Hour)
+	task := Task{
+		ID:          "task-id",
+		ProjectID:   "project-id",
+		Title:       "Write tests",
+		Description: "Cover the repository",
+		Status:      StatusTodo,
+		Position:    2,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+	}
+	if err := repo.Create(ctx, task); err != nil {
+		t.Fatalf("unexpected error creating task: %v", err)
+	}
+
+	found, err := repo.FindByID(ctx, task.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if found.ID != task.ID {
+		t.Errorf("expected id %q, got %q", task.ID, found.ID)
+	}
+	if found.ProjectID != task.ProjectID {
+		t.Errorf("expected project_id %q, got %q", task.ProjectID, found.ProjectID)
+	}
+	if found.Title != task.Title {
+		t.Errorf("expected title %q, got %q", task.Title, found.Title)
+	}
+	if found.Description != task.Description {
+		t.Errorf("expected description %q, got %q", task.Description, found.Description)
+	}
+	if found.Status != task.Status {
+		t.Errorf("expected status %q, got %q", task.Status, found.Status)
+	}
+	if found.Position != task.Position {
+		t.Errorf("expected position %d, got %d", task.Position, found.Position)
+	}
+	if !found.CreatedAt.Equal(task.CreatedAt) {
+		t.Errorf("expected created_at %v, got %v", task.CreatedAt, found.CreatedAt)
+	}
+	if !found.UpdatedAt.Equal(task.UpdatedAt) {
+		t.Errorf("expected updated_at %v, got %v", task.UpdatedAt, found.UpdatedAt)
+	}
+}
+
+func TestTasksRepository_FindByID_NullDescription(t *testing.T) {
+	repo, db := newTestRepository(t)
+	ctx := context.Background()
+
+	if _, err := db.Exec(`INSERT INTO tasks (id, project_id, title, description, status, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		"task-id", "project-id", "Write tests", nil, "backlog", 1, time.Now().UTC(), time.Now().UTC()); err != nil {
+		t.Fatalf("insert task: %v", err)
+	}
+
+	found, err := repo.FindByID(ctx, "task-id")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if found.Description != "" {
+		t.Errorf("expected empty description, got %q", found.Description)
+	}
+}
+
+func TestTasksRepository_FindByID_EmptyID(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if _, err := repo.FindByID(context.Background(), ""); !errors.Is(err, ErrInvalidEmptyArgumentError) {
+		t.Fatalf("expected ErrInvalidEmptyArgumentError, got %v", err)
+	}
+}
+
+func TestTasksRepository_FindByID_NotFound(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if _, err := repo.FindByID(context.Background(), "missing"); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
