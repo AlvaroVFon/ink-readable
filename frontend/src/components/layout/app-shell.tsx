@@ -6,15 +6,16 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
 
-type AppLayoutProps = {
+type AppShellProps = {
+  sidebar?: ReactNode
   children: ReactNode
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppShell({ sidebar, children }: AppShellProps) {
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar>{sidebar}</AppSidebar>
         <SidebarInset>
           <AppHeader />
           <div className='flex flex-1 flex-col overflow-auto'>{children}</div>

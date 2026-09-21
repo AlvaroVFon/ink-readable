@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import {
   Sidebar,
   SidebarContent,
@@ -6,11 +8,15 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  children?: ReactNode
+}
+
+export function AppSidebar({ children }: AppSidebarProps) {
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader />
-      <SidebarContent />
+      <SidebarContent>{children}</SidebarContent>
       <SidebarFooter />
       <SidebarRail />
     </Sidebar>
