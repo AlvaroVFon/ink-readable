@@ -102,6 +102,15 @@ describe('NotesTree', () => {
     expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
   })
 
+  it('renders vault roots with a database icon instead of a folder', () => {
+    renderTree()
+
+    const vault = screen.getByRole('button', { name: 'Reading' })
+
+    expect(vault.querySelector('.lucide-database')).not.toBeNull()
+    expect(vault.querySelector('.lucide-folder, .lucide-folder-open')).toBeNull()
+  })
+
   it('navigates to a document when clicked', () => {
     renderTree()
 
@@ -190,14 +199,29 @@ describe('NotesTree', () => {
     await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1))
   })
 
-  it('offers creation but not rename or delete for vault roots', () => {
+  it('offers creation, rename and delete for vault roots', () => {
     renderTree()
 
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
 
     expect(screen.getByRole('button', { name: 'New note' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New folder' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('renames a vault with a vault-labelled inline field', async () => {
+    const onRename = vi.fn().mockResolvedValue(undefined)
+    renderTree({ onRename })
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
+
+    const input = screen.getByLabelText('Vault name')
+    fireEvent.change(input, { target: { value: 'Archive' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1))
+    expect(onRename.mock.calls[0]?.[1]).toBe('Archive')
   })
 })

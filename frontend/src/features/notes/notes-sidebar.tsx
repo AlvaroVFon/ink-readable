@@ -3,6 +3,13 @@ import { useMatch, useNavigate } from 'react-router'
 
 import type { Document } from '@/lib/types'
 
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogDescription,
+  AlertDialogPopup,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   SidebarGroup,
@@ -21,6 +28,7 @@ import {
   collectDocuments,
   collectFolderPaths,
   filterTree,
+  isVaultRoot,
   parentPath,
   resolveCreateScope,
 } from './lib/file-tree'
@@ -53,6 +61,8 @@ export function NotesSidebar() {
     createNote,
     createFolder,
     createVault,
+    renameVault,
+    deleteVault,
     renameNode,
     deleteNode,
   } = useNotesWorkspaceContext()
@@ -65,6 +75,7 @@ export function NotesSidebar() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [vaultPendingDelete, setVaultPendingDelete] = useState<FileTreeNode | null>(null)
   const searchRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -166,19 +177,51 @@ export function NotesSidebar() {
 
   const handleRename = async (node: FileTreeNode, name: string) => {
     setActionError(null)
-    await renameNode(node, name)
+    if (isVaultRoot(node)) {
+      await renameVault(node.vaultId, name)
+    } else {
+      await renameNode(node, name)
+    }
     if (isAffectedSelection(node)) {
       setSelectedFolderPath(null)
     }
   }
 
   const handleDelete = async (node: FileTreeNode) => {
+    // Vault deletion is permanent (no trash), so it asks for confirmation first.
+    if (isVaultRoot(node)) {
+      setVaultPendingDelete(node)
+      return
+    }
     setActionError(null)
     try {
       const deletedActiveDocument =
         activeDocumentId !== undefined &&
         collectDocuments(node).some((document) => document.id === activeDocumentId)
       await deleteNode(node)
+      if (isAffectedSelection(node)) {
+        setSelectedFolderPath(null)
+      }
+      if (deletedActiveDocument) {
+        void navigate('/')
+      }
+    } catch (cause) {
+      setActionError(toMessage(cause))
+    }
+  }
+
+  const handleConfirmDeleteVault = async () => {
+    const node = vaultPendingDelete
+    if (node === null) {
+      return
+    }
+    setVaultPendingDelete(null)
+    setActionError(null)
+    try {
+      const deletedActiveDocument =
+        activeDocumentId !== undefined &&
+        collectDocuments(node).some((document) => document.id === activeDocumentId)
+      await deleteVault(node.vaultId)
       if (isAffectedSelection(node)) {
         setSelectedFolderPath(null)
       }
@@ -297,6 +340,47 @@ export function NotesSidebar() {
           />
         )}
       </SidebarGroupContent>
+
+      <AlertDialog
+        open={vaultPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVaultPendingDelete(null)
+          }
+        }}
+      >
+        <AlertDialogPopup>
+          <AlertDialogTitle>Delete vault?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {`"${vaultPendingDelete?.name ?? ''}" and all of its documents will be permanently deleted. This cannot be undone.`}
+          </AlertDialogDescription>
+          <div className='flex justify-end gap-2'>
+            <AlertDialogClose
+              render={
+                <Button
+                  variant='ghost'
+                  size='sm'
+                />
+              }
+            >
+              Cancel
+            </AlertDialogClose>
+            <AlertDialogClose
+              render={
+                <Button
+                  variant='destructive'
+                  size='sm'
+                />
+              }
+              onClick={() => {
+                void handleConfirmDeleteVault()
+              }}
+            >
+              Delete vault
+            </AlertDialogClose>
+          </div>
+        </AlertDialogPopup>
+      </AlertDialog>
     </SidebarGroup>
   )
 }

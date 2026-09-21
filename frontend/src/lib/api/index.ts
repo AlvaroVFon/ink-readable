@@ -9,4 +9,4 @@ export {
   renameDocumentPath,
   updateDocumentContent,
 } from './documents'
-export { createVault, listVaults } from './vaults'
+export { createVault, deleteVault, listVaults, renameVault } from './vaults'

@@ -70,6 +70,8 @@ function mockWorkspace(overrides: WorkspaceOverrides = {}) {
     createNote: vi.fn(),
     createFolder: vi.fn(),
     createVault: vi.fn(),
+    renameVault: vi.fn(),
+    deleteVault: vi.fn(),
     renameNode: vi.fn(),
     deleteNode: vi.fn(),
     ...overrides,
@@ -226,6 +228,41 @@ describe('NotesSidebar', () => {
         name: 'Work',
       }),
     )
+  })
+
+  it('renames a vault from the context menu', async () => {
+    const renameVault = vi.fn().mockResolvedValue(undefined)
+    mockWorkspace({ renameVault })
+
+    renderSidebar()
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
+
+    const input = screen.getByLabelText('Vault name')
+    fireEvent.change(input, { target: { value: 'Archive' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(renameVault).toHaveBeenCalledWith('v1', 'Archive'))
+  })
+
+  it('asks for confirmation before deleting a vault', async () => {
+    const deleteVault = vi.fn().mockResolvedValue(undefined)
+    const deleteNode = vi.fn().mockResolvedValue(undefined)
+    mockWorkspace({ deleteVault, deleteNode })
+
+    renderSidebar()
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(screen.getByText('Delete vault?')).toBeInTheDocument()
+    expect(deleteVault).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete vault' }))
+
+    await waitFor(() => expect(deleteVault).toHaveBeenCalledWith('v1'))
+    expect(deleteNode).not.toHaveBeenCalled()
   })
 
   it('focuses the search input with Ctrl+K', () => {
