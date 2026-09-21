@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils'
 
 import type { FileTreeNode } from '../types'
 
+import { parentPath } from '../lib/file-tree'
+
 type NotesTreeProps = {
   nodes: FileTreeNode[]
   activeDocumentId: string | undefined
@@ -24,6 +26,8 @@ type NotesTreeProps = {
   onSelectFolder: (path: string) => void
   onRename: (node: FileTreeNode, name: string) => Promise<void>
   onDelete: (node: FileTreeNode) => Promise<void>
+  onCreateNote: (node: FileTreeNode) => Promise<void>
+  onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
 }
 
 type NotesTreeNodeProps = {
@@ -34,11 +38,14 @@ type NotesTreeNodeProps = {
   forceExpandedPaths: ReadonlySet<string>
   collapsedPaths: ReadonlySet<string>
   renamingPath: string | null
+  creatingFolderPath: string | null
   onSelectFolder: (path: string) => void
   onRename: (node: FileTreeNode, name: string) => Promise<void>
   onToggle: (path: string) => void
   onContextMenu: (node: FileTreeNode, position: { x: number; y: number }) => void
   onFinishRename: () => void
+  onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
+  onFinishCreateFolder: () => void
 }
 
 const MENU_ITEM_CLASS =
@@ -54,7 +61,8 @@ function isVaultRoot(node: FileTreeNode): boolean {
  *
  * Folders keep their own collapse state; while a search is active, their
  * ancestors are force-expanded through `forceExpandedPaths`. Right-clicking a
- * node opens a context menu with rename and delete, and rename happens inline.
+ * node opens a context menu with creation, rename and delete. Rename happens
+ * inline, and a new folder is named through an inline field below its parent.
  */
 export function NotesTree({
   nodes,
@@ -64,9 +72,12 @@ export function NotesTree({
   onSelectFolder,
   onRename,
   onDelete,
+  onCreateNote,
+  onCreateFolder,
 }: NotesTreeProps) {
   const [collapsedPaths, setCollapsedPaths] = useState<ReadonlySet<string>>(new Set())
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
+  const [creatingFolderPath, setCreatingFolderPath] = useState<string | null>(null)
   const [menu, setMenu] = useState<{ node: FileTreeNode; x: number; y: number } | null>(null)
 
   const toggle = (path: string) => {
@@ -82,9 +93,6 @@ export function NotesTree({
   }
 
   const openMenu = (node: FileTreeNode, position: { x: number; y: number }) => {
-    if (isVaultRoot(node)) {
-      return
-    }
     setMenu({ node, ...position })
   }
 
@@ -96,10 +104,15 @@ export function NotesTree({
             key={node.id}
             activeDocumentId={activeDocumentId}
             collapsedPaths={collapsedPaths}
+            creatingFolderPath={creatingFolderPath}
             depth={0}
             forceExpandedPaths={forceExpandedPaths}
             node={node}
             onContextMenu={openMenu}
+            onCreateFolder={onCreateFolder}
+            onFinishCreateFolder={() => {
+              setCreatingFolderPath(null)
+            }}
             onFinishRename={() => {
               setRenamingPath(null)
             }}
@@ -118,6 +131,16 @@ export function NotesTree({
           node={menu.node}
           onClose={() => {
             setMenu(null)
+          }}
+          onCreateFolder={() => {
+            const node = menu.node
+            setMenu(null)
+            setCreatingFolderPath(node.type === 'folder' ? node.path : parentPath(node.path))
+          }}
+          onCreateNote={() => {
+            const node = menu.node
+            setMenu(null)
+            void onCreateNote(node)
           }}
           onDelete={() => {
             const node = menu.node
@@ -145,10 +168,13 @@ function NotesTreeNode({
   selectedFolderPath,
   forceExpandedPaths,
   renamingPath,
+  creatingFolderPath,
   onToggle,
   onContextMenu,
   onFinishRename,
+  onFinishCreateFolder,
   onRename,
+  onCreateFolder,
   onSelectFolder,
 }: NotesTreeNodeProps) {
   const indent = depth * 12
@@ -191,7 +217,9 @@ function NotesTreeNode({
     )
   }
 
-  const isExpanded = forceExpandedPaths.has(node.path) || !collapsedPaths.has(node.path)
+  const isCreatingFolder = creatingFolderPath === node.path
+  const isExpanded =
+    isCreatingFolder || forceExpandedPaths.has(node.path) || !collapsedPaths.has(node.path)
 
   return (
     <li onContextMenu={handleContextMenu}>
@@ -212,17 +240,32 @@ function NotesTreeNode({
           <span>{node.name}</span>
         </SidebarMenuButton>
       )}
-      {isExpanded && node.children.length > 0 && (
+      {isExpanded && (node.children.length > 0 || isCreatingFolder) && (
         <ul className='flex flex-col gap-0.5'>
+          {isCreatingFolder && (
+            <li>
+              <InlineCreateFolder
+                onCancel={onFinishCreateFolder}
+                onSubmit={async (name) => {
+                  await onCreateFolder(node, name)
+                  onFinishCreateFolder()
+                }}
+                paddingLeft={indent + 20}
+              />
+            </li>
+          )}
           {node.children.map((child) => (
             <NotesTreeNode
               key={child.id}
               activeDocumentId={activeDocumentId}
               collapsedPaths={collapsedPaths}
+              creatingFolderPath={creatingFolderPath}
               depth={depth + 1}
               forceExpandedPaths={forceExpandedPaths}
               node={child}
               onContextMenu={onContextMenu}
+              onCreateFolder={onCreateFolder}
+              onFinishCreateFolder={onFinishCreateFolder}
               onFinishRename={onFinishRename}
               onRename={onRename}
               onSelectFolder={onSelectFolder}
@@ -244,6 +287,8 @@ type NodeContextMenuProps = {
   canModify: boolean
   onRename: () => void
   onDelete: () => void
+  onCreateNote: () => void
+  onCreateFolder: () => void
   onClose: () => void
 }
 
@@ -254,6 +299,8 @@ function NodeContextMenu({
   canModify,
   onRename,
   onDelete,
+  onCreateNote,
+  onCreateFolder,
   onClose,
 }: NodeContextMenuProps) {
   useEffect(() => {
@@ -269,7 +316,7 @@ function NodeContextMenu({
   }, [onClose])
 
   const left = Math.min(x, window.innerWidth - 176)
-  const top = Math.min(y, window.innerHeight - 96)
+  const top = Math.min(y, window.innerHeight - (canModify ? 192 : 120))
 
   return createPortal(
     <div
@@ -291,20 +338,37 @@ function NodeContextMenu({
         <p className='truncate px-2 py-1 text-xs text-muted-foreground'>{node.name}</p>
         <button
           className={MENU_ITEM_CLASS}
-          disabled={!canModify}
-          onClick={onRename}
+          onClick={onCreateNote}
           type='button'
         >
-          Rename
+          New note
         </button>
         <button
-          className={cn(MENU_ITEM_CLASS, 'text-destructive')}
-          disabled={!canModify}
-          onClick={onDelete}
+          className={MENU_ITEM_CLASS}
+          onClick={onCreateFolder}
           type='button'
         >
-          Delete
+          New folder
         </button>
+        {canModify && (
+          <>
+            <div className='my-1 h-px bg-border' />
+            <button
+              className={MENU_ITEM_CLASS}
+              onClick={onRename}
+              type='button'
+            >
+              Rename
+            </button>
+            <button
+              className={cn(MENU_ITEM_CLASS, 'text-destructive')}
+              onClick={onDelete}
+              type='button'
+            >
+              Delete
+            </button>
+          </>
+        )}
       </div>
     </div>,
     document.body,
@@ -373,6 +437,69 @@ function InlineRename({
           setValue(event.target.value)
         }}
         onKeyDown={handleKeyDown}
+        style={{ marginLeft: paddingLeft }}
+        value={value}
+      />
+      {error !== null && <p className='px-2 text-xs text-destructive'>{error}</p>}
+    </form>
+  )
+}
+
+type InlineCreateFolderProps = {
+  paddingLeft: number
+  onSubmit: (name: string) => Promise<void>
+  onCancel: () => void
+}
+
+/** Inline field shown below a folder to name a folder being created there. */
+function InlineCreateFolder({ paddingLeft, onSubmit, onCancel }: InlineCreateFolderProps) {
+  const [value, setValue] = useState('')
+  const [isBusy, setIsBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const trimmed = value.trim()
+
+  const submit = async () => {
+    if (trimmed === '' || isBusy) {
+      return
+    }
+    setIsBusy(true)
+    setError(null)
+    try {
+      await onSubmit(trimmed)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Something went wrong')
+      setIsBusy(false)
+    }
+  }
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void submit()
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onCancel()
+    }
+  }
+
+  return (
+    <form
+      className='flex flex-col gap-1'
+      onSubmit={handleSubmit}
+    >
+      <Input
+        autoFocus
+        aria-label='New folder name'
+        className='h-7 text-sm'
+        disabled={isBusy}
+        onBlur={onCancel}
+        onChange={(event) => {
+          setValue(event.target.value)
+        }}
+        onKeyDown={handleKeyDown}
+        placeholder='Folder name'
         style={{ marginLeft: paddingLeft }}
         value={value}
       />

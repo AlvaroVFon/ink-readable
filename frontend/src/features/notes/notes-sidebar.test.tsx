@@ -111,6 +111,123 @@ describe('NotesSidebar', () => {
     expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
   })
 
+  it('collapses folders when there is no search query', () => {
+    mockWorkspace({
+      tree: [
+        {
+          id: 'v1',
+          name: 'Reading',
+          path: '/Reading',
+          vaultId: 'v1',
+          type: 'folder',
+          children: [
+            {
+              id: '/Reading/notes',
+              name: 'notes',
+              path: '/Reading/notes',
+              vaultId: 'v1',
+              type: 'folder',
+              children: [
+                {
+                  id: 'd2',
+                  name: 'beta',
+                  path: '/Reading/notes/beta.md',
+                  vaultId: 'v1',
+                  type: 'document',
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    renderSidebar()
+
+    expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'notes' }))
+
+    expect(screen.queryByRole('link', { name: 'beta' })).toBeNull()
+  })
+
+  it('keeps ancestors expanded while searching', () => {
+    mockWorkspace({
+      tree: [
+        {
+          id: 'v1',
+          name: 'Reading',
+          path: '/Reading',
+          vaultId: 'v1',
+          type: 'folder',
+          children: [
+            {
+              id: '/Reading/notes',
+              name: 'notes',
+              path: '/Reading/notes',
+              vaultId: 'v1',
+              type: 'folder',
+              children: [
+                {
+                  id: 'd2',
+                  name: 'beta',
+                  path: '/Reading/notes/beta.md',
+                  vaultId: 'v1',
+                  type: 'document',
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    renderSidebar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'notes' }))
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'beta' } })
+
+    expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
+  })
+
+  it('creates a sibling note from the context menu', async () => {
+    const createNote = vi.fn().mockResolvedValue(document)
+    mockWorkspace({ createNote })
+
+    renderSidebar()
+
+    fireEvent.contextMenu(screen.getByRole('link', { name: 'alpha' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }))
+
+    await waitFor(() =>
+      expect(createNote).toHaveBeenCalledWith({ vaultId: 'v1', basePath: '/Reading' }),
+    )
+  })
+
+  it('creates a folder from the vault root context menu', async () => {
+    const createFolder = vi.fn().mockResolvedValue(document)
+    mockWorkspace({ createFolder })
+
+    renderSidebar()
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New folder' }))
+
+    const input = screen.getByLabelText('New folder name')
+    fireEvent.change(input, { target: { value: 'Work' } })
+    fireEvent.submit(input)
+
+    await waitFor(() =>
+      expect(createFolder).toHaveBeenCalledWith({
+        vaultId: 'v1',
+        basePath: '/Reading',
+        name: 'Work',
+      }),
+    )
+  })
+
   it('focuses the search input with Ctrl+K', () => {
     mockWorkspace()
 
