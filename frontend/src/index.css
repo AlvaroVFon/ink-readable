@@ -38,6 +38,15 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --syntax-comment: oklch(0.55 0.02 265);
+  --syntax-keyword: oklch(0.5 0.2 300);
+  --syntax-string: oklch(0.5 0.14 150);
+  --syntax-number: oklch(0.55 0.16 55);
+  --syntax-heading: oklch(0.45 0.16 260);
+  --syntax-link: oklch(0.5 0.16 250);
+  --syntax-code: oklch(0.47 0.14 20);
+  --syntax-quote: oklch(0.5 0.03 265);
+  --syntax-list: oklch(0.55 0.18 300);
 }
 
 .dark {
@@ -72,10 +81,21 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --syntax-comment: oklch(0.65 0.02 265);
+  --syntax-keyword: oklch(0.78 0.14 305);
+  --syntax-string: oklch(0.78 0.13 155);
+  --syntax-number: oklch(0.8 0.12 70);
+  --syntax-heading: oklch(0.82 0.1 255);
+  --syntax-link: oklch(0.78 0.12 250);
+  --syntax-code: oklch(0.8 0.1 25);
+  --syntax-quote: oklch(0.72 0.02 265);
+  --syntax-list: oklch(0.8 0.13 305);
 }
 
 @theme inline {
   --font-sans: 'Geist Variable', sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -129,4 +149,246 @@
   html {
     @apply font-sans;
   }
+}
+
+/*
+ * Markdown preview
+ *
+ * Styles are scoped to `.markdown-preview` and rely on the shared theme tokens
+ * so light/dark mode works without extra selectors. Syntax highlighting colors
+ * come from the `--syntax-*` palette (shared with the editor).
+ */
+.markdown-preview {
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: 1.5rem;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+}
+
+.markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin: 1.8em 0 0.7em;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.markdown-preview h1 {
+  font-size: 1.9em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-preview h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-preview h3 {
+  font-size: 1.25em;
+}
+
+.markdown-preview h4 {
+  font-size: 1.1em;
+}
+
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview blockquote,
+.markdown-preview table,
+.markdown-preview pre {
+  margin: 1em 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 1.6em;
+}
+
+.markdown-preview ul {
+  list-style: disc;
+}
+
+.markdown-preview ol {
+  list-style: decimal;
+}
+
+.markdown-preview li {
+  margin: 0.3em 0;
+}
+
+.markdown-preview li > ul,
+.markdown-preview li > ol {
+  margin: 0.3em 0;
+}
+
+.markdown-preview a {
+  color: var(--syntax-link);
+  text-underline-offset: 3px;
+  text-decoration: underline;
+}
+
+.markdown-preview strong {
+  font-weight: 700;
+}
+
+.markdown-preview em {
+  font-style: italic;
+}
+
+.markdown-preview del {
+  text-decoration: line-through;
+  color: var(--muted-foreground);
+}
+
+.markdown-preview blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.markdown-preview hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.markdown-preview code {
+  background-color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 0.15em 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.markdown-preview pre {
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1em;
+  overflow-x: auto;
+}
+
+.markdown-preview pre code {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+.markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9em;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background-color: var(--muted);
+  font-weight: 600;
+}
+
+.markdown-preview img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+}
+
+.markdown-preview input[type='checkbox'] {
+  margin-right: 0.5em;
+  accent-color: var(--primary);
+}
+
+.markdown-preview .contains-task-list {
+  list-style: none;
+  padding-left: 0.25em;
+}
+
+/* highlight.js tokens mapped onto the shared syntax palette */
+.markdown-preview .hljs-comment,
+.markdown-preview .hljs-quote {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+
+.markdown-preview .hljs-keyword,
+.markdown-preview .hljs-selector-tag,
+.markdown-preview .hljs-built_in,
+.markdown-preview .hljs-name {
+  color: var(--syntax-keyword);
+}
+
+.markdown-preview .hljs-string,
+.markdown-preview .hljs-attr,
+.markdown-preview .hljs-template-tag,
+.markdown-preview .hljs-regexp {
+  color: var(--syntax-string);
+}
+
+.markdown-preview .hljs-number,
+.markdown-preview .hljs-literal,
+.markdown-preview .hljs-symbol {
+  color: var(--syntax-number);
+}
+
+.markdown-preview .hljs-title,
+.markdown-preview .hljs-section,
+.markdown-preview .hljs-type {
+  color: var(--syntax-heading);
+}
+
+.markdown-preview .hljs-variable,
+.markdown-preview .hljs-template-variable,
+.markdown-preview .hljs-attribute {
+  color: var(--syntax-link);
+}
+
+.markdown-preview .hljs-meta {
+  color: var(--syntax-comment);
+}
+
+/* KaTeX */
+.markdown-preview .katex-display {
+  margin: 1.25em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25em;
+}
+
+/* Mermaid */
+.mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 1.5em 0;
+  overflow-x: auto;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  color: var(--destructive);
+  font-size: 0.85em;
 }
