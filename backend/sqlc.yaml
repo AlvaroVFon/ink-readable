@@ -5,6 +5,7 @@ sql:
     queries:
       - "internal/sqlc/queries/vaults"
       - "internal/sqlc/queries/documents"
+      - "internal/sqlc/queries/projects"
     schema: "migrations"
     gen:
       go:
