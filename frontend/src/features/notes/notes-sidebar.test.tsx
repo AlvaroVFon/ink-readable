@@ -73,6 +73,7 @@ function mockWorkspace(overrides: WorkspaceOverrides = {}) {
     renameVault: vi.fn(),
     deleteVault: vi.fn(),
     renameNode: vi.fn(),
+    moveNode: vi.fn(),
     deleteNode: vi.fn(),
     ...overrides,
   })
@@ -263,6 +264,49 @@ describe('NotesSidebar', () => {
 
     await waitFor(() => expect(deleteVault).toHaveBeenCalledWith('v1'))
     expect(deleteNode).not.toHaveBeenCalled()
+  })
+
+  it('moves a document into a folder on drop', async () => {
+    const moveNode = vi.fn().mockResolvedValue(undefined)
+    mockWorkspace({
+      moveNode,
+      tree: [
+        {
+          id: 'v1',
+          name: 'Reading',
+          path: '/Reading',
+          vaultId: 'v1',
+          type: 'folder',
+          children: [
+            {
+              id: 'd1',
+              name: 'alpha',
+              path: '/Reading/alpha.md',
+              vaultId: 'v1',
+              type: 'document',
+              children: [],
+            },
+            {
+              id: '/Reading/notes',
+              name: 'notes',
+              path: '/Reading/notes',
+              vaultId: 'v1',
+              type: 'folder',
+              children: [],
+            },
+          ],
+        },
+      ],
+    })
+
+    renderSidebar()
+
+    fireEvent.dragStart(screen.getByRole('link', { name: 'alpha' }))
+    fireEvent.dragOver(screen.getByRole('button', { name: 'notes' }))
+    fireEvent.drop(screen.getByRole('button', { name: 'notes' }))
+
+    await waitFor(() => expect(moveNode).toHaveBeenCalledTimes(1))
+    expect(moveNode.mock.calls[0]?.[1]).toBe('/Reading/notes')
   })
 
   it('focuses the search input with Ctrl+K', () => {

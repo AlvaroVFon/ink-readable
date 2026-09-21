@@ -5,6 +5,7 @@ export {
   deleteDocument,
   getDocument,
   listDocuments,
+  moveDocument,
   renameDocument,
   renameDocumentPath,
   updateDocumentContent,

@@ -45,22 +45,67 @@ const tree: FileTreeNode[] = [
   },
 ]
 
+const crossVaultTree: FileTreeNode[] = [
+  {
+    id: 'v1',
+    name: 'Reading',
+    path: '/Reading',
+    vaultId: 'v1',
+    type: 'folder',
+    children: [
+      {
+        id: 'd1',
+        name: 'alpha',
+        path: '/Reading/alpha.md',
+        vaultId: 'v1',
+        type: 'document',
+        children: [],
+      },
+    ],
+  },
+  {
+    id: 'v2',
+    name: 'Work',
+    path: '/Work',
+    vaultId: 'v2',
+    type: 'folder',
+    children: [
+      {
+        id: 'd9',
+        name: 'spec',
+        path: '/Work/spec.md',
+        vaultId: 'v2',
+        type: 'document',
+        children: [],
+      },
+    ],
+  },
+]
+
+function createDataTransfer() {
+  return { dropEffect: '', effectAllowed: '', setData: vi.fn() }
+}
+
 type RenderTreeOptions = {
   activeDocumentId?: string
   selectedFolderPath?: string | null
+  nodes?: FileTreeNode[]
   onRename?: (node: FileTreeNode, name: string) => Promise<void>
   onDelete?: (node: FileTreeNode) => Promise<void>
   onCreateNote?: (node: FileTreeNode) => Promise<void>
   onCreateFolder?: (node: FileTreeNode, name: string) => Promise<void>
+  onMove?: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
 }
 
 function renderTree({
   activeDocumentId,
   selectedFolderPath = null,
+  nodes = tree,
   onRename = vi.fn(),
   onDelete = vi.fn(),
   onCreateNote = vi.fn(),
   onCreateFolder = vi.fn(),
+  onMove = vi.fn(),
 }: RenderTreeOptions = {}) {
   return render(
     <SidebarProvider>
@@ -72,10 +117,11 @@ function renderTree({
               <NotesTree
                 activeDocumentId={activeDocumentId}
                 forceExpandedPaths={new Set()}
-                nodes={tree}
+                nodes={nodes}
                 onCreateFolder={onCreateFolder}
                 onCreateNote={onCreateNote}
                 onDelete={onDelete}
+                onMove={onMove}
                 onRename={onRename}
                 onSelectFolder={vi.fn()}
                 selectedFolderPath={selectedFolderPath}
@@ -223,5 +269,49 @@ describe('NotesTree', () => {
 
     await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1))
     expect(onRename.mock.calls[0]?.[1]).toBe('Archive')
+  })
+
+  it('moves a document into another folder on drop', async () => {
+    const onMove = vi.fn().mockResolvedValue(undefined)
+    renderTree({ onMove })
+
+    const source = screen.getByRole('link', { name: 'alpha' })
+    const target = screen.getByRole('button', { name: 'notes' })
+
+    fireEvent.dragStart(source, { dataTransfer: createDataTransfer() })
+    fireEvent.dragOver(target, { dataTransfer: createDataTransfer() })
+    fireEvent.drop(target, { dataTransfer: createDataTransfer() })
+
+    await waitFor(() => expect(onMove).toHaveBeenCalledTimes(1))
+    expect(onMove.mock.calls[0]?.[0]).toMatchObject({ id: 'd1' })
+    expect(onMove.mock.calls[0]?.[1]).toBe('/Reading/notes')
+  })
+
+  it('does not move a document into its current folder', () => {
+    const onMove = vi.fn()
+    renderTree({ onMove })
+
+    const source = screen.getByRole('link', { name: 'alpha' })
+    const vault = screen.getByRole('button', { name: 'Reading' })
+
+    fireEvent.dragStart(source, { dataTransfer: createDataTransfer() })
+    fireEvent.dragOver(vault, { dataTransfer: createDataTransfer() })
+    fireEvent.drop(vault, { dataTransfer: createDataTransfer() })
+
+    expect(onMove).not.toHaveBeenCalled()
+  })
+
+  it('does not move a document across vaults', () => {
+    const onMove = vi.fn()
+    renderTree({ nodes: crossVaultTree, onMove })
+
+    const source = screen.getByRole('link', { name: 'alpha' })
+    const target = screen.getByRole('button', { name: 'Work' })
+
+    fireEvent.dragStart(source, { dataTransfer: createDataTransfer() })
+    fireEvent.dragOver(target, { dataTransfer: createDataTransfer() })
+    fireEvent.drop(target, { dataTransfer: createDataTransfer() })
+
+    expect(onMove).not.toHaveBeenCalled()
   })
 })

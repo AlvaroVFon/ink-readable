@@ -9,6 +9,7 @@ import {
   deleteVault as deleteVaultRequest,
   listDocuments,
   listVaults,
+  moveDocument as moveDocumentRequest,
   renameDocument as renameDocumentRequest,
   renameDocumentPath as renameDocumentPathRequest,
   renameVault as renameVaultRequest,
@@ -21,6 +22,7 @@ import {
   buildFolderPath,
   buildNamedDocumentPath,
   buildNotePath,
+  buildUniqueDocumentPath,
   collectDocuments,
   collectDocumentPaths,
   nameFromPath,
@@ -59,6 +61,7 @@ export type UseNotesWorkspaceResult = {
   renameVault: (vaultId: string, name: string) => Promise<void>
   deleteVault: (vaultId: string) => Promise<void>
   renameNode: (node: FileTreeNode, name: string) => Promise<void>
+  moveNode: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
   deleteNode: (node: FileTreeNode) => Promise<void>
 }
 
@@ -215,6 +218,22 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     [refresh],
   )
 
+  const moveNode = useCallback(
+    async (node: FileTreeNode, targetFolderPath: string) => {
+      if (node.type !== 'document' || parentPath(node.path) === targetFolderPath) {
+        return
+      }
+
+      const existingPaths = collectDocumentPaths(tree)
+      existingPaths.delete(node.path)
+      const path = buildUniqueDocumentPath(targetFolderPath, node.name, existingPaths)
+      await moveDocumentRequest(node.id, { path })
+      await refresh()
+      setRevision((value) => value + 1)
+    },
+    [tree, refresh],
+  )
+
   const deleteNode = useCallback(
     async (node: FileTreeNode) => {
       const documents = collectDocuments(node)
@@ -242,6 +261,7 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     renameVault,
     deleteVault,
     renameNode,
+    moveNode,
     deleteNode,
   }
 }

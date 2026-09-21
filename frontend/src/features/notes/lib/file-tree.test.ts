@@ -6,6 +6,7 @@ import {
   buildFileTree,
   buildFolderPath,
   buildNotePath,
+  buildUniqueDocumentPath,
   collectDocumentPaths,
   collectFolderPaths,
   filterTree,
@@ -107,6 +108,22 @@ describe('buildNotePath', () => {
     const existing = new Set(['/Reading/Untitled.md', '/Reading/Untitled 2.md'])
 
     expect(buildNotePath('/Reading', existing)).toBe('/Reading/Untitled 3.md')
+  })
+})
+
+describe('buildUniqueDocumentPath', () => {
+  it('keeps the name when the path is free', () => {
+    expect(buildUniqueDocumentPath('/Reading/Ideas', 'Note', new Set())).toBe(
+      '/Reading/Ideas/Note.md',
+    )
+  })
+
+  it('appends a counter when the target path already exists', () => {
+    const existing = new Set(['/Reading/Ideas/Note.md', '/Reading/Ideas/Note 2.md'])
+
+    expect(buildUniqueDocumentPath('/Reading/Ideas', 'Note', existing)).toBe(
+      '/Reading/Ideas/Note 3.md',
+    )
   })
 })
 
