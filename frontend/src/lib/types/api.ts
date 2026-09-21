@@ -39,6 +39,18 @@ export const secretsSchema = z.record(z.string(), z.string())
 
 export type Secrets = z.infer<typeof secretsSchema>
 
+/**
+ * Editor preferences returned by `GET /api/v1/editor/config`. The backend
+ * stores a single row keyed by `default`, mirroring `editorconfig.EditorConfig`.
+ */
+export const editorConfigSchema = z.object({
+  id: z.string(),
+  darkTheme: z.boolean(),
+  vimMotion: z.boolean(),
+})
+
+export type EditorConfig = z.infer<typeof editorConfigSchema>
+
 export type CreateVaultInput = {
   name: string
 }

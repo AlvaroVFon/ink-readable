@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 
 import type { Document } from '@/lib/types'
 
+import { useEditorConfigContext } from '@/components/editor-config/editor-config-context'
 import { cn } from '@/lib/utils'
 
 import type { ViewMode } from './types'
@@ -29,6 +30,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
   const [mode, setMode] = useState<ViewMode>('split')
   const previewRef = useRef<HTMLDivElement | null>(null)
 
+  const { config } = useEditorConfigContext()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
   const { containerRef, scrollElement } = useCodeMirror({
     initialDoc: document.content,
@@ -36,6 +38,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
     onSave: () => {
       void saveNow()
     },
+    vimEnabled: config?.vimMotion ?? true,
   })
 
   useScrollSync(scrollElement, previewRef, mode === 'split')

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { EditorConfigProvider } from '@/components/editor-config/editor-config-context'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 
 import App from './App'
@@ -9,9 +10,11 @@ import App from './App'
 function renderApp(initialEntries: string[] = ['/']) {
   return render(
     <ThemeProvider>
-      <MemoryRouter initialEntries={initialEntries}>
-        <App />
-      </MemoryRouter>
+      <EditorConfigProvider>
+        <MemoryRouter initialEntries={initialEntries}>
+          <App />
+        </MemoryRouter>
+      </EditorConfigProvider>
     </ThemeProvider>,
   )
 }
