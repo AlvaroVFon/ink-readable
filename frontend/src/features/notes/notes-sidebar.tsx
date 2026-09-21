@@ -21,6 +21,7 @@ import {
   collectDocuments,
   collectFolderPaths,
   filterTree,
+  parentPath,
   resolveCreateScope,
 } from './lib/file-tree'
 import { useNotesWorkspaceContext } from './notes-workspace-context'
@@ -29,6 +30,17 @@ type PendingAction = 'folder' | 'vault' | null
 
 function toMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : 'Something went wrong'
+}
+
+/**
+ * Resolves the creation scope for a node picked through the right-click menu:
+ * a folder creates inside itself, a document creates next to it.
+ */
+function createScopeFor(node: FileTreeNode) {
+  return {
+    vaultId: node.vaultId,
+    basePath: node.type === 'folder' ? node.path : parentPath(node.path),
+  }
 }
 
 export function NotesSidebar() {
@@ -76,9 +88,12 @@ export function NotesSidebar() {
   )
 
   const filteredTree = useMemo(() => filterTree(tree, query), [tree, query])
+  // Only force-expand every folder while searching; otherwise folders keep their
+  // own collapse state (an empty query returns the whole tree, which would
+  // otherwise mark every folder as force-expanded).
   const forceExpandedPaths = useMemo(
-    () => new Set(collectFolderPaths(filteredTree)),
-    [filteredTree],
+    () => (query.trim() === '' ? new Set<string>() : new Set(collectFolderPaths(filteredTree))),
+    [filteredTree, query],
   )
 
   const handleCreateNote = async () => {
@@ -128,6 +143,21 @@ export function NotesSidebar() {
   const cancelForm = () => {
     setPendingAction(null)
     setActionError(null)
+  }
+
+  const handleCreateNoteAt = async (node: FileTreeNode) => {
+    setActionError(null)
+    try {
+      const document = await createNote(createScopeFor(node))
+      void navigate(`/notes/${document.id}`)
+    } catch (cause) {
+      setActionError(toMessage(cause))
+    }
+  }
+
+  const handleCreateFolderAt = async (node: FileTreeNode, name: string) => {
+    const document = await createFolder({ ...createScopeFor(node), name })
+    void navigate(`/notes/${document.id}`)
   }
 
   const isAffectedSelection = (node: FileTreeNode): boolean =>
@@ -258,6 +288,8 @@ export function NotesSidebar() {
             activeDocumentId={activeDocumentId}
             forceExpandedPaths={forceExpandedPaths}
             nodes={filteredTree}
+            onCreateFolder={handleCreateFolderAt}
+            onCreateNote={handleCreateNoteAt}
             onDelete={handleDelete}
             onRename={handleRename}
             onSelectFolder={setSelectedFolderPath}

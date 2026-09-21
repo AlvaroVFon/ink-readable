@@ -50,6 +50,8 @@ type RenderTreeOptions = {
   selectedFolderPath?: string | null
   onRename?: (node: FileTreeNode, name: string) => Promise<void>
   onDelete?: (node: FileTreeNode) => Promise<void>
+  onCreateNote?: (node: FileTreeNode) => Promise<void>
+  onCreateFolder?: (node: FileTreeNode, name: string) => Promise<void>
 }
 
 function renderTree({
@@ -57,6 +59,8 @@ function renderTree({
   selectedFolderPath = null,
   onRename = vi.fn(),
   onDelete = vi.fn(),
+  onCreateNote = vi.fn(),
+  onCreateFolder = vi.fn(),
 }: RenderTreeOptions = {}) {
   return render(
     <SidebarProvider>
@@ -69,6 +73,8 @@ function renderTree({
                 activeDocumentId={activeDocumentId}
                 forceExpandedPaths={new Set()}
                 nodes={tree}
+                onCreateFolder={onCreateFolder}
+                onCreateNote={onCreateNote}
                 onDelete={onDelete}
                 onRename={onRename}
                 onSelectFolder={vi.fn()}
@@ -120,14 +126,43 @@ describe('NotesTree', () => {
     expect(screen.getByRole('link', { name: 'alpha' })).toHaveAttribute('data-active')
   })
 
-  it('opens a context menu with rename and delete on right click', () => {
+  it('opens a context menu with create, rename and delete on right click', () => {
     renderTree()
 
     fireEvent.contextMenu(screen.getByRole('link', { name: 'alpha' }))
 
     expect(screen.getByRole('menu')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New note' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New folder' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('creates a sibling note from a document context menu', async () => {
+    const onCreateNote = vi.fn().mockResolvedValue(undefined)
+    renderTree({ onCreateNote })
+
+    fireEvent.contextMenu(screen.getByRole('link', { name: 'alpha' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }))
+
+    await waitFor(() => expect(onCreateNote).toHaveBeenCalledTimes(1))
+    expect(onCreateNote.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading/alpha.md' })
+  })
+
+  it('shows an inline field and creates a folder from the context menu', async () => {
+    const onCreateFolder = vi.fn().mockResolvedValue(undefined)
+    renderTree({ onCreateFolder })
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'notes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New folder' }))
+
+    const input = screen.getByLabelText('New folder name')
+    fireEvent.change(input, { target: { value: 'ideas' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onCreateFolder).toHaveBeenCalledTimes(1))
+    expect(onCreateFolder.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading/notes' })
+    expect(onCreateFolder.mock.calls[0]?.[1]).toBe('ideas')
   })
 
   it('renames a document from the context menu', async () => {
@@ -155,11 +190,14 @@ describe('NotesTree', () => {
     await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1))
   })
 
-  it('does not open the context menu for vault roots', () => {
+  it('offers creation but not rename or delete for vault roots', () => {
     renderTree()
 
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Reading' }))
 
-    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByRole('button', { name: 'New note' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New folder' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull()
   })
 })
