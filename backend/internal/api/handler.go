@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"ink-readable/internal/config"
+	editorconfig "ink-readable/internal/editor/config"
 	"ink-readable/internal/editor/documents"
 	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/httpx"
@@ -56,23 +57,30 @@ type (
 		UpdatePosition(context.Context, string, int64) error
 		Delete(context.Context, string) error
 	}
+	editorConfigService interface {
+		Get(context.Context) (*editorconfig.EditorConfig, error)
+		UpdateDarkTheme(context.Context, bool) error
+		UpdateVimMotion(context.Context, bool) error
+	}
 )
 
 type Handler struct {
-	config    configService
-	vaults    vaultService
-	documents documentService
-	projects  projectService
-	tasks     taskService
+	config       configService
+	vaults       vaultService
+	documents    documentService
+	projects     projectService
+	tasks        taskService
+	editorConfig editorConfigService
 }
 
-func NewHandler(vaultsService vaultService, documentsService documentService, projectsService projectService, tasksService taskService, configService configService) http.Handler {
+func NewHandler(vaultsService vaultService, documentsService documentService, projectsService projectService, tasksService taskService, editorConfigService editorConfigService, configService configService) http.Handler {
 	handler := &Handler{
-		vaults:    vaultsService,
-		documents: documentsService,
-		projects:  projectsService,
-		tasks:     tasksService,
-		config:    configService,
+		vaults:       vaultsService,
+		documents:    documentsService,
+		projects:     projectsService,
+		tasks:        tasksService,
+		editorConfig: editorConfigService,
+		config:       configService,
 	}
 	mux := http.NewServeMux()
 
@@ -113,6 +121,10 @@ func NewHandler(vaultsService vaultService, documentsService documentService, pr
 	mux.HandleFunc("DELETE /api/v1/tasks/{id}", handler.deleteTask)
 
 	mux.HandleFunc("GET /api/v1/config", handler.ListFrontSecrets)
+
+	mux.HandleFunc("GET /api/v1/editor/config", handler.getEditorConfig)
+	mux.HandleFunc("PATCH /api/v1/editor/config/dark-theme", handler.updateEditorConfigDarkTheme)
+	mux.HandleFunc("PATCH /api/v1/editor/config/vim-motion", handler.updateEditorConfigVimMotion)
 
 	return httpx.CORS(mux)
 }

@@ -7,6 +7,7 @@ sql:
       - "internal/sqlc/queries/documents"
       - "internal/sqlc/queries/projects"
       - "internal/sqlc/queries/tasks"
+      - "internal/sqlc/queries/editorconfig"
     schema: "migrations"
     gen:
       go:

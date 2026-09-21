@@ -25,6 +25,13 @@ type DocumentLink struct {
 	DocumentBID string
 }
 
+type EditorConfig struct {
+	ID        string
+	DarkTheme int64
+	VimMotion int64
+	UpdatedAt sql.NullString
+}
+
 type Project struct {
 	ID        string
 	Name      string

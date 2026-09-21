@@ -6,6 +6,7 @@ import (
 	"ink-readable/internal/api"
 	"ink-readable/internal/config"
 	"ink-readable/internal/database"
+	editorconfig "ink-readable/internal/editor/config"
 	"ink-readable/internal/editor/documents"
 	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/planner/projects"
@@ -67,12 +68,13 @@ func main() {
 	documentsService := documents.NewDocumentsService(documents.NewDocumentsRepository(*queries, db))
 	projectsService := projects.NewProjectsService(projects.NewProjectsRepository(*queries))
 	tasksService := tasks.NewTasksService(tasks.NewTasksRepository(*queries))
+	editorConfigService := editorconfig.NewEditorConfigService(editorconfig.NewEditorConfigRepository(*queries))
 	configService := config.NewConfigService(cfg)
 
 	startedAt := time.Now()
 	mux := http.NewServeMux()
 	mux.Handle("/health", health.NewHandler(db, startedAt))
-	mux.Handle("/", api.NewHandler(vaultsService, documentsService, projectsService, tasksService, configService))
+	mux.Handle("/", api.NewHandler(vaultsService, documentsService, projectsService, tasksService, editorConfigService, configService))
 
 	addr := fmt.Sprintf("%s:%s", cfg.AppConfig.BaseURL, cfg.AppConfig.Port)
 	log.Printf("API listening on http://%s", addr)
