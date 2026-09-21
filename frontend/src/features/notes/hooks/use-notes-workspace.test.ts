@@ -10,6 +10,8 @@ const {
   listDocuments,
   createDocument,
   createVault,
+  renameVault,
+  deleteVault,
   renameDocument,
   renameDocumentPath,
   deleteDocument,
@@ -18,6 +20,8 @@ const {
   listDocuments: vi.fn<(vaultId: string) => Promise<Document[]>>(),
   createDocument: vi.fn<(vaultId: string, input: unknown) => Promise<Document>>(),
   createVault: vi.fn<(name: string) => Promise<Vault>>(),
+  renameVault: vi.fn<(id: string, input: unknown) => Promise<void>>(),
+  deleteVault: vi.fn<(id: string) => Promise<void>>(),
   renameDocument: vi.fn<(id: string, input: unknown) => Promise<void>>(),
   renameDocumentPath: vi.fn<(vaultId: string, input: unknown) => Promise<void>>(),
   deleteDocument: vi.fn<(id: string) => Promise<void>>(),
@@ -28,6 +32,8 @@ vi.mock('@/lib/api', () => ({
   listDocuments,
   createDocument,
   createVault,
+  renameVault,
+  deleteVault,
   renameDocument,
   renameDocumentPath,
   deleteDocument,
@@ -45,6 +51,8 @@ describe('useNotesWorkspace', () => {
     listDocuments.mockReset()
     createDocument.mockReset()
     createVault.mockReset()
+    renameVault.mockReset()
+    deleteVault.mockReset()
     renameDocument.mockReset()
     renameDocumentPath.mockReset()
     deleteDocument.mockReset()
@@ -119,6 +127,38 @@ describe('useNotesWorkspace', () => {
       content: '',
     })
     expect(created?.id).toBe('d4')
+  })
+
+  it('renames a vault through the vault endpoint', async () => {
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.renameVault('v1', 'Archive')
+    })
+
+    expect(renameVault).toHaveBeenCalledWith('v1', { name: 'Archive' })
+    expect(result.current.revision).toBe(1)
+  })
+
+  it('rejects an empty vault name', async () => {
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await expect(result.current.renameVault('v1', '   ')).rejects.toThrow('Name cannot be empty')
+    expect(renameVault).not.toHaveBeenCalled()
+  })
+
+  it('deletes a vault through the vault endpoint', async () => {
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.deleteVault('v1')
+    })
+
+    expect(deleteVault).toHaveBeenCalledWith('v1')
+    expect(result.current.revision).toBe(1)
   })
 
   it('exposes the error when loading fails', async () => {

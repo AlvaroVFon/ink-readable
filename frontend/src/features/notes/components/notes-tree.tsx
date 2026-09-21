@@ -1,4 +1,4 @@
-import { ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react'
+import { ChevronRight, Database, FileText, Folder, FolderOpen } from 'lucide-react'
 import {
   useEffect,
   useState,
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 
 import type { FileTreeNode } from '../types'
 
-import { parentPath } from '../lib/file-tree'
+import { isVaultRoot, parentPath } from '../lib/file-tree'
 
 type NotesTreeProps = {
   nodes: FileTreeNode[]
@@ -50,11 +50,6 @@ type NotesTreeNodeProps = {
 
 const MENU_ITEM_CLASS =
   'flex w-full cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50'
-
-/** Vault roots are backend entities, not virtual folders, so they are immutable here. */
-function isVaultRoot(node: FileTreeNode): boolean {
-  return node.type === 'folder' && node.id === node.vaultId
-}
 
 /**
  * Recursive vault → folder → document tree.
@@ -127,7 +122,6 @@ export function NotesTree({
 
       {menu !== null && (
         <NodeContextMenu
-          canModify={!isVaultRoot(menu.node)}
           node={menu.node}
           onClose={() => {
             setMenu(null)
@@ -186,19 +180,20 @@ function NotesTreeNode({
     onContextMenu(node, { x: event.clientX, y: event.clientY })
   }
 
-  const renameForm =
-    isRenaming && !isVaultRoot(node) ? (
-      <InlineRename
-        initialName={node.name}
-        isFolder={node.type === 'folder'}
-        onCancel={onFinishRename}
-        onSubmit={async (name) => {
-          await onRename(node, name)
-          onFinishRename()
-        }}
-        paddingLeft={indent + 8}
-      />
-    ) : null
+  const renameForm = isRenaming ? (
+    <InlineRename
+      initialName={node.name}
+      nameLabel={
+        node.type === 'document' ? 'Note name' : isVaultRoot(node) ? 'Vault name' : 'Folder name'
+      }
+      onCancel={onFinishRename}
+      onSubmit={async (name) => {
+        await onRename(node, name)
+        onFinishRename()
+      }}
+      paddingLeft={indent + 8}
+    />
+  ) : null
 
   if (node.type === 'document') {
     return (
@@ -236,7 +231,13 @@ function NotesTreeNode({
             aria-hidden='true'
             className={cn('transition-transform', isExpanded && 'rotate-90')}
           />
-          {isExpanded ? <FolderOpen aria-hidden='true' /> : <Folder aria-hidden='true' />}
+          {isVaultRoot(node) ? (
+            <Database aria-hidden='true' />
+          ) : isExpanded ? (
+            <FolderOpen aria-hidden='true' />
+          ) : (
+            <Folder aria-hidden='true' />
+          )}
           <span>{node.name}</span>
         </SidebarMenuButton>
       )}
@@ -284,7 +285,6 @@ type NodeContextMenuProps = {
   node: FileTreeNode
   x: number
   y: number
-  canModify: boolean
   onRename: () => void
   onDelete: () => void
   onCreateNote: () => void
@@ -296,7 +296,6 @@ function NodeContextMenu({
   node,
   x,
   y,
-  canModify,
   onRename,
   onDelete,
   onCreateNote,
@@ -316,7 +315,7 @@ function NodeContextMenu({
   }, [onClose])
 
   const left = Math.min(x, window.innerWidth - 176)
-  const top = Math.min(y, window.innerHeight - (canModify ? 192 : 120))
+  const top = Math.min(y, window.innerHeight - 192)
 
   return createPortal(
     <div
@@ -350,25 +349,21 @@ function NodeContextMenu({
         >
           New folder
         </button>
-        {canModify && (
-          <>
-            <div className='my-1 h-px bg-border' />
-            <button
-              className={MENU_ITEM_CLASS}
-              onClick={onRename}
-              type='button'
-            >
-              Rename
-            </button>
-            <button
-              className={cn(MENU_ITEM_CLASS, 'text-destructive')}
-              onClick={onDelete}
-              type='button'
-            >
-              Delete
-            </button>
-          </>
-        )}
+        <div className='my-1 h-px bg-border' />
+        <button
+          className={MENU_ITEM_CLASS}
+          onClick={onRename}
+          type='button'
+        >
+          Rename
+        </button>
+        <button
+          className={cn(MENU_ITEM_CLASS, 'text-destructive')}
+          onClick={onDelete}
+          type='button'
+        >
+          Delete
+        </button>
       </div>
     </div>,
     document.body,
@@ -377,7 +372,7 @@ function NodeContextMenu({
 
 type InlineRenameProps = {
   initialName: string
-  isFolder: boolean
+  nameLabel: string
   paddingLeft: number
   onSubmit: (name: string) => Promise<void>
   onCancel: () => void
@@ -385,7 +380,7 @@ type InlineRenameProps = {
 
 function InlineRename({
   initialName,
-  isFolder,
+  nameLabel,
   paddingLeft,
   onSubmit,
   onCancel,
@@ -429,7 +424,7 @@ function InlineRename({
     >
       <Input
         autoFocus
-        aria-label={isFolder ? 'Folder name' : 'Note name'}
+        aria-label={nameLabel}
         className='h-7 text-sm'
         disabled={isBusy}
         onBlur={onCancel}

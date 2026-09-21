@@ -21,6 +21,14 @@ export function buildFileTree(
 }
 
 /**
+ * Vault roots are backend entities (the vault itself), not virtual folders
+ * derived from document paths, so mutations must target the vault API.
+ */
+export function isVaultRoot(node: FileTreeNode): boolean {
+  return node.type === 'folder' && node.id === node.vaultId
+}
+
+/**
  * Filters the tree by document name or path, keeping the ancestors of every
  * match. An empty query returns the original tree unchanged.
  */

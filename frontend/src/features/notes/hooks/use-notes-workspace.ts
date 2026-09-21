@@ -6,10 +6,12 @@ import {
   createDocument,
   createVault as createVaultRequest,
   deleteDocument as deleteDocumentRequest,
+  deleteVault as deleteVaultRequest,
   listDocuments,
   listVaults,
   renameDocument as renameDocumentRequest,
   renameDocumentPath as renameDocumentPathRequest,
+  renameVault as renameVaultRequest,
 } from '@/lib/api'
 
 import type { FileTreeNode } from '../types'
@@ -54,6 +56,8 @@ export type UseNotesWorkspaceResult = {
   createNote: (input: CreateNoteInput) => Promise<Document>
   createFolder: (input: CreateFolderInput) => Promise<Document>
   createVault: (name: string) => Promise<Document>
+  renameVault: (vaultId: string, name: string) => Promise<void>
+  deleteVault: (vaultId: string) => Promise<void>
   renameNode: (node: FileTreeNode, name: string) => Promise<void>
   deleteNode: (node: FileTreeNode) => Promise<void>
 }
@@ -162,6 +166,28 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     [refresh],
   )
 
+  const renameVault = useCallback(
+    async (vaultId: string, name: string) => {
+      const trimmed = name.trim()
+      if (trimmed === '') {
+        throw new Error('Name cannot be empty')
+      }
+      await renameVaultRequest(vaultId, { name: trimmed })
+      await refresh()
+      setRevision((value) => value + 1)
+    },
+    [refresh],
+  )
+
+  const deleteVault = useCallback(
+    async (vaultId: string) => {
+      await deleteVaultRequest(vaultId)
+      await refresh()
+      setRevision((value) => value + 1)
+    },
+    [refresh],
+  )
+
   const renameNode = useCallback(
     async (node: FileTreeNode, name: string) => {
       const trimmed = name.trim()
@@ -213,6 +239,8 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     createNote,
     createFolder,
     createVault,
+    renameVault,
+    deleteVault,
     renameNode,
     deleteNode,
   }
