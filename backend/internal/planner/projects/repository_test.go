@@ -313,3 +313,47 @@ func TestProjectsRepository_Delete_EmptyID(t *testing.T) {
 		t.Fatalf("expected ErrInvalidEmptyArgumentError, got %v", err)
 	}
 }
+
+func TestProjectsRepository_FindByID(t *testing.T) {
+	repo, _ := newTestRepository(t)
+	ctx := context.Background()
+
+	createdAt := time.Now().UTC().Add(-time.Hour)
+	project := Project{ID: "project-id", Name: "Reading", CreatedAt: createdAt, UpdatedAt: createdAt}
+	if err := repo.Create(ctx, project); err != nil {
+		t.Fatalf("unexpected error creating project: %v", err)
+	}
+
+	found, err := repo.FindByID(ctx, project.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if found.ID != project.ID {
+		t.Errorf("expected id %q, got %q", project.ID, found.ID)
+	}
+	if found.Name != project.Name {
+		t.Errorf("expected name %q, got %q", project.Name, found.Name)
+	}
+	if !found.CreatedAt.Equal(project.CreatedAt) {
+		t.Errorf("expected created_at %v, got %v", project.CreatedAt, found.CreatedAt)
+	}
+	if !found.UpdatedAt.Equal(project.UpdatedAt) {
+		t.Errorf("expected updated_at %v, got %v", project.UpdatedAt, found.UpdatedAt)
+	}
+}
+
+func TestProjectsRepository_FindByID_EmptyID(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if _, err := repo.FindByID(context.Background(), ""); !errors.Is(err, ErrInvalidEmptyArgumentError) {
+		t.Fatalf("expected ErrInvalidEmptyArgumentError, got %v", err)
+	}
+}
+
+func TestProjectsRepository_FindByID_NotFound(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if _, err := repo.FindByID(context.Background(), "missing"); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
