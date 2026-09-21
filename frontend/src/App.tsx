@@ -17,6 +17,10 @@ function App() {
           index
           element={<NotesWorkspace />}
         />
+        <Route
+          path='notes/:documentId'
+          element={<NotesWorkspace />}
+        />
       </Route>
       <Route
         element={<PlannerLayout />}

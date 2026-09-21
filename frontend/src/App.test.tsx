@@ -2,13 +2,17 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { ThemeProvider } from '@/components/theme/theme-provider'
+
 import App from './App'
 
 function renderApp(initialEntries: string[] = ['/']) {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <App />
-    </MemoryRouter>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <App />
+      </MemoryRouter>
+    </ThemeProvider>,
   )
 }
 

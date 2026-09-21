@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router'
 
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './components/theme/theme-provider'
 
 const root = document.getElementById('root')
 if (!root) {
@@ -12,8 +13,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 )
