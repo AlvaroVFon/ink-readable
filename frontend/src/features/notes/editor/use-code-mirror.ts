@@ -1,6 +1,6 @@
 import { Compartment } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { createEditorExtensions, vimExtension } from './editor-extensions'
 import { registerVimCommands, setVimSaveHandler } from './vim'
@@ -16,6 +16,8 @@ type UseCodeMirrorResult = {
   containerRef: RefObject<HTMLDivElement | null>
   /** The element that actually scrolls, used to sync with the preview pane. */
   scrollElement: HTMLElement | null
+  /** Re-measures the viewport, needed after the editor is shown again. */
+  requestMeasure: () => void
 }
 
 /**
@@ -95,5 +97,9 @@ export function useCodeMirror({
     })
   }, [vimEnabled])
 
-  return { containerRef, scrollElement }
+  const requestMeasure = useCallback(() => {
+    viewRef.current?.requestMeasure()
+  }, [])
+
+  return { containerRef, scrollElement, requestMeasure }
 }
