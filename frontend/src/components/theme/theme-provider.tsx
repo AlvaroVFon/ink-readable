@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import {
-  applyResolvedTheme,
-  getStoredTheme,
+  applyTheme,
+  getStoredMode,
+  getStoredPalette,
   getSystemTheme,
   resolveTheme,
-  storeTheme,
+  storeMode,
+  storePalette,
+  type Palette,
   type ResolvedTheme,
-  type Theme,
+  type ThemeMode,
 } from '@/lib/theme'
 
 import { ThemeContext, type ThemeContextValue } from './theme-context'
@@ -17,26 +20,29 @@ type ThemeProviderProps = {
 }
 
 /**
- * Owns the light/dark/system preference for the whole app.
+ * Owns the light/dark/system mode and the color palette for the whole app.
  *
- * The resolved theme is mirrored onto `<html class="dark">`, so every shadcn
- * token flips at once, and `resolvedTheme` is exposed for imperative consumers
- * (CodeMirror, Mermaid). The choice persists in localStorage.
+ * The resolved mode is mirrored onto `<html class="dark">` and the palette onto
+ * `<html data-palette>`, so every shadcn token flips at once. `resolvedTheme`
+ * is exposed for imperative consumers (CodeMirror, Mermaid). Both choices
+ * persist in localStorage.
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme())
+  const [mode, setModeState] = useState<ThemeMode>(() => getStoredMode())
+  const [palette, setPaletteState] = useState<Palette>(() => getStoredPalette())
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-    resolveTheme(getStoredTheme()),
+    resolveTheme(getStoredMode()),
   )
 
   useEffect(() => {
-    const resolved = resolveTheme(theme)
+    const resolved = resolveTheme(mode)
     // oxlint-disable-next-line react/set-state-in-effect -- mirroring an external system (matchMedia/localStorage) into React state
     setResolvedTheme(resolved)
-    applyResolvedTheme(resolved)
-    storeTheme(theme)
+    applyTheme(resolved, palette)
+    storeMode(mode)
+    storePalette(palette)
 
-    if (theme !== 'system') {
+    if (mode !== 'system') {
       return () => {}
     }
 
@@ -44,21 +50,25 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const handleChange = () => {
       const next = getSystemTheme()
       setResolvedTheme(next)
-      applyResolvedTheme(next)
+      applyTheme(next, palette)
     }
     media.addEventListener('change', handleChange)
     return () => {
       media.removeEventListener('change', handleChange)
     }
-  }, [theme])
+  }, [mode, palette])
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next)
+  const setMode = useCallback((next: ThemeMode) => {
+    setModeState(next)
+  }, [])
+
+  const setPalette = useCallback((next: Palette) => {
+    setPaletteState(next)
   }, [])
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, resolvedTheme, setTheme }),
-    [theme, resolvedTheme, setTheme],
+    () => ({ mode, resolvedTheme, palette, setMode, setPalette }),
+    [mode, resolvedTheme, palette, setMode, setPalette],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

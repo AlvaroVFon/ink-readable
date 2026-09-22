@@ -15,15 +15,15 @@ const EditorConfigContext = createContext<UseEditorConfigResult | null>(null)
  */
 export function EditorConfigProvider({ children }: { children: ReactNode }) {
   const editorConfig = useEditorConfig()
-  const { setTheme } = useTheme()
+  const { setMode } = useTheme()
   const darkTheme = editorConfig.config?.darkTheme
 
   useEffect(() => {
     if (darkTheme === undefined) {
       return
     }
-    setTheme(darkTheme ? 'dark' : 'light')
-  }, [darkTheme, setTheme])
+    setMode(darkTheme ? 'dark' : 'light')
+  }, [darkTheme, setMode])
 
   return (
     <EditorConfigContext.Provider value={editorConfig}>{children}</EditorConfigContext.Provider>
