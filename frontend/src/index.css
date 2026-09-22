@@ -47,6 +47,11 @@
   --syntax-code: oklch(0.47 0.14 20);
   --syntax-quote: oklch(0.5 0.03 265);
   --syntax-list: oklch(0.55 0.18 300);
+  --alert-note: oklch(0.52 0.16 250);
+  --alert-tip: oklch(0.5 0.13 150);
+  --alert-important: oklch(0.5 0.2 300);
+  --alert-warning: oklch(0.56 0.14 75);
+  --alert-caution: oklch(0.55 0.2 25);
 }
 
 .dark {
@@ -90,6 +95,11 @@
   --syntax-code: oklch(0.8 0.1 25);
   --syntax-quote: oklch(0.72 0.02 265);
   --syntax-list: oklch(0.8 0.13 305);
+  --alert-note: oklch(0.78 0.12 250);
+  --alert-tip: oklch(0.78 0.13 155);
+  --alert-important: oklch(0.78 0.14 305);
+  --alert-warning: oklch(0.8 0.12 70);
+  --alert-caution: oklch(0.7 0.18 25);
 }
 
 @theme inline {
@@ -259,6 +269,56 @@
   padding-left: 1em;
   color: var(--muted-foreground);
   font-style: italic;
+}
+
+/* GitHub-style alerts (> [!NOTE], > [!WARNING], ...) */
+.markdown-preview .markdown-alert {
+  --alert-color: var(--border);
+  margin: 1em 0;
+  border-left: 3px solid var(--alert-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75em 1em;
+  background-color: color-mix(in oklch, var(--alert-color) 8%, transparent);
+  color: var(--foreground);
+}
+
+.markdown-preview .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0 0 0.35em;
+  color: var(--alert-color);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.markdown-preview .markdown-alert-title svg {
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.markdown-preview .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview .markdown-alert-note {
+  --alert-color: var(--alert-note);
+}
+
+.markdown-preview .markdown-alert-tip {
+  --alert-color: var(--alert-tip);
+}
+
+.markdown-preview .markdown-alert-important {
+  --alert-color: var(--alert-important);
+}
+
+.markdown-preview .markdown-alert-warning {
+  --alert-color: var(--alert-warning);
+}
+
+.markdown-preview .markdown-alert-caution {
+  --alert-color: var(--alert-caution);
 }
 
 .markdown-preview hr {
