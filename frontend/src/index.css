@@ -534,6 +534,54 @@
   line-height: 1.6;
 }
 
+.markdown-preview .code-block {
+  margin: 1em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--muted);
+  overflow: hidden;
+}
+
+.markdown-preview .code-block pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.markdown-preview .code-block-language {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4em;
+  border-bottom: 1px solid var(--border);
+  padding: 0.35em 0.75em;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.markdown-preview .code-block-language:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.markdown-preview .code-block-language-copied {
+  color: var(--primary);
+}
+
+.markdown-preview .code-block-language svg {
+  width: 0.9em;
+  height: 0.9em;
+}
+
 .markdown-preview table {
   border-collapse: collapse;
   width: 100%;

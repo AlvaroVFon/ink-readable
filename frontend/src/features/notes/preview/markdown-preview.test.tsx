@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ThemeProvider } from '@/components/theme/theme-provider'
@@ -84,6 +84,29 @@ describe('MarkdownPreview', () => {
     await waitFor(() => {
       expect(document.querySelector('.katex')).not.toBeNull()
     })
+  })
+
+  it('renders a language header that copies the code on click', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    })
+
+    renderPreview('```go\nfmt.Println("hi")\n```')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy go code' }))
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0]?.[0]).toContain('fmt.Println')
+    expect(await screen.findByText('Copied!')).toBeInTheDocument()
+  })
+
+  it('renders a plain block without a language header', () => {
+    renderPreview('```\nplain text\n```')
+
+    expect(screen.queryByRole('button', { name: /copy/i })).toBeNull()
+    expect(screen.getByText('plain text')).toBeInTheDocument()
   })
 
   it('renders mermaid fences as diagrams', async () => {
