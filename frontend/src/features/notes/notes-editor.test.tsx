@@ -26,12 +26,12 @@ const document: Document = {
   updatedAt: '',
 }
 
-function setup(relativeLineNumbers = false) {
+function setup(relativeLineNumbers = false, vimMotion = false) {
   useEditorConfigContext.mockReturnValue({
     config: {
       id: 'default',
       darkTheme: true,
-      vimMotion: false,
+      vimMotion,
       formatOnSave: true,
       relativeLineNumbers,
     },
@@ -54,6 +54,14 @@ function editorView(container: HTMLElement): EditorView {
     throw new Error('editor not mounted')
   }
   return view
+}
+
+function contentElement(container: HTMLElement): HTMLElement {
+  const content = container.querySelector<HTMLElement>('.cm-content')
+  if (content === null) {
+    throw new Error('editor content not mounted')
+  }
+  return content
 }
 
 describe('NotesEditor view modes', () => {
@@ -95,5 +103,48 @@ describe('NotesEditor view modes', () => {
     const ranges = editorView(container).state.facet(lineNumberMarkers)
 
     expect(ranges.every((range) => range.size === 0)).toBe(true)
+  })
+})
+
+describe('NotesEditor Tab behaviour', () => {
+  beforeEach(() => {
+    useEditorConfigContext.mockReset()
+  })
+
+  it('indents instead of moving focus out of the editor', () => {
+    const { container } = setup()
+    const view = editorView(container)
+
+    fireEvent.keyDown(contentElement(container), { key: 'Tab' })
+
+    expect(view.state.doc.toString()).toBe('  # Hello world')
+  })
+
+  it('dedents on Shift-Tab', () => {
+    const { container } = setup()
+    const view = editorView(container)
+
+    fireEvent.keyDown(contentElement(container), { key: 'Tab', shiftKey: true })
+
+    expect(view.state.doc.toString()).toBe('# Hello world')
+  })
+
+  it('swallows Tab in vim normal mode without indenting', () => {
+    const { container } = setup(false, true)
+    const view = editorView(container)
+
+    fireEvent.keyDown(contentElement(container), { key: 'Tab' })
+
+    expect(view.state.doc.toString()).toBe('# Hello world')
+  })
+
+  it('indents with Tab in vim insert mode', () => {
+    const { container } = setup(false, true)
+    const view = editorView(container)
+
+    fireEvent.keyDown(contentElement(container), { key: 'i' })
+    fireEvent.keyDown(contentElement(container), { key: 'Tab' })
+
+    expect(view.state.doc.toString()).toBe('  # Hello world')
   })
 })

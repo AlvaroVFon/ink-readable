@@ -1,10 +1,11 @@
 import type { Compartment, Extension } from '@codemirror/state'
 
+import { indentLess, indentMore } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { syntaxHighlighting } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { EditorView } from '@codemirror/view'
-import { vim } from '@replit/codemirror-vim'
+import { EditorView, keymap, type KeyBinding } from '@codemirror/view'
+import { getCM, vim } from '@replit/codemirror-vim'
 import { basicSetup } from 'codemirror'
 
 import { editorTheme, markdownHighlightStyle } from './editor-theme'
@@ -36,6 +37,31 @@ export function lineNumbersExtension(relative: boolean): Extension {
   return relative ? relativeLineNumbersExtension() : []
 }
 
+function isVimNormalMode(view: EditorView): boolean {
+  const vimState = getCM(view)?.state.vim
+  return vimState != null && !vimState.insertMode
+}
+
+/**
+ * Tab indents (and Shift-Tab dedents) instead of moving focus out of the
+ * editor. CodeMirror leaves Tab unbound on purpose, so without this the browser
+ * tabs away to the next focusable element.
+ *
+ * Vim leaves Tab unbound in normal/visual mode; there the key is swallowed so it
+ * still never escapes the editor, while insert mode gets the usual indentation.
+ */
+function tabKeymapExtension(): Extension {
+  const tabKeymap: KeyBinding[] = [
+    {
+      key: 'Tab',
+      run: (view) => (isVimNormalMode(view) ? true : indentMore(view)),
+      shift: (view) => (isVimNormalMode(view) ? true : indentLess(view)),
+    },
+  ]
+
+  return keymap.of(tabKeymap)
+}
+
 /**
  * Extension list for the markdown editor.
  *
@@ -60,6 +86,7 @@ export function createEditorExtensions({
     syntaxHighlighting(markdownHighlightStyle),
     EditorView.lineWrapping,
     editorTheme,
+    tabKeymapExtension(),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         onChange(update.state.doc.toString())
