@@ -2,7 +2,7 @@ import { Compartment } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
-import { createEditorExtensions, vimExtension } from './editor-extensions'
+import { createEditorExtensions, lineNumbersExtension, vimExtension } from './editor-extensions'
 import { registerVimCommands, setVimSaveHandler } from './vim'
 
 type UseCodeMirrorOptions = {
@@ -10,6 +10,7 @@ type UseCodeMirrorOptions = {
   onChange: (value: string) => void
   onSave: () => void
   vimEnabled: boolean
+  relativeLineNumbers: boolean
 }
 
 type UseCodeMirrorResult = {
@@ -39,6 +40,7 @@ export function useCodeMirror({
   onChange,
   onSave,
   vimEnabled,
+  relativeLineNumbers,
 }: UseCodeMirrorOptions): UseCodeMirrorResult {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -46,7 +48,9 @@ export function useCodeMirror({
   const onSaveRef = useRef(onSave)
   const initialDocRef = useRef(initialDoc)
   const vimCompartmentRef = useRef(new Compartment())
+  const lineNumbersCompartmentRef = useRef(new Compartment())
   const initialVimEnabledRef = useRef(vimEnabled)
+  const initialRelativeLineNumbersRef = useRef(relativeLineNumbers)
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -77,6 +81,8 @@ export function useCodeMirror({
         },
         vimCompartment: vimCompartmentRef.current,
         vimEnabled: initialVimEnabledRef.current,
+        lineNumbersCompartment: lineNumbersCompartmentRef.current,
+        relativeLineNumbers: initialRelativeLineNumbersRef.current,
       }),
     })
     viewRef.current = view
@@ -100,6 +106,18 @@ export function useCodeMirror({
       effects: vimCompartmentRef.current.reconfigure(vimExtension(vimEnabled)),
     })
   }, [vimEnabled])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (view === null) {
+      return
+    }
+    view.dispatch({
+      effects: lineNumbersCompartmentRef.current.reconfigure(
+        lineNumbersExtension(relativeLineNumbers),
+      ),
+    })
+  }, [relativeLineNumbers])
 
   const requestMeasure = useCallback(() => {
     viewRef.current?.requestMeasure()

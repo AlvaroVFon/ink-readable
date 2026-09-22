@@ -46,3 +46,13 @@ export function updateEditorConfigFormatOnSave(
 ): Promise<void> {
   return client.patch(`${EDITOR_CONFIG_PATH}/format-on-save`, { formatOnSave })
 }
+
+/**
+ * Persists the relative line numbers preference.
+ */
+export function updateEditorConfigRelativeLineNumbers(
+  relativeLineNumbers: boolean,
+  client: ApiClient = apiClient,
+): Promise<void> {
+  return client.patch(`${EDITOR_CONFIG_PATH}/relative-line-numbers`, { relativeLineNumbers })
+}

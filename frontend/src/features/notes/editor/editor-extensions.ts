@@ -8,12 +8,15 @@ import { vim } from '@replit/codemirror-vim'
 import { basicSetup } from 'codemirror'
 
 import { editorTheme, markdownHighlightStyle } from './editor-theme'
+import { relativeLineNumbersExtension } from './relative-line-numbers'
 
 type CreateEditorExtensionsOptions = {
   onChange: (value: string) => void
   onSave: () => void
   vimCompartment: Compartment
   vimEnabled: boolean
+  lineNumbersCompartment: Compartment
+  relativeLineNumbers: boolean
 }
 
 /**
@@ -22,6 +25,15 @@ type CreateEditorExtensionsOptions = {
  */
 export function vimExtension(enabled: boolean): Extension {
   return enabled ? vim({ status: true }) : []
+}
+
+/**
+ * Line numbers, toggled through a `Compartment` so switching between absolute
+ * (`basicSetup`'s default gutter) and relative numbers does not recreate the
+ * editor.
+ */
+export function lineNumbersExtension(relative: boolean): Extension {
+  return relative ? relativeLineNumbersExtension() : []
 }
 
 /**
@@ -37,9 +49,12 @@ export function createEditorExtensions({
   onSave,
   vimCompartment,
   vimEnabled,
+  lineNumbersCompartment,
+  relativeLineNumbers,
 }: CreateEditorExtensionsOptions): Extension[] {
   return [
     vimCompartment.of(vimExtension(vimEnabled)),
+    lineNumbersCompartment.of(lineNumbersExtension(relativeLineNumbers)),
     basicSetup,
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     syntaxHighlighting(markdownHighlightStyle),
