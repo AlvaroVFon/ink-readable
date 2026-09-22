@@ -13,8 +13,8 @@ vi.mock('@/hooks/use-editor-config', () => ({ useEditorConfig }))
 import { EditorConfigProvider } from './editor-config-context'
 
 function ThemeProbe() {
-  const { theme } = useTheme()
-  return <span data-testid='theme'>{theme}</span>
+  const { mode } = useTheme()
+  return <span data-testid='theme'>{mode}</span>
 }
 
 function configValue(overrides: Partial<UseEditorConfigResult> = {}): UseEditorConfigResult {
