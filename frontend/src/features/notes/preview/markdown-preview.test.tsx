@@ -49,6 +49,35 @@ describe('MarkdownPreview', () => {
     expect(screen.getByRole('checkbox')).toBeChecked()
   })
 
+  it('renders GitHub alerts with a title and icon', () => {
+    renderPreview('> [!WARNING]\n> Watch out')
+
+    const alert = document.querySelector('.markdown-alert-warning')
+    expect(alert).not.toBeNull()
+    expect(alert?.querySelector('.markdown-alert-title')?.textContent).toBe('WARNING')
+    expect(alert?.querySelector('svg path')?.getAttribute('d')).toBeTruthy()
+    expect(screen.getByText('Watch out')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['NOTE', 'note'],
+    ['TIP', 'tip'],
+    ['IMPORTANT', 'important'],
+    ['WARNING', 'warning'],
+    ['CAUTION', 'caution'],
+  ])('maps the %s alert to its variant class', (label, variant) => {
+    const { container } = renderPreview(`> [!${label}]\n> body`)
+
+    expect(container.querySelector(`.markdown-alert-${variant}`)).not.toBeNull()
+  })
+
+  it('keeps plain blockquotes untouched', () => {
+    renderPreview('> just a quote')
+
+    expect(document.querySelector('blockquote')).not.toBeNull()
+    expect(document.querySelector('.markdown-alert')).toBeNull()
+  })
+
   it('renders math with KaTeX', async () => {
     renderPreview('$E = mc^2$')
 

@@ -4,13 +4,14 @@ import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
+import { remarkAlert } from 'remark-github-blockquote-alert'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'
 
 import { markdownComponents } from './markdown-components'
 import { markdownSanitizeSchema } from './sanitize-schema'
 
-const remarkPlugins: NonNullable<Options['remarkPlugins']> = [remarkGfm, remarkMath]
+const remarkPlugins: NonNullable<Options['remarkPlugins']> = [remarkGfm, remarkAlert, remarkMath]
 const rehypePlugins: NonNullable<Options['rehypePlugins']> = [
   rehypeKatex,
   rehypeHighlight,

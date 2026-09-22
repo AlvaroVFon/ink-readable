@@ -61,6 +61,15 @@ const SVG_TAGS = [
   'desc',
 ]
 
+/**
+ * Attributes for inline SVG. The GitHub alert icons rely on `viewBox` on the
+ * `svg` and `d` on the `path`; the rest keeps hand-written SVG usable.
+ */
+const SVG_ATTRIBUTES: Record<string, string[]> = {
+  svg: ['viewBox', 'fill', 'role', 'focusable'],
+  path: ['d', 'fill', 'fillRule', 'clipRule', 'stroke'],
+}
+
 function append<T>(list: readonly T[] | null | undefined, ...items: T[]): T[] {
   return [...(list ?? []), ...items]
 }
@@ -81,5 +90,11 @@ export const markdownSanitizeSchema: Options = {
     '*': append(defaultSchema.attributes?.['*'], 'className', 'style', 'ariaHidden'),
     input: append(defaultSchema.attributes?.['input'], ['type', 'checkbox'], 'checked', 'disabled'),
     math: append(defaultSchema.attributes?.['math'], 'xmlns', 'display'),
+    ...Object.fromEntries(
+      Object.entries(SVG_ATTRIBUTES).map(([tag, attrs]) => [
+        tag,
+        append(defaultSchema.attributes?.[tag], ...attrs),
+      ]),
+    ),
   },
 }
