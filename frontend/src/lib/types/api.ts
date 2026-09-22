@@ -48,6 +48,7 @@ export const editorConfigSchema = z.object({
   darkTheme: z.boolean(),
   vimMotion: z.boolean(),
   formatOnSave: z.boolean(),
+  relativeLineNumbers: z.boolean(),
 })
 
 export type EditorConfig = z.infer<typeof editorConfigSchema>

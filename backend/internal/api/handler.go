@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"ink-readable/internal/config"
-	editorconfig "ink-readable/internal/editor/config"
 	"ink-readable/internal/editor/documents"
 	"ink-readable/internal/editor/vaults"
 	"ink-readable/internal/httpx"
 	"ink-readable/internal/planner/projects"
 	"ink-readable/internal/planner/tasks"
 	"net/http"
+
+	editorconfig "ink-readable/internal/editor/config"
 )
 
 type (
@@ -62,6 +63,7 @@ type (
 		UpdateDarkTheme(context.Context, bool) error
 		UpdateVimMotion(context.Context, bool) error
 		UpdateFormatOnSave(context.Context, bool) error
+		UpdateRelativeLineNumbers(context.Context, bool) error
 	}
 )
 
@@ -127,6 +129,7 @@ func NewHandler(vaultsService vaultService, documentsService documentService, pr
 	mux.HandleFunc("PATCH /api/v1/editor/config/dark-theme", handler.updateEditorConfigDarkTheme)
 	mux.HandleFunc("PATCH /api/v1/editor/config/vim-motion", handler.updateEditorConfigVimMotion)
 	mux.HandleFunc("PATCH /api/v1/editor/config/format-on-save", handler.updateEditorConfigFormatOnSave)
+	mux.HandleFunc("PATCH /api/v1/editor/config/relative-line-numbers", handler.updateEditorConfigRelativeLineNumbers)
 
 	return httpx.CORS(mux)
 }

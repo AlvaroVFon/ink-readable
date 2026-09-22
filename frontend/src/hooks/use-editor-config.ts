@@ -6,6 +6,7 @@ import {
   fetchEditorConfig,
   updateEditorConfigDarkTheme,
   updateEditorConfigFormatOnSave,
+  updateEditorConfigRelativeLineNumbers,
   updateEditorConfigVimMotion,
 } from '@/lib/api'
 
@@ -16,6 +17,7 @@ export type UseEditorConfigResult = {
   updateDarkTheme: (darkTheme: boolean) => Promise<void>
   updateVimMotion: (vimMotion: boolean) => Promise<void>
   updateFormatOnSave: (formatOnSave: boolean) => Promise<void>
+  updateRelativeLineNumbers: (relativeLineNumbers: boolean) => Promise<void>
   reload: () => void
 }
 
@@ -84,6 +86,16 @@ export function useEditorConfig(): UseEditorConfigResult {
     }
   }, [])
 
+  const updateRelativeLineNumbers = useCallback(async (relativeLineNumbers: boolean) => {
+    try {
+      await updateEditorConfigRelativeLineNumbers(relativeLineNumbers)
+      setConfig((current) => (current === null ? current : { ...current, relativeLineNumbers }))
+      setError(null)
+    } catch (cause) {
+      setError(toError(cause))
+    }
+  }, [])
+
   const reload = useCallback(() => {
     refresh()
   }, [refresh])
@@ -95,6 +107,7 @@ export function useEditorConfig(): UseEditorConfigResult {
     updateDarkTheme,
     updateVimMotion,
     updateFormatOnSave,
+    updateRelativeLineNumbers,
     reload,
   }
 }

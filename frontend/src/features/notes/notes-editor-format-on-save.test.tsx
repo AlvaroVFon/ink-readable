@@ -32,12 +32,19 @@ const document: Document = {
 
 function setup(formatOnSave: boolean) {
   useEditorConfigContext.mockReturnValue({
-    config: { id: 'default', darkTheme: true, vimMotion: false, formatOnSave },
+    config: {
+      id: 'default',
+      darkTheme: true,
+      vimMotion: false,
+      formatOnSave,
+      relativeLineNumbers: false,
+    },
     isLoading: false,
     error: null,
     updateDarkTheme: vi.fn(),
     updateVimMotion: vi.fn(),
     updateFormatOnSave: vi.fn(),
+    updateRelativeLineNumbers: vi.fn(),
     reload: vi.fn(),
   } satisfies UseEditorConfigResult)
 

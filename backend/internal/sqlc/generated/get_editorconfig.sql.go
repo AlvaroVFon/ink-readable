@@ -11,15 +11,16 @@ import (
 )
 
 const getEditorConfig = `-- name: GetEditorConfig :one
-SELECT id, dark_theme, vim_motion, format_on_save, updated_at FROM editor_config WHERE id = ?
+SELECT id, dark_theme, vim_motion, format_on_save, relative_line_numbers, updated_at FROM editor_config WHERE id = ?
 `
 
 type GetEditorConfigRow struct {
-	ID           string
-	DarkTheme    int64
-	VimMotion    int64
-	FormatOnSave int64
-	UpdatedAt    sql.NullString
+	ID                  string
+	DarkTheme           int64
+	VimMotion           int64
+	FormatOnSave        int64
+	RelativeLineNumbers int64
+	UpdatedAt           sql.NullString
 }
 
 func (q *Queries) GetEditorConfig(ctx context.Context, id string) (GetEditorConfigRow, error) {
@@ -30,6 +31,7 @@ func (q *Queries) GetEditorConfig(ctx context.Context, id string) (GetEditorConf
 		&i.DarkTheme,
 		&i.VimMotion,
 		&i.FormatOnSave,
+		&i.RelativeLineNumbers,
 		&i.UpdatedAt,
 	)
 	return i, err

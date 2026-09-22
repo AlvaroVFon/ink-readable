@@ -41,6 +41,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
         void handleSave()
       },
       vimEnabled: config?.vimMotion ?? true,
+      relativeLineNumbers: config?.relativeLineNumbers ?? false,
     },
   )
 

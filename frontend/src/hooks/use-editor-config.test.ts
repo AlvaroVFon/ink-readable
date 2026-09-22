@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   updateEditorConfigDarkTheme: vi.fn<(darkTheme: boolean) => Promise<void>>(),
   updateEditorConfigVimMotion: vi.fn<(vimMotion: boolean) => Promise<void>>(),
   updateEditorConfigFormatOnSave: vi.fn<(formatOnSave: boolean) => Promise<void>>(),
+  updateEditorConfigRelativeLineNumbers: vi.fn<(relativeLineNumbers: boolean) => Promise<void>>(),
 }))
 
 vi.mock('@/lib/api', () => api)
@@ -19,6 +20,7 @@ const config: EditorConfig = {
   darkTheme: true,
   vimMotion: true,
   formatOnSave: true,
+  relativeLineNumbers: true,
 }
 
 describe('useEditorConfig', () => {
@@ -27,6 +29,7 @@ describe('useEditorConfig', () => {
     api.updateEditorConfigDarkTheme.mockReset()
     api.updateEditorConfigVimMotion.mockReset()
     api.updateEditorConfigFormatOnSave.mockReset()
+    api.updateEditorConfigRelativeLineNumbers.mockReset()
   })
 
   it('loads the editor config', async () => {
@@ -85,6 +88,22 @@ describe('useEditorConfig', () => {
     expect(api.updateEditorConfigFormatOnSave).toHaveBeenCalledWith(false)
     expect(result.current.config?.formatOnSave).toBe(false)
     expect(result.current.config?.vimMotion).toBe(true)
+  })
+
+  it('updates the relative line numbers preference', async () => {
+    api.fetchEditorConfig.mockResolvedValue(config)
+    api.updateEditorConfigRelativeLineNumbers.mockResolvedValue(undefined)
+
+    const { result } = renderHook(() => useEditorConfig())
+    await waitFor(() => expect(result.current.config).not.toBeNull())
+
+    await act(async () => {
+      await result.current.updateRelativeLineNumbers(false)
+    })
+
+    expect(api.updateEditorConfigRelativeLineNumbers).toHaveBeenCalledWith(false)
+    expect(result.current.config?.relativeLineNumbers).toBe(false)
+    expect(result.current.config?.formatOnSave).toBe(true)
   })
 
   it('exposes the error when loading fails', async () => {

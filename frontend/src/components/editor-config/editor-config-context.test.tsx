@@ -19,12 +19,19 @@ function ThemeProbe() {
 
 function configValue(overrides: Partial<UseEditorConfigResult> = {}): UseEditorConfigResult {
   return {
-    config: { id: 'default', darkTheme: true, vimMotion: false, formatOnSave: true },
+    config: {
+      id: 'default',
+      darkTheme: true,
+      vimMotion: false,
+      formatOnSave: true,
+      relativeLineNumbers: false,
+    },
     isLoading: false,
     error: null,
     updateDarkTheme: vi.fn().mockResolvedValue(undefined),
     updateVimMotion: vi.fn().mockResolvedValue(undefined),
     updateFormatOnSave: vi.fn().mockResolvedValue(undefined),
+    updateRelativeLineNumbers: vi.fn().mockResolvedValue(undefined),
     reload: vi.fn(),
     ...overrides,
   }
@@ -55,7 +62,13 @@ describe('EditorConfigProvider', () => {
   it('applies the persisted light theme', async () => {
     renderProvider(
       configValue({
-        config: { id: 'default', darkTheme: false, vimMotion: false, formatOnSave: true },
+        config: {
+          id: 'default',
+          darkTheme: false,
+          vimMotion: false,
+          formatOnSave: true,
+          relativeLineNumbers: false,
+        },
       }),
     )
 

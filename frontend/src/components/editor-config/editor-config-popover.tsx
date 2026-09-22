@@ -36,8 +36,15 @@ function SettingRow({ label, description, checked, disabled, onCheckedChange }: 
  * editor preferences (`dark_theme` and `vim_motion`).
  */
 export function EditorConfigPopover() {
-  const { config, isLoading, error, updateDarkTheme, updateVimMotion, updateFormatOnSave } =
-    useEditorConfigContext()
+  const {
+    config,
+    isLoading,
+    error,
+    updateDarkTheme,
+    updateVimMotion,
+    updateFormatOnSave,
+    updateRelativeLineNumbers,
+  } = useEditorConfigContext()
   const disabled = config === null || isLoading
 
   return (
@@ -79,6 +86,15 @@ export function EditorConfigPopover() {
             label='Format on save'
             onCheckedChange={(checked) => {
               void updateFormatOnSave(checked)
+            }}
+          />
+          <SettingRow
+            checked={config?.relativeLineNumbers ?? false}
+            description='Show line numbers relative to the cursor'
+            disabled={disabled}
+            label='Relative line numbers'
+            onCheckedChange={(checked) => {
+              void updateRelativeLineNumbers(checked)
             }}
           />
         </div>

@@ -1,0 +1,1 @@
+ALTER TABLE editor_config DROP COLUMN relative_line_numbers

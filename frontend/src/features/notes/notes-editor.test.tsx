@@ -1,3 +1,4 @@
+import { EditorView, lineNumberMarkers } from '@codemirror/view'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -25,18 +26,34 @@ const document: Document = {
   updatedAt: '',
 }
 
-function setup() {
+function setup(relativeLineNumbers = false) {
   useEditorConfigContext.mockReturnValue({
-    config: { id: 'default', darkTheme: true, vimMotion: false, formatOnSave: true },
+    config: {
+      id: 'default',
+      darkTheme: true,
+      vimMotion: false,
+      formatOnSave: true,
+      relativeLineNumbers,
+    },
     isLoading: false,
     error: null,
     updateDarkTheme: vi.fn(),
     updateVimMotion: vi.fn(),
     updateFormatOnSave: vi.fn(),
+    updateRelativeLineNumbers: vi.fn(),
     reload: vi.fn(),
   } satisfies UseEditorConfigResult)
 
   return render(<NotesEditor document={document} />)
+}
+
+function editorView(container: HTMLElement): EditorView {
+  const editor = container.querySelector<HTMLElement>('.cm-editor')
+  const view = editor === null ? null : EditorView.findFromDOM(editor)
+  if (view === null) {
+    throw new Error('editor not mounted')
+  }
+  return view
 }
 
 describe('NotesEditor view modes', () => {
@@ -62,5 +79,21 @@ describe('NotesEditor view modes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview only' }))
 
     expect(screen.getByRole('heading', { name: 'Hello world' })).toBeInTheDocument()
+  })
+
+  it('enables relative line numbers when the preference is on', () => {
+    const { container } = setup(true)
+
+    const ranges = editorView(container).state.facet(lineNumberMarkers)
+
+    expect(ranges.some((range) => range.size > 0)).toBe(true)
+  })
+
+  it('leaves the default line numbers when the preference is off', () => {
+    const { container } = setup(false)
+
+    const ranges = editorView(container).state.facet(lineNumberMarkers)
+
+    expect(ranges.every((range) => range.size === 0)).toBe(true)
   })
 })

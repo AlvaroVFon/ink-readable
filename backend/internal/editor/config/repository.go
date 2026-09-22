@@ -25,10 +25,11 @@ func (r *EditorConfigRepository) Get(ctx context.Context) (*EditorConfig, error)
 	}
 
 	return &EditorConfig{
-		ID:           row.ID,
-		DarkTheme:    row.DarkTheme != 0,
-		VimMotion:    row.VimMotion != 0,
-		FormatOnSave: row.FormatOnSave != 0,
+		ID:                  row.ID,
+		DarkTheme:           row.DarkTheme != 0,
+		VimMotion:           row.VimMotion != 0,
+		FormatOnSave:        row.FormatOnSave != 0,
+		RelativeLineNumbers: row.RelativeLineNumbers != 0,
 	}, nil
 }
 
@@ -53,6 +54,14 @@ func (r *EditorConfigRepository) UpdateFormatOnSave(ctx context.Context, formatO
 		FormatOnSave: boolToInt64(formatOnSave),
 		UpdatedAt:    timestamp(),
 		ID:           DefaultID,
+	})
+}
+
+func (r *EditorConfigRepository) UpdateRelativeLineNumbers(ctx context.Context, relativeLineNumbers bool) error {
+	return r.Store.UpdateEditorConfigRelativeLineNumbers(ctx, sqlc.UpdateEditorConfigRelativeLineNumbersParams{
+		RelativeLineNumbers: boolToInt64(relativeLineNumbers),
+		UpdatedAt:           timestamp(),
+		ID:                  DefaultID,
 	})
 }
 
