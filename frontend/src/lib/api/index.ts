@@ -18,4 +18,15 @@ export {
   updateEditorConfigRelativeLineNumbers,
   updateEditorConfigVimMotion,
 } from './editor-config'
+export { createProject, deleteProject, getProject, listProjects, renameProject } from './projects'
+export {
+  createTask,
+  deleteTask,
+  getTask,
+  listTasks,
+  updateTaskDescription,
+  updateTaskPosition,
+  updateTaskStatus,
+  updateTaskTitle,
+} from './tasks'
 export { createVault, deleteVault, listVaults, renameVault } from './vaults'

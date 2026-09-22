@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { documentSchema, secretsSchema, vaultSchema } from './api'
+import { documentSchema, projectSchema, secretsSchema, taskSchema, vaultSchema } from './api'
 
 const validVault = {
   id: '2f0d2f2a-0000-4000-8000-000000000000',
@@ -44,6 +44,55 @@ describe('documentSchema', () => {
 
     expect(vaultId).toBe(validVault.id)
     expect(documentSchema.safeParse(incomplete).success).toBe(false)
+  })
+})
+
+const validProject = {
+  id: '4b2f4b4c-0000-4000-8000-000000000000',
+  name: 'Website',
+  deleted: false,
+  createdAt: '2026-09-20T10:00:00Z',
+  updatedAt: '2026-09-20T10:00:00Z',
+}
+
+const validTask = {
+  id: '5c3f5c5d-0000-4000-8000-000000000000',
+  projectId: validProject.id,
+  title: 'Design the board',
+  description: '',
+  status: 'backlog',
+  position: 1,
+  createdAt: '2026-09-20T10:00:00Z',
+  updatedAt: '2026-09-20T10:00:00Z',
+}
+
+describe('projectSchema', () => {
+  it('parses a project response', () => {
+    expect(projectSchema.parse(validProject)).toEqual(validProject)
+  })
+
+  it('rejects a project missing the deleted flag', () => {
+    const { deleted, ...incomplete } = validProject
+
+    expect(deleted).toBe(false)
+    expect(projectSchema.safeParse(incomplete).success).toBe(false)
+  })
+})
+
+describe('taskSchema', () => {
+  it('parses a task response', () => {
+    expect(taskSchema.parse(validTask)).toEqual(validTask)
+  })
+
+  it('rejects an unknown status', () => {
+    expect(taskSchema.safeParse({ ...validTask, status: 'archived' }).success).toBe(false)
+  })
+
+  it('rejects a task missing projectId', () => {
+    const { projectId, ...incomplete } = validTask
+
+    expect(projectId).toBe(validProject.id)
+    expect(taskSchema.safeParse(incomplete).success).toBe(false)
   })
 })
 

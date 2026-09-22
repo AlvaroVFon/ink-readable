@@ -53,6 +53,47 @@ export const editorConfigSchema = z.object({
 
 export type EditorConfig = z.infer<typeof editorConfigSchema>
 
+/**
+ * Planner task statuses. Mirrors the typed enum in
+ * `backend/internal/planner/tasks/tasks.go`; values are snake_case.
+ */
+export const taskStatusSchema = z.enum(['backlog', 'todo', 'in_progress', 'done'])
+
+export type TaskStatus = z.infer<typeof taskStatusSchema>
+
+/**
+ * Project returned by `GET /api/v1/projects`. `deleted` is computed on the
+ * backend from `deleted_at` (soft delete); list endpoints only return active
+ * projects.
+ */
+export const projectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  deleted: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type Project = z.infer<typeof projectSchema>
+
+/**
+ * Task returned by `GET /api/v1/projects/{projectID}/tasks`. `projectId` is
+ * camelCase in JSON while the domain field is `ProjectID`. Tasks are
+ * hard-deleted, so there is no `deleted` flag.
+ */
+export const taskSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  title: z.string(),
+  description: z.string(),
+  status: taskStatusSchema,
+  position: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type Task = z.infer<typeof taskSchema>
+
 export type CreateVaultInput = {
   name: string
 }
@@ -78,4 +119,33 @@ export type MoveDocumentInput = {
 
 export type UpdateContentInput = {
   content: string
+}
+
+export type CreateProjectInput = {
+  name: string
+}
+
+export type RenameProjectInput = {
+  name: string
+}
+
+export type CreateTaskInput = {
+  title: string
+  description: string
+}
+
+export type UpdateTaskTitleInput = {
+  title: string
+}
+
+export type UpdateTaskDescriptionInput = {
+  description: string
+}
+
+export type UpdateTaskStatusInput = {
+  status: TaskStatus
+}
+
+export type UpdateTaskPositionInput = {
+  position: number
 }
