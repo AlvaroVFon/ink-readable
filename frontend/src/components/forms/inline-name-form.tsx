@@ -9,13 +9,16 @@ type InlineNameFormProps = {
   submitLabel: string
   isBusy: boolean
   error: string | null
+  initialValue?: string
   onSubmit: (name: string) => void
   onCancel: () => void
 }
 
 /**
- * Small inline form used to name a new folder or vault. Notes are created
- * directly (Untitled), so this is only for entities that need a name.
+ * Small inline form used to name a new entity (folder, vault, project).
+ *
+ * Entities created without a name (e.g. an Untitled note) skip this form, so
+ * it is only for the ones that need an explicit name.
  */
 export function InlineNameForm({
   label,
@@ -23,10 +26,11 @@ export function InlineNameForm({
   submitLabel,
   isBusy,
   error,
+  initialValue = '',
   onSubmit,
   onCancel,
 }: InlineNameFormProps) {
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(initialValue)
   const trimmed = value.trim()
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

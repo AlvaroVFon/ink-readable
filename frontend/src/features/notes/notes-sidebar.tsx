@@ -3,6 +3,7 @@ import { useMatch, useNavigate } from 'react-router'
 
 import type { Document } from '@/lib/types'
 
+import { InlineNameForm } from '@/components/forms/inline-name-form'
 import {
   AlertDialog,
   AlertDialogClose,
@@ -21,7 +22,6 @@ import {
 
 import type { FileTreeNode } from './types'
 
-import { InlineNameForm } from './components/inline-name-form'
 import { NotesNewMenu, type NewAction } from './components/notes-new-menu'
 import { NotesTree } from './components/notes-tree'
 import {
