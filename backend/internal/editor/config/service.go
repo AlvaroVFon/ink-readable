@@ -7,6 +7,7 @@ type repository interface {
 	UpdateDarkTheme(ctx context.Context, darkTheme bool) error
 	UpdateVimMotion(ctx context.Context, vimMotion bool) error
 	UpdateFormatOnSave(ctx context.Context, formatOnSave bool) error
+	UpdateRelativeLineNumbers(ctx context.Context, relativeLineNumbers bool) error
 }
 
 type EditorConfigService struct {
@@ -33,4 +34,8 @@ func (s *EditorConfigService) UpdateVimMotion(ctx context.Context, vimMotion boo
 
 func (s *EditorConfigService) UpdateFormatOnSave(ctx context.Context, formatOnSave bool) error {
 	return s.editorConfigRepository.UpdateFormatOnSave(ctx, formatOnSave)
+}
+
+func (s *EditorConfigService) UpdateRelativeLineNumbers(ctx context.Context, relativeLineNumbers bool) error {
+	return s.editorConfigRepository.UpdateRelativeLineNumbers(ctx, relativeLineNumbers)
 }

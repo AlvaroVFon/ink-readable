@@ -72,12 +72,13 @@ type fakeConfigService struct{}
 func (f fakeConfigService) ListFrontSecrets(context.Context) *config.FrontConfig { return nil }
 
 type fakeEditorConfigService struct {
-	config       editorconfig.EditorConfig
-	darkTheme    *bool
-	vimMotion    *bool
-	formatOnSave *bool
-	getErr       error
-	updateErr    error
+	config              editorconfig.EditorConfig
+	darkTheme           *bool
+	vimMotion           *bool
+	formatOnSave        *bool
+	relativeLineNumbers *bool
+	getErr              error
+	updateErr           error
 }
 
 func (f *fakeEditorConfigService) Get(context.Context) (*editorconfig.EditorConfig, error) {
@@ -100,6 +101,11 @@ func (f *fakeEditorConfigService) UpdateVimMotion(_ context.Context, vimMotion b
 
 func (f *fakeEditorConfigService) UpdateFormatOnSave(_ context.Context, formatOnSave bool) error {
 	f.formatOnSave = &formatOnSave
+	return f.updateErr
+}
+
+func (f *fakeEditorConfigService) UpdateRelativeLineNumbers(_ context.Context, relativeLineNumbers bool) error {
+	f.relativeLineNumbers = &relativeLineNumbers
 	return f.updateErr
 }
 
@@ -413,7 +419,7 @@ func TestHandler_GetTask_NotFound(t *testing.T) {
 
 func TestHandler_GetEditorConfig(t *testing.T) {
 	editorConfigService := &fakeEditorConfigService{
-		config: editorconfig.EditorConfig{ID: editorconfig.DefaultID, DarkTheme: true, VimMotion: false, FormatOnSave: true},
+		config: editorconfig.EditorConfig{ID: editorconfig.DefaultID, DarkTheme: true, VimMotion: false, FormatOnSave: true, RelativeLineNumbers: true},
 	}
 	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
 
@@ -428,7 +434,7 @@ func TestHandler_GetEditorConfig(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&got); err != nil {
 		t.Fatalf("decode editor config: %v", err)
 	}
-	if got.ID != editorconfig.DefaultID || !got.DarkTheme || got.VimMotion || !got.FormatOnSave {
+	if got.ID != editorconfig.DefaultID || !got.DarkTheme || got.VimMotion || !got.FormatOnSave || !got.RelativeLineNumbers {
 		t.Fatalf("unexpected editor config: %+v", got)
 	}
 }
@@ -491,6 +497,22 @@ func TestHandler_UpdateEditorConfigFormatOnSave(t *testing.T) {
 	}
 	if editorConfigService.formatOnSave == nil || *editorConfigService.formatOnSave {
 		t.Fatalf("expected format on save false, got %+v", editorConfigService.formatOnSave)
+	}
+}
+
+func TestHandler_UpdateEditorConfigRelativeLineNumbers(t *testing.T) {
+	editorConfigService := &fakeEditorConfigService{}
+	handler := NewHandler(&fakeVaultService{}, &fakeDocumentService{}, &fakeProjectService{}, &fakeTaskService{}, editorConfigService, fakeConfigService{})
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/editor/config/relative-line-numbers", strings.NewReader(`{"relativeLineNumbers":false}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+	if editorConfigService.relativeLineNumbers == nil || *editorConfigService.relativeLineNumbers {
+		t.Fatalf("expected relative line numbers false, got %+v", editorConfigService.relativeLineNumbers)
 	}
 }
 

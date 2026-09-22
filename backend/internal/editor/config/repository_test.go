@@ -23,11 +23,12 @@ func newTestRepository(t *testing.T) (*EditorConfigRepository, *sql.DB) {
 	t.Cleanup(func() { _ = db.Close() })
 
 	if _, err := db.Exec(`CREATE TABLE editor_config (
-		id             TEXT PRIMARY KEY,
-		dark_theme     INTEGER NOT NULL DEFAULT 1,
-		vim_motion     INTEGER NOT NULL DEFAULT 1,
-		format_on_save INTEGER NOT NULL DEFAULT 1,
-		updated_at     TEXT
+		id                    TEXT PRIMARY KEY,
+		dark_theme            INTEGER NOT NULL DEFAULT 1,
+		vim_motion            INTEGER NOT NULL DEFAULT 1,
+		format_on_save        INTEGER NOT NULL DEFAULT 1,
+		relative_line_numbers INTEGER NOT NULL DEFAULT 1,
+		updated_at            TEXT
 	)`); err != nil {
 		t.Fatalf("create table: %v", err)
 	}
@@ -35,33 +36,33 @@ func newTestRepository(t *testing.T) (*EditorConfigRepository, *sql.DB) {
 	return NewEditorConfigRepository(*sqlc.New(db)), db
 }
 
-func insertDefaultConfig(t *testing.T, db *sql.DB, darkTheme, vimMotion, formatOnSave int) {
+func insertDefaultConfig(t *testing.T, db *sql.DB, darkTheme, vimMotion, formatOnSave, relativeLineNumbers int) {
 	t.Helper()
 
 	if _, err := db.Exec(
-		`INSERT INTO editor_config (id, dark_theme, vim_motion, format_on_save, updated_at) VALUES (?, ?, ?, ?, ?)`,
-		DefaultID, darkTheme, vimMotion, formatOnSave, nil,
+		`INSERT INTO editor_config (id, dark_theme, vim_motion, format_on_save, relative_line_numbers, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		DefaultID, darkTheme, vimMotion, formatOnSave, relativeLineNumbers, nil,
 	); err != nil {
 		t.Fatalf("insert editor config: %v", err)
 	}
 }
 
-func readConfig(t *testing.T, db *sql.DB) (darkTheme, vimMotion, formatOnSave int64, updatedAt sql.NullString) {
+func readConfig(t *testing.T, db *sql.DB) (darkTheme, vimMotion, formatOnSave, relativeLineNumbers int64, updatedAt sql.NullString) {
 	t.Helper()
 
 	err := db.QueryRow(
-		"SELECT dark_theme, vim_motion, format_on_save, updated_at FROM editor_config WHERE id = ?", DefaultID,
-	).Scan(&darkTheme, &vimMotion, &formatOnSave, &updatedAt)
+		"SELECT dark_theme, vim_motion, format_on_save, relative_line_numbers, updated_at FROM editor_config WHERE id = ?", DefaultID,
+	).Scan(&darkTheme, &vimMotion, &formatOnSave, &relativeLineNumbers, &updatedAt)
 	if err != nil {
 		t.Fatalf("select editor config: %v", err)
 	}
 
-	return darkTheme, vimMotion, formatOnSave, updatedAt
+	return darkTheme, vimMotion, formatOnSave, relativeLineNumbers, updatedAt
 }
 
 func TestEditorConfigRepository_Get(t *testing.T) {
 	repo, db := newTestRepository(t)
-	insertDefaultConfig(t, db, 1, 0, 1)
+	insertDefaultConfig(t, db, 1, 0, 1, 1)
 
 	config, err := repo.Get(context.Background())
 	if err != nil {
@@ -78,6 +79,9 @@ func TestEditorConfigRepository_Get(t *testing.T) {
 	}
 	if !config.FormatOnSave {
 		t.Errorf("expected format_on_save true, got false")
+	}
+	if !config.RelativeLineNumbers {
+		t.Errorf("expected relative_line_numbers true, got false")
 	}
 }
 
@@ -105,13 +109,13 @@ func TestEditorConfigRepository_Get_QueryError(t *testing.T) {
 
 func TestEditorConfigRepository_UpdateDarkTheme(t *testing.T) {
 	repo, db := newTestRepository(t)
-	insertDefaultConfig(t, db, 1, 1, 1)
+	insertDefaultConfig(t, db, 1, 1, 1, 1)
 
 	if err := repo.UpdateDarkTheme(context.Background(), false); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	darkTheme, vimMotion, formatOnSave, updatedAt := readConfig(t, db)
+	darkTheme, vimMotion, formatOnSave, relativeLineNumbers, updatedAt := readConfig(t, db)
 	if darkTheme != 0 {
 		t.Errorf("expected dark_theme 0, got %d", darkTheme)
 	}
@@ -121,6 +125,9 @@ func TestEditorConfigRepository_UpdateDarkTheme(t *testing.T) {
 	if formatOnSave != 1 {
 		t.Errorf("expected format_on_save to remain 1, got %d", formatOnSave)
 	}
+	if relativeLineNumbers != 1 {
+		t.Errorf("expected relative_line_numbers to remain 1, got %d", relativeLineNumbers)
+	}
 	if !updatedAt.Valid || updatedAt.String == "" {
 		t.Errorf("expected updated_at to be set, got %+v", updatedAt)
 	}
@@ -128,13 +135,13 @@ func TestEditorConfigRepository_UpdateDarkTheme(t *testing.T) {
 
 func TestEditorConfigRepository_UpdateVimMotion(t *testing.T) {
 	repo, db := newTestRepository(t)
-	insertDefaultConfig(t, db, 1, 1, 1)
+	insertDefaultConfig(t, db, 1, 1, 1, 1)
 
 	if err := repo.UpdateVimMotion(context.Background(), false); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	darkTheme, vimMotion, formatOnSave, updatedAt := readConfig(t, db)
+	darkTheme, vimMotion, formatOnSave, relativeLineNumbers, updatedAt := readConfig(t, db)
 	if vimMotion != 0 {
 		t.Errorf("expected vim_motion 0, got %d", vimMotion)
 	}
@@ -144,6 +151,9 @@ func TestEditorConfigRepository_UpdateVimMotion(t *testing.T) {
 	if formatOnSave != 1 {
 		t.Errorf("expected format_on_save to remain 1, got %d", formatOnSave)
 	}
+	if relativeLineNumbers != 1 {
+		t.Errorf("expected relative_line_numbers to remain 1, got %d", relativeLineNumbers)
+	}
 	if !updatedAt.Valid || updatedAt.String == "" {
 		t.Errorf("expected updated_at to be set, got %+v", updatedAt)
 	}
@@ -151,13 +161,13 @@ func TestEditorConfigRepository_UpdateVimMotion(t *testing.T) {
 
 func TestEditorConfigRepository_UpdateFormatOnSave(t *testing.T) {
 	repo, db := newTestRepository(t)
-	insertDefaultConfig(t, db, 1, 1, 1)
+	insertDefaultConfig(t, db, 1, 1, 1, 1)
 
 	if err := repo.UpdateFormatOnSave(context.Background(), false); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	darkTheme, vimMotion, formatOnSave, updatedAt := readConfig(t, db)
+	darkTheme, vimMotion, formatOnSave, relativeLineNumbers, updatedAt := readConfig(t, db)
 	if formatOnSave != 0 {
 		t.Errorf("expected format_on_save 0, got %d", formatOnSave)
 	}
@@ -166,6 +176,35 @@ func TestEditorConfigRepository_UpdateFormatOnSave(t *testing.T) {
 	}
 	if vimMotion != 1 {
 		t.Errorf("expected vim_motion to remain 1, got %d", vimMotion)
+	}
+	if relativeLineNumbers != 1 {
+		t.Errorf("expected relative_line_numbers to remain 1, got %d", relativeLineNumbers)
+	}
+	if !updatedAt.Valid || updatedAt.String == "" {
+		t.Errorf("expected updated_at to be set, got %+v", updatedAt)
+	}
+}
+
+func TestEditorConfigRepository_UpdateRelativeLineNumbers(t *testing.T) {
+	repo, db := newTestRepository(t)
+	insertDefaultConfig(t, db, 1, 1, 1, 1)
+
+	if err := repo.UpdateRelativeLineNumbers(context.Background(), false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	darkTheme, vimMotion, formatOnSave, relativeLineNumbers, updatedAt := readConfig(t, db)
+	if relativeLineNumbers != 0 {
+		t.Errorf("expected relative_line_numbers 0, got %d", relativeLineNumbers)
+	}
+	if darkTheme != 1 {
+		t.Errorf("expected dark_theme to remain 1, got %d", darkTheme)
+	}
+	if vimMotion != 1 {
+		t.Errorf("expected vim_motion to remain 1, got %d", vimMotion)
+	}
+	if formatOnSave != 1 {
+		t.Errorf("expected format_on_save to remain 1, got %d", formatOnSave)
 	}
 	if !updatedAt.Valid || updatedAt.String == "" {
 		t.Errorf("expected updated_at to be set, got %+v", updatedAt)
@@ -192,6 +231,14 @@ func TestEditorConfigRepository_UpdateFormatOnSave_NoRows(t *testing.T) {
 	repo, _ := newTestRepository(t)
 
 	if err := repo.UpdateFormatOnSave(context.Background(), false); err != nil {
+		t.Fatalf("expected update on missing row to be a no-op, got %v", err)
+	}
+}
+
+func TestEditorConfigRepository_UpdateRelativeLineNumbers_NoRows(t *testing.T) {
+	repo, _ := newTestRepository(t)
+
+	if err := repo.UpdateRelativeLineNumbers(context.Background(), false); err != nil {
 		t.Fatalf("expected update on missing row to be a no-op, got %v", err)
 	}
 }

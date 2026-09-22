@@ -1,16 +1,18 @@
 package api
 
 import (
-	editorconfig "ink-readable/internal/editor/config"
 	"ink-readable/internal/httpx"
 	"net/http"
+
+	editorconfig "ink-readable/internal/editor/config"
 )
 
 type editorConfigResponse struct {
-	ID           string `json:"id"`
-	DarkTheme    bool   `json:"darkTheme"`
-	VimMotion    bool   `json:"vimMotion"`
-	FormatOnSave bool   `json:"formatOnSave"`
+	ID                  string `json:"id"`
+	DarkTheme           bool   `json:"darkTheme"`
+	VimMotion           bool   `json:"vimMotion"`
+	FormatOnSave        bool   `json:"formatOnSave"`
+	RelativeLineNumbers bool   `json:"relativeLineNumbers"`
 }
 
 type darkThemeRequest struct {
@@ -23,6 +25,10 @@ type vimMotionRequest struct {
 
 type formatOnSaveRequest struct {
 	FormatOnSave bool `json:"formatOnSave"`
+}
+
+type relativeLineNumbersRequest struct {
+	RelativeLineNumbers bool `json:"relativeLineNumbers"`
 }
 
 func (h *Handler) getEditorConfig(w http.ResponseWriter, r *http.Request) {
@@ -73,11 +79,25 @@ func (h *Handler) updateEditorConfigFormatOnSave(w http.ResponseWriter, r *http.
 	httpx.NoContent(w)
 }
 
+func (h *Handler) updateEditorConfigRelativeLineNumbers(w http.ResponseWriter, r *http.Request) {
+	var request relativeLineNumbersRequest
+	if err := httpx.DecodeJSON(r, &request); err != nil {
+		httpx.Error(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := h.editorConfig.UpdateRelativeLineNumbers(r.Context(), request.RelativeLineNumbers); err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	httpx.NoContent(w)
+}
+
 func mapEditorConfig(item editorconfig.EditorConfig) editorConfigResponse {
 	return editorConfigResponse{
-		ID:           item.ID,
-		DarkTheme:    item.DarkTheme,
-		VimMotion:    item.VimMotion,
-		FormatOnSave: item.FormatOnSave,
+		ID:                  item.ID,
+		DarkTheme:           item.DarkTheme,
+		VimMotion:           item.VimMotion,
+		FormatOnSave:        item.FormatOnSave,
+		RelativeLineNumbers: item.RelativeLineNumbers,
 	}
 }
