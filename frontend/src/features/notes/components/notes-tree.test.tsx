@@ -6,6 +6,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 
 import type { FileTreeNode } from '../types'
 
+import { NotesVimProvider } from '../notes-vim-context'
 import { NotesTree } from './notes-tree'
 
 const tree: FileTreeNode[] = [
@@ -86,6 +87,15 @@ function createDataTransfer() {
   return { dropEffect: '', effectAllowed: '', setData: vi.fn() }
 }
 
+function focusTree(container: HTMLElement): HTMLElement {
+  const root = container.querySelector<HTMLElement>('div[tabindex="-1"]')
+  if (root === null) {
+    throw new Error('tree root not found')
+  }
+  root.focus()
+  return root
+}
+
 type RenderTreeOptions = {
   activeDocumentId?: string
   selectedFolderPath?: string | null
@@ -93,6 +103,7 @@ type RenderTreeOptions = {
   onRename?: (node: FileTreeNode, name: string) => Promise<void>
   onDelete?: (node: FileTreeNode) => Promise<void>
   onCreateNote?: (node: FileTreeNode) => Promise<void>
+  onCreateNamedNote?: (node: FileTreeNode, name: string) => Promise<void>
   onCreateFolder?: (node: FileTreeNode, name: string) => Promise<void>
   onMove?: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
 }
@@ -104,37 +115,41 @@ function renderTree({
   onRename = vi.fn(),
   onDelete = vi.fn(),
   onCreateNote = vi.fn(),
+  onCreateNamedNote = vi.fn(),
   onCreateFolder = vi.fn(),
   onMove = vi.fn(),
 }: RenderTreeOptions = {}) {
   return render(
-    <SidebarProvider>
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route
-            path='/'
-            element={
-              <NotesTree
-                activeDocumentId={activeDocumentId}
-                forceExpandedPaths={new Set()}
-                nodes={nodes}
-                onCreateFolder={onCreateFolder}
-                onCreateNote={onCreateNote}
-                onDelete={onDelete}
-                onMove={onMove}
-                onRename={onRename}
-                onSelectFolder={vi.fn()}
-                selectedFolderPath={selectedFolderPath}
-              />
-            }
-          />
-          <Route
-            path='/notes/:documentId'
-            element={<div>Document view</div>}
-          />
-        </Routes>
-      </MemoryRouter>
-    </SidebarProvider>,
+    <NotesVimProvider>
+      <SidebarProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route
+              path='/'
+              element={
+                <NotesTree
+                  activeDocumentId={activeDocumentId}
+                  forceExpandedPaths={new Set()}
+                  nodes={nodes}
+                  onCreateFolder={onCreateFolder}
+                  onCreateNamedNote={onCreateNamedNote}
+                  onCreateNote={onCreateNote}
+                  onDelete={onDelete}
+                  onMove={onMove}
+                  onRename={onRename}
+                  onSelectFolder={vi.fn()}
+                  selectedFolderPath={selectedFolderPath}
+                />
+              }
+            />
+            <Route
+              path='/notes/:documentId'
+              element={<div>Document view</div>}
+            />
+          </Routes>
+        </MemoryRouter>
+      </SidebarProvider>
+    </NotesVimProvider>,
   )
 }
 
@@ -313,5 +328,101 @@ describe('NotesTree', () => {
     fireEvent.drop(target, { dataTransfer: createDataTransfer() })
 
     expect(onMove).not.toHaveBeenCalled()
+  })
+})
+
+describe('NotesTree keyboard navigation', () => {
+  it('moves the cursor with j and opens a document with l', () => {
+    const { container } = renderTree()
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    expect(screen.getByRole('link', { name: 'alpha' })).toHaveAttribute('data-cursor')
+
+    fireEvent.keyDown(root, { key: 'l' })
+    expect(screen.getByText('Document view')).toBeInTheDocument()
+  })
+
+  it('collapses and expands folders with h and l', () => {
+    const { container } = renderTree()
+    const root = focusTree(container)
+
+    expect(screen.getByRole('link', { name: 'alpha' })).toBeInTheDocument()
+
+    fireEvent.keyDown(root, { key: 'h' })
+    expect(screen.queryByRole('link', { name: 'alpha' })).toBeNull()
+
+    fireEvent.keyDown(root, { key: 'l' })
+    expect(screen.getByRole('link', { name: 'alpha' })).toBeInTheDocument()
+  })
+
+  it('jumps to the last row with G', () => {
+    const { container } = renderTree()
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'G' })
+
+    expect(screen.getByRole('link', { name: 'beta' })).toHaveAttribute('data-cursor')
+  })
+
+  it('creates a named note with a and an inline field', async () => {
+    const onCreateNamedNote = vi.fn().mockResolvedValue(undefined)
+    const { container } = renderTree({ onCreateNamedNote })
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'a' })
+
+    const input = screen.getByLabelText('New note name')
+    fireEvent.change(input, { target: { value: 'ideas' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onCreateNamedNote).toHaveBeenCalledTimes(1))
+    expect(onCreateNamedNote.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading' })
+    expect(onCreateNamedNote.mock.calls[0]?.[1]).toBe('ideas')
+  })
+
+  it('creates a folder when the name ends with a slash', async () => {
+    const onCreateFolder = vi.fn().mockResolvedValue(undefined)
+    const { container } = renderTree({ onCreateFolder })
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'a' })
+
+    const input = screen.getByLabelText('New note name')
+    fireEvent.change(input, { target: { value: 'ideas/' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onCreateFolder).toHaveBeenCalledTimes(1))
+    expect(onCreateFolder.mock.calls[0]?.[1]).toBe('ideas')
+  })
+
+  it('renames the cursor node with r', async () => {
+    const onRename = vi.fn().mockResolvedValue(undefined)
+    const { container } = renderTree({ onRename })
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'r' })
+
+    const input = screen.getByLabelText('Note name')
+    fireEvent.change(input, { target: { value: 'renamed' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1))
+    expect(onRename.mock.calls[0]?.[1]).toBe('renamed')
+  })
+
+  it('deletes the cursor node with d', async () => {
+    const onDelete = vi.fn().mockResolvedValue(undefined)
+    const { container } = renderTree({ onDelete })
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'd' })
+
+    await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1))
+    expect(onDelete.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading/alpha.md' })
   })
 })

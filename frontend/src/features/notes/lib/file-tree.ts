@@ -60,6 +60,20 @@ export function findNode(nodes: FileTreeNode[], path: string): FileTreeNode | nu
   return null
 }
 
+/** Finds the node whose `id` matches, used to locate the open document. */
+export function findNodeById(nodes: FileTreeNode[], id: string): FileTreeNode | null {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return node
+    }
+    const found = findNodeById(node.children, id)
+    if (found !== null) {
+      return found
+    }
+  }
+  return null
+}
+
 /**
  * Builds the path for a new "Untitled" note under `basePath`, disambiguating
  * against the paths that already exist (`Untitled`, `Untitled 2`, ...).
