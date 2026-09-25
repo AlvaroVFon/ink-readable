@@ -23,6 +23,8 @@ type UseCodeMirrorResult = {
   getContent: () => string
   /** Replaces the whole document, used after formatting on save. */
   replaceContent: (value: string) => void
+  /** Moves DOM focus into the editor. */
+  focus: () => void
 }
 
 /**
@@ -133,5 +135,9 @@ export function useCodeMirror({
     view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } })
   }, [])
 
-  return { containerRef, scrollElement, requestMeasure, getContent, replaceContent }
+  const focus = useCallback(() => {
+    viewRef.current?.focus()
+  }, [])
+
+  return { containerRef, scrollElement, requestMeasure, getContent, replaceContent, focus }
 }

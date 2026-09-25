@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseEditorConfigResult } from '@/hooks/use-editor-config'
 import type { Document } from '@/lib/types'
 
+import { SidebarProvider } from '@/components/ui/sidebar'
+
 const { useEditorConfigContext } = vi.hoisted(() => ({ useEditorConfigContext: vi.fn() }))
 const { formatMarkdown } = vi.hoisted(() => ({
   formatMarkdown: vi.fn<(content: string) => Promise<string>>(),
@@ -18,6 +20,7 @@ vi.mock('./lib/format-markdown', () => ({ formatMarkdown }))
 vi.mock('@/lib/api', () => ({ updateDocumentContent }))
 
 import { NotesEditor } from './notes-editor'
+import { NotesVimProvider } from './notes-vim-context'
 
 const document: Document = {
   id: 'doc-1',
@@ -48,7 +51,13 @@ function setup(formatOnSave: boolean) {
     reload: vi.fn(),
   } satisfies UseEditorConfigResult)
 
-  return render(<NotesEditor document={document} />)
+  return render(
+    <NotesVimProvider>
+      <SidebarProvider>
+        <NotesEditor document={document} />
+      </SidebarProvider>
+    </NotesVimProvider>,
+  )
 }
 
 function editorView(container: HTMLElement): EditorView {
