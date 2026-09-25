@@ -148,3 +148,24 @@ describe('NotesEditor Tab behaviour', () => {
     expect(view.state.doc.toString()).toBe('  # Hello world')
   })
 })
+
+describe('NotesEditor vim status bar', () => {
+  beforeEach(() => {
+    useEditorConfigContext.mockReset()
+  })
+
+  it('renders the mode status bar when vim motion is enabled', () => {
+    const { container } = setup(false, true)
+
+    const panel = container.querySelector('.cm-vim-panel')
+
+    expect(panel).not.toBeNull()
+    expect(panel?.textContent).toContain('NORMAL')
+  })
+
+  it('omits the status bar when vim motion is disabled', () => {
+    const { container } = setup(false, false)
+
+    expect(container.querySelector('.cm-vim-panel')).toBeNull()
+  })
+})
