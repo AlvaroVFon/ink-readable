@@ -37,8 +37,17 @@ export const editorTheme = EditorView.theme({
     backgroundColor: 'color-mix(in oklab, var(--muted) 45%, transparent)',
   },
   '.cm-activeLineGutter': { backgroundColor: 'transparent' },
-  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
-    backgroundColor: 'color-mix(in oklab, var(--primary) 20%, transparent)',
+  // Drawn selection (editor not focused) and the native selection while the
+  // content is focused. `drawSelection` pins the focused selection to the
+  // browser's `Highlight` color, which is light in dark mode and washes out the
+  // text, so override it with a theme-tinted, readable color.
+  '&.cm-editor .cm-selectionLayer .cm-selectionBackground, &.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground':
+    {
+      backgroundColor: 'color-mix(in oklab, var(--primary) 30%, var(--background))',
+    },
+  '& .cm-content.cm-content :focus ::selection, & .cm-content.cm-content :focus::selection': {
+    backgroundColor: 'color-mix(in oklab, var(--primary) 30%, var(--background)) !important',
+    color: 'var(--foreground)',
   },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--foreground)' },
   '.cm-selectionMatch': {

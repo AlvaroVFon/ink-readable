@@ -45,6 +45,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
       },
       vimEnabled: config?.vimMotion ?? true,
       relativeLineNumbers: config?.relativeLineNumbers ?? false,
+      darkTheme: config?.darkTheme ?? true,
     })
 
   const {
