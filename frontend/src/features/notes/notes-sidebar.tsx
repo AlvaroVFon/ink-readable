@@ -60,6 +60,7 @@ export function NotesSidebar() {
     isLoading,
     error,
     createNote,
+    createNamedNote,
     createFolder,
     createVault,
     renameVault,
@@ -166,6 +167,12 @@ export function NotesSidebar() {
     } catch (cause) {
       setActionError(toMessage(cause))
     }
+  }
+
+  const handleCreateNamedNoteAt = async (node: FileTreeNode, name: string) => {
+    setActionError(null)
+    const document = await createNamedNote({ ...createScopeFor(node), name })
+    void navigate(`/notes/${document.id}`)
   }
 
   const handleCreateFolderAt = async (node: FileTreeNode, name: string) => {
@@ -345,6 +352,7 @@ export function NotesSidebar() {
             forceExpandedPaths={forceExpandedPaths}
             nodes={filteredTree}
             onCreateFolder={handleCreateFolderAt}
+            onCreateNamedNote={handleCreateNamedNoteAt}
             onCreateNote={handleCreateNoteAt}
             onDelete={handleDelete}
             onMove={handleMove}

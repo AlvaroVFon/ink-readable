@@ -3,15 +3,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Document } from '@/lib/types'
 
 import { useEditorConfigContext } from '@/components/editor-config/editor-config-context'
+import { useSidebar } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 
 import type { ViewMode } from './types'
 
 import { useCodeMirror } from './editor/use-code-mirror'
+import { setVimLeaderHandlers } from './editor/vim'
 import { useAutosave } from './hooks/use-autosave'
 import { useScrollSync } from './hooks/use-scroll-sync'
 import { formatMarkdown } from './lib/format-markdown'
 import { NotesToolbar } from './notes-toolbar'
+import { useNotesVimContext } from './notes-vim-context'
 import { MarkdownPreview } from './preview/markdown-preview'
 
 type NotesEditorProps = {
@@ -33,8 +36,8 @@ export function NotesEditor({ document }: NotesEditorProps) {
 
   const { config } = useEditorConfigContext()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
-  const { containerRef, scrollElement, requestMeasure, getContent, replaceContent } = useCodeMirror(
-    {
+  const { containerRef, scrollElement, requestMeasure, getContent, replaceContent, focus } =
+    useCodeMirror({
       initialDoc: document.content,
       onChange: setContent,
       onSave: () => {
@@ -43,8 +46,48 @@ export function NotesEditor({ document }: NotesEditorProps) {
       vimEnabled: config?.vimMotion ?? true,
       relativeLineNumbers: config?.relativeLineNumbers ?? false,
       darkTheme: config?.darkTheme ?? true,
-    },
-  )
+    })
+
+  const {
+    focus: focusTarget,
+    focusEditor,
+    focusSidebar,
+    editorFocusRef,
+    openFinder,
+  } = useNotesVimContext()
+  const { open, setOpen } = useSidebar()
+
+  // Expose this editor's focus action so the sidebar can hand focus back, and
+  // pull focus in whenever the app switches back to the editor pane.
+  useEffect(() => {
+    editorFocusRef.current = focus
+    return () => {
+      editorFocusRef.current = null
+    }
+  }, [editorFocusRef, focus])
+
+  useEffect(() => {
+    if (focusTarget === 'editor') {
+      focus()
+    }
+  }, [focusTarget, focus])
+
+  // LazyVim-style leader: `<Space>e` toggles the sidebar (focusing the tree when
+  // it opens), `<Space><Space>` opens the file finder.
+  useEffect(() => {
+    setVimLeaderHandlers({
+      toggleSidebar: () => {
+        if (open) {
+          setOpen(false)
+          focusEditor()
+        } else {
+          setOpen(true)
+          focusSidebar()
+        }
+      },
+      openFinder,
+    })
+  }, [open, setOpen, focusEditor, focusSidebar, openFinder])
 
   const formatOnSave = config?.formatOnSave ?? false
 

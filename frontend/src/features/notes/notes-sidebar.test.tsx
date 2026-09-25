@@ -10,6 +10,7 @@ import type { UseNotesWorkspaceResult } from './hooks/use-notes-workspace'
 import type { FileTreeNode } from './types'
 
 import { NotesSidebar } from './notes-sidebar'
+import { NotesVimProvider } from './notes-vim-context'
 
 const { useNotesWorkspaceContext } = vi.hoisted(() => ({ useNotesWorkspaceContext: vi.fn() }))
 
@@ -68,6 +69,7 @@ function mockWorkspace(overrides: WorkspaceOverrides = {}) {
     revision: 0,
     refresh: vi.fn(),
     createNote: vi.fn(),
+    createNamedNote: vi.fn(),
     createFolder: vi.fn(),
     createVault: vi.fn(),
     renameVault: vi.fn(),
@@ -81,11 +83,13 @@ function mockWorkspace(overrides: WorkspaceOverrides = {}) {
 
 function renderSidebar() {
   return render(
-    <SidebarProvider>
-      <MemoryRouter initialEntries={['/']}>
-        <NotesSidebar />
-      </MemoryRouter>
-    </SidebarProvider>,
+    <NotesVimProvider>
+      <SidebarProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <NotesSidebar />
+        </MemoryRouter>
+      </SidebarProvider>
+    </NotesVimProvider>,
   )
 }
 

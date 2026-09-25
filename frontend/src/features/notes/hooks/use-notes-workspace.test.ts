@@ -91,6 +91,22 @@ describe('useNotesWorkspace', () => {
     expect(listDocuments).toHaveBeenCalledTimes(2)
   })
 
+  it('creates a named note with a sanitized path', async () => {
+    createDocument.mockResolvedValue(document('d2', 'Ideas', 'v1', '/Reading/Ideas.md'))
+    const { result } = renderHook(() => useNotesWorkspace())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.createNamedNote({ vaultId: 'v1', basePath: '/Reading', name: 'Ideas' })
+    })
+
+    expect(createDocument).toHaveBeenCalledWith('v1', {
+      name: 'Ideas',
+      path: '/Reading/Ideas.md',
+      content: '',
+    })
+  })
+
   it('creates a folder as a placeholder note inside it', async () => {
     createDocument.mockResolvedValue(document('d3', 'Untitled', 'v1', '/Reading/Ideas/Untitled.md'))
     const { result } = renderHook(() => useNotesWorkspace())

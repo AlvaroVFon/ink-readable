@@ -40,6 +40,12 @@ export type CreateNoteInput = {
   basePath: string
 }
 
+export type CreateNamedNoteInput = {
+  vaultId: string
+  basePath: string
+  name: string
+}
+
 export type CreateFolderInput = {
   vaultId: string
   basePath: string
@@ -56,6 +62,7 @@ export type UseNotesWorkspaceResult = {
   revision: number
   refresh: () => Promise<void>
   createNote: (input: CreateNoteInput) => Promise<Document>
+  createNamedNote: (input: CreateNamedNoteInput) => Promise<Document>
   createFolder: (input: CreateFolderInput) => Promise<Document>
   createVault: (name: string) => Promise<Document>
   renameVault: (vaultId: string, name: string) => Promise<void>
@@ -128,6 +135,21 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     async ({ vaultId, basePath }: CreateNoteInput) => {
       const existingPaths = collectDocumentPaths(tree)
       const path = buildNotePath(basePath, existingPaths)
+      const document = await createDocument(vaultId, {
+        name: nameFromPath(path),
+        path,
+        content: '',
+      })
+      await refresh()
+      return document
+    },
+    [tree, refresh],
+  )
+
+  const createNamedNote = useCallback(
+    async ({ vaultId, basePath, name }: CreateNamedNoteInput) => {
+      const existingPaths = collectDocumentPaths(tree)
+      const path = buildUniqueDocumentPath(basePath, name, existingPaths)
       const document = await createDocument(vaultId, {
         name: nameFromPath(path),
         path,
@@ -256,6 +278,7 @@ export function useNotesWorkspace(): UseNotesWorkspaceResult {
     revision,
     refresh,
     createNote,
+    createNamedNote,
     createFolder,
     createVault,
     renameVault,

@@ -21,6 +21,7 @@ export const editorTheme = EditorView.theme({
     fontFamily: 'var(--font-mono)',
     lineHeight: '1.7',
     overflowY: 'auto',
+    minHeight: '0',
   },
   '.cm-content': {
     padding: '1.5rem 0',
@@ -63,13 +64,43 @@ export const editorTheme = EditorView.theme({
     color: 'var(--popover-foreground)',
     border: '1px solid var(--border)',
   },
+  '.cm-panels-bottom': {
+    position: 'sticky',
+    bottom: '0',
+    zIndex: '10',
+    flexShrink: '0',
+  },
+  // Vim status line: pinned to the bottom of the editor so it stays visible
+  // while the document scrolls, tinted with the active theme palette.
   '.cm-vim-panel': {
-    backgroundColor: 'var(--muted)',
+    position: 'sticky',
+    bottom: '0',
+    zIndex: '10',
+    display: 'flex',
+    flexShrink: '0',
+    alignItems: 'center',
+    gap: '0.5rem',
+    minHeight: '1.75rem',
+    padding: '0 0.75rem',
+    backgroundColor: 'color-mix(in oklab, var(--muted) 85%, var(--background))',
     color: 'var(--muted-foreground)',
-    padding: '2px 12px',
+    borderTop: '1px solid var(--border)',
     fontFamily: 'var(--font-mono)',
     fontSize: '0.75rem',
-    borderTop: '1px solid var(--border)',
+    letterSpacing: '0.02em',
+    backdropFilter: 'blur(6px)',
+  },
+  '.cm-vim-panel > span:first-child': {
+    padding: '0.05rem 0.45rem',
+    borderRadius: '9999px',
+    backgroundColor: 'var(--primary)',
+    color: 'var(--primary-foreground)',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  '.cm-vim-panel > span:last-child': {
+    color: 'var(--foreground)',
+    whiteSpace: 'pre',
   },
 })
 
