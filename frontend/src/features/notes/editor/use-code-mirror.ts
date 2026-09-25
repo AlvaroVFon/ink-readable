@@ -2,7 +2,12 @@ import { Compartment } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
-import { createEditorExtensions, lineNumbersExtension, vimExtension } from './editor-extensions'
+import {
+  createEditorExtensions,
+  darkThemeExtension,
+  lineNumbersExtension,
+  vimExtension,
+} from './editor-extensions'
 import { registerVimCommands, setVimSaveHandler } from './vim'
 
 type UseCodeMirrorOptions = {
@@ -11,6 +16,7 @@ type UseCodeMirrorOptions = {
   onSave: () => void
   vimEnabled: boolean
   relativeLineNumbers: boolean
+  darkTheme: boolean
 }
 
 type UseCodeMirrorResult = {
@@ -41,6 +47,7 @@ export function useCodeMirror({
   onSave,
   vimEnabled,
   relativeLineNumbers,
+  darkTheme,
 }: UseCodeMirrorOptions): UseCodeMirrorResult {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -49,8 +56,10 @@ export function useCodeMirror({
   const initialDocRef = useRef(initialDoc)
   const vimCompartmentRef = useRef(new Compartment())
   const lineNumbersCompartmentRef = useRef(new Compartment())
+  const darkCompartmentRef = useRef(new Compartment())
   const initialVimEnabledRef = useRef(vimEnabled)
   const initialRelativeLineNumbersRef = useRef(relativeLineNumbers)
+  const initialDarkThemeRef = useRef(darkTheme)
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -83,6 +92,8 @@ export function useCodeMirror({
         vimEnabled: initialVimEnabledRef.current,
         lineNumbersCompartment: lineNumbersCompartmentRef.current,
         relativeLineNumbers: initialRelativeLineNumbersRef.current,
+        darkCompartment: darkCompartmentRef.current,
+        darkTheme: initialDarkThemeRef.current,
       }),
     })
     viewRef.current = view
@@ -118,6 +129,16 @@ export function useCodeMirror({
       ),
     })
   }, [relativeLineNumbers])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (view === null) {
+      return
+    }
+    view.dispatch({
+      effects: darkCompartmentRef.current.reconfigure(darkThemeExtension(darkTheme)),
+    })
+  }, [darkTheme])
 
   const requestMeasure = useCallback(() => {
     viewRef.current?.requestMeasure()

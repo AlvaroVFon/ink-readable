@@ -26,11 +26,11 @@ const document: Document = {
   updatedAt: '',
 }
 
-function setup(relativeLineNumbers = false, vimMotion = false) {
+function setup(relativeLineNumbers = false, vimMotion = false, darkTheme = true) {
   useEditorConfigContext.mockReturnValue({
     config: {
       id: 'default',
-      darkTheme: true,
+      darkTheme,
       vimMotion,
       formatOnSave: true,
       relativeLineNumbers,
@@ -146,5 +146,23 @@ describe('NotesEditor Tab behaviour', () => {
     fireEvent.keyDown(contentElement(container), { key: 'Tab' })
 
     expect(view.state.doc.toString()).toBe('  # Hello world')
+  })
+})
+
+describe('NotesEditor dark theme', () => {
+  beforeEach(() => {
+    useEditorConfigContext.mockReset()
+  })
+
+  it('reports the editor as dark when the preference is on', () => {
+    const { container } = setup(false, false, true)
+
+    expect(editorView(container).state.facet(EditorView.darkTheme)).toBe(true)
+  })
+
+  it('reports the editor as light when the preference is off', () => {
+    const { container } = setup(false, false, false)
+
+    expect(editorView(container).state.facet(EditorView.darkTheme)).toBe(false)
   })
 })

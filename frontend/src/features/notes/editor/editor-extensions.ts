@@ -18,6 +18,8 @@ type CreateEditorExtensionsOptions = {
   vimEnabled: boolean
   lineNumbersCompartment: Compartment
   relativeLineNumbers: boolean
+  darkCompartment: Compartment
+  darkTheme: boolean
 }
 
 /**
@@ -26,6 +28,15 @@ type CreateEditorExtensionsOptions = {
  */
 export function vimExtension(enabled: boolean): Extension {
   return enabled ? vim({ status: true }) : []
+}
+
+/**
+ * Tells CodeMirror whether the editor is dark. Without it the editor assumes
+ * light mode and its base theme paints dark-mode selections with light colors,
+ * which washes out the light text.
+ */
+export function darkThemeExtension(dark: boolean): Extension {
+  return EditorView.darkTheme.of(dark)
 }
 
 /**
@@ -77,8 +88,11 @@ export function createEditorExtensions({
   vimEnabled,
   lineNumbersCompartment,
   relativeLineNumbers,
+  darkCompartment,
+  darkTheme,
 }: CreateEditorExtensionsOptions): Extension[] {
   return [
+    darkCompartment.of(darkThemeExtension(darkTheme)),
     vimCompartment.of(vimExtension(vimEnabled)),
     lineNumbersCompartment.of(lineNumbersExtension(relativeLineNumbers)),
     basicSetup,
