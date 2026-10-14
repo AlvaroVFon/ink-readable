@@ -56,14 +56,19 @@ Requires macOS 10.15 (Catalina) or newer.
    - **Apple Silicon** (M1/M2/M3/…): the `aarch64` build.
    - **Intel**: the `x64` build.
 2. Open the `.dmg` and drag **Ink and Readable** into **Applications**.
-3. On first launch Gatekeeper blocks the unsigned app. Either:
-   - Right-click (or Control-click) the app in **Applications** → **Open** →
-     **Open** again; or
-   - drop the quarantine flag:
+3. **First launch is blocked by Gatekeeper** — the app is not signed/notarized
+   yet (that is planned):
+   - *"…can't be opened because Apple cannot check it for malicious software"* →
+     right-click (Control-click) the app in **Applications** → **Open** →
+     **Open**.
+   - *"…is damaged and can't be opened. You should move it to the Trash"* — this
+     is the quarantine flag on an unsigned app, **not** real corruption. Remove
+     it:
      ```bash
      xattr -dr com.apple.quarantine "/Applications/Ink and Readable.app"
      ```
-   - On macOS 15+, if it still refuses, allow it under
+     If it still refuses, use `xattr -cr "/Applications/Ink and Readable.app"`.
+   - On macOS 15+, you can also allow it under
      **System Settings → Privacy & Security → Open Anyway**.
 
 ### Windows

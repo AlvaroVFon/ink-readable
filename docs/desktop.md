@@ -74,6 +74,15 @@ It holds `ink-readable.db` and `api.log` (the sidecar output, truncated past
 
 ## Troubleshooting
 
+- **macOS: "…is damaged and can't be opened"** — the app is unsigned; this is
+  the quarantine flag, not real corruption. Remove it and open again:
+
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/Ink and Readable.app"
+  ```
+
+  If it still refuses, `xattr -cr "/Applications/Ink and Readable.app"`.
+  (Signing/notarization is planned; see `t12-updater-signing-roadmap.md`.)
 - **Backend did not start** — the app shows an error screen. Use **Open data
   folder** and check `api.log` for the Go process output.
 - **Reset the data** — quit the app and delete the `data` directory listed above.
