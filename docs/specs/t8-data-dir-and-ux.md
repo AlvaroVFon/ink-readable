@@ -79,3 +79,22 @@ make tauri-dev
 - Preferencias de usuario para cambiar data dir (roadmap T12 — necesitaría
   migración de la DB existente, no lo hacemos en v1).
 - Backups automáticos de la DB (roadmap futuro; no en este track).
+
+## Nota de implementación (T8)
+
+- `src/paths.rs`: `data_dir(app)` = `app_data_dir().join("data")` (fuente única
+  para el `--data-dir` del sidecar y para el comando); `data_dir_in()` puro +
+  unit test.
+- `src/api.rs`: el stdout/stderr del sidecar se espeja en `data/api.log`
+  (truncado si supera 5 MB) además del `eprintln`; comando `open_data_dir` que
+  crea el dir y lo abre con `tauri-plugin-opener`
+  (`OpenerExt::open_path`, invocado desde Rust → sin capability extra).
+- `lib.rs`: registra `tauri_plugin_opener::init()` y expone `open_data_dir`.
+- UI: el helper `openDataDir()` (frontend, no-op fuera de Tauri) se usa en la
+  pantalla de error de arranque (`boot.tsx`) con un botón **Open data folder**
+  — justo donde es útil, para inspeccionar `api.log`.
+- **Verificado:** `cargo test` (3), `pnpm test` (286), lint/typecheck/format/build;
+  smoke `tauri dev`: `api.log` se crea en `~/.local/share/dev.inkreadable.app/data`
+  con las líneas de arranque del backend, junto a `ink-readable.db`.
+- **Pendiente manual:** abrir la carpeta con el botón (no automatizable sin
+  interacción de UI).

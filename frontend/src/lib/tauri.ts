@@ -28,3 +28,16 @@ export async function resolveApiBaseUrl(): Promise<string> {
 
   return `${apiUrl}/api/v1`
 }
+
+/**
+ * Opens the app data directory (SQLite database and `api.log`) in the OS file
+ * manager. No-op outside the desktop shell.
+ */
+export async function openDataDir(): Promise<void> {
+  if (!isTauri()) {
+    return
+  }
+
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('open_data_dir')
+}
