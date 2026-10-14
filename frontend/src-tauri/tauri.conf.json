@@ -27,6 +27,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "A calm, keyboard-first home for your Markdown notes.",
+    "longDescription": "Ink & Readable is a split Markdown editor with live preview, vaults, Mermaid diagrams, KaTeX math and a Kanban planner.",
     "externalBin": ["binaries/ink-readable-api"],
     "icon": [
       "icons/32x32.png",
