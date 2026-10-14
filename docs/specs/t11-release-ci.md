@@ -90,3 +90,19 @@ make sidecar && make tauri-build
 - Updater/signing (T12, roadmap).
 - Test de instalación en runners reales (smoke manual; CI de instalación es
   una mejora futura).
+
+## Nota de implementación (T11)
+
+- Workflow `.github/workflows/release-desktop.yml`, disparado por tags
+  `desktop-v*` (o manual). Matriz de 4 jobs: macOS arm64, macOS x86_64
+  (`macos-14`), Linux (`ubuntu-22.04`) y Windows (`windows-latest`).
+- Pasos: pnpm/node + Go + Rust (`dtolnay/rust-toolchain` con el target del
+  matrix) + `Swatinem/rust-cache`; deps de Linux por apt; sidecar con
+  `./scripts/build-sidecar.sh --target <triple>` (`shell: bash`); luego
+  `tauri-apps/tauri-action@v0` (`projectPath: frontend`, `releaseDraft: true`,
+  `args: --target <triple>`) que publica los instaladores en un Release draft.
+- Se añadió `--target <triple>` a `scripts/build-sidecar.sh` para reutilizarlo
+  desde CI sin duplicar lógica en el workflow.
+- **Validado:** YAML parseable. No ejecutable en este entorno (requiere un tag
+  y runners macOS/Windows); el `tauri build` local equivalente está verificado
+  en T9. El owner debe lanzar un tag de prueba (`desktop-v0.0.1`) para validar la matriz.
