@@ -77,10 +77,30 @@ It holds `ink-readable.db` and `api.log` (the sidecar output, truncated past
 - **Backend did not start** — the app shows an error screen. Use **Open data
   folder** and check `api.log` for the Go process output.
 - **Reset the data** — quit the app and delete the `data` directory listed above.
-- **Wayland / headless dev** — running `pnpm tauri dev` from a shell without a
-  full graphical session can fail with
-  `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`. Use
-  `GDK_BACKEND=x11` (XWayland). A normal desktop terminal does not need it.
+- **Blank or grey window on Linux (GPU / DMA-BUF)** — WebKitGTK may fail to
+  paint with `Failed to create GBM buffer of size … Invalid argument`, leaving
+  the window empty even though the app is running (the DOM is fine). Force the
+  fallback renderer:
+
+  ```bash
+  WEBKIT_DISABLE_DMABUF_RENDERER=1 ink-readable
+  ```
+
+- **Window does not open on Wayland** — `Gdk-Message: Error 71 (Protocol error)
+  dispatching to Wayland display`. Force XWayland:
+
+  ```bash
+  GDK_BACKEND=x11 ink-readable
+  ```
+
+  On VMs and some (older) GPUs both are needed together:
+
+  ```bash
+  GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ink-readable
+  ```
+
+  These also apply to `pnpm tauri dev`, and to the AppImage (replace
+  `ink-readable` with the `.AppImage` path).
 - **Missing WebKitGTK** — on Linux the build fails at `libsoup-3.0`/`webkit2gtk-4.1`;
   install the dev packages listed in the root README.
 
