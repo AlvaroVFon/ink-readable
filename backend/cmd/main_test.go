@@ -2,39 +2,65 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
-// TestDesktopModeServesAPI builds the real binary and exercises the desktop
-// contract end to end: flags, embedded migrations, the stdout ready line and
-// the HTTP API on a loopback port chosen by the OS.
-func TestDesktopModeServesAPI(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping desktop end-to-end test in -short mode")
+var (
+	buildOnce  sync.Once
+	binaryPath string
+	buildErr   error
+)
+
+// buildBinary compiles the CLI once per test run and returns its path.
+func buildBinary(t *testing.T) string {
+	t.Helper()
+
+	buildOnce.Do(func() {
+		backendDir, err := filepath.Abs("..")
+		if err != nil {
+			buildErr = err
+			return
+		}
+
+		dir, err := os.MkdirTemp("", "ink-readable-build-")
+		if err != nil {
+			buildErr = err
+			return
+		}
+
+		path := filepath.Join(dir, "ink-readable-api")
+		build := exec.Command("go", "build", "-o", path, "./cmd")
+		build.Dir = backendDir
+		if out, err := build.CombinedOutput(); err != nil {
+			buildErr = fmt.Errorf("build binary: %w\n%s", err, out)
+			return
+		}
+
+		binaryPath = path
+	})
+
+	if buildErr != nil {
+		t.Fatalf("%v", buildErr)
 	}
 
-	backendDir, err := filepath.Abs("..")
-	if err != nil {
-		t.Fatalf("resolve backend dir: %v", err)
-	}
+	return binaryPath
+}
 
-	binary := filepath.Join(t.TempDir(), "ink-readable-api")
-	build := exec.Command("go", "build", "-o", binary, "./cmd")
-	build.Dir = backendDir
-	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("build binary: %v\n%s", err, out)
-	}
+// startDesktop launches the binary in desktop mode and returns the base URL
+// once the process printed its ready line. The process is killed on cleanup.
+func startDesktop(t *testing.T, dataDir string) (string, *exec.Cmd) {
+	t.Helper()
 
-	dataDir := filepath.Join(t.TempDir(), "data")
-
-	cmd := exec.Command(binary, "--desktop", "--port", "0", "--data-dir", dataDir)
+	cmd := exec.Command(buildBinary(t), "--desktop", "--port", "0", "--data-dir", dataDir)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("stdout pipe: %v", err)
@@ -49,7 +75,19 @@ func TestDesktopModeServesAPI(t *testing.T) {
 		_ = cmd.Wait()
 	})
 
-	baseURL := waitForReady(t, stdout)
+	return waitForReady(t, stdout), cmd
+}
+
+// TestDesktopModeServesAPI exercises the desktop contract end to end: flags,
+// embedded migrations, the stdout ready line and the HTTP API on a loopback
+// port chosen by the OS.
+func TestDesktopModeServesAPI(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping desktop end-to-end test in -short mode")
+	}
+
+	dataDir := filepath.Join(t.TempDir(), "data")
+	baseURL, _ := startDesktop(t, dataDir)
 
 	assertStatus(t, baseURL+"/health", http.StatusOK)
 	assertStatus(t, baseURL+"/api/v1/vaults", http.StatusOK)
@@ -64,19 +102,7 @@ func TestDesktopModeRequiresDataDir(t *testing.T) {
 		t.Skip("skipping desktop end-to-end test in -short mode")
 	}
 
-	backendDir, err := filepath.Abs("..")
-	if err != nil {
-		t.Fatalf("resolve backend dir: %v", err)
-	}
-
-	binary := filepath.Join(t.TempDir(), "ink-readable-api")
-	build := exec.Command("go", "build", "-o", binary, "./cmd")
-	build.Dir = backendDir
-	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("build binary: %v\n%s", err, out)
-	}
-
-	out, err := exec.Command(binary, "--desktop").CombinedOutput()
+	out, err := exec.Command(buildBinary(t), "--desktop").CombinedOutput()
 	if err == nil {
 		t.Fatalf("expected a non-zero exit without --data-dir, output:\n%s", out)
 	}

@@ -18,6 +18,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -33,6 +34,10 @@ const defaultVaultURL = "http://localhost:8080"
 // desktop sidecar is listening. The Tauri shell parses this line to learn which
 // port the OS assigned.
 const readyToken = "__INK_API_READY__"
+
+// shutdownTimeout caps how long the desktop server drains in-flight requests
+// before giving up and exiting.
+const shutdownTimeout = 5 * time.Second
 
 func main() {
 	desktop := flag.Bool("desktop", false, "run in desktop mode: loopback only, no Vault/.env")
@@ -81,8 +86,29 @@ func runDesktop(dataDir string, port int) {
 	fmt.Fprintf(os.Stdout, "%s %s\n", readyToken, readyURL)
 	log.Printf("API listening on %s", readyURL)
 
-	if err := http.Serve(listener, handler); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+	server := &http.Server{Handler: handler}
+
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals()...)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		stop()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("server shutdown: %v", err)
+		}
+	}()
+
+	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("serve: %v", err)
+	}
+
+	if err := db.Close(); err != nil {
+		log.Printf("close database: %v", err)
 	}
 }
 
