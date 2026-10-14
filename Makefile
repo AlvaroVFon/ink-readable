@@ -5,7 +5,7 @@ MIGRATIONS_DIR=backend/migrations
 DB_PATH?=backend/data/ink-readable.db
 DATABASE_URL=sqlite://$(DB_PATH)
 
-.PHONY: build run test sqlc-generate sqlc-vet migrate-create migrate-up migrate-down migrate-down-all migrate-version migrate-force db-reset up up-prod up-dev down down-dev
+.PHONY: build run test sqlc-generate sqlc-vet migrate-create migrate-up migrate-down migrate-down-all migrate-version migrate-force db-reset up up-prod up-dev down down-dev tauri-dev tauri-build
 
 build:
 	go -C backend build -o ../${BINARY_NAME} ./cmd/main.go
@@ -55,3 +55,9 @@ down:
 
 down-dev:
 	docker compose -f ./docker-compose.dev.yml down
+
+tauri-dev:
+	cd frontend && pnpm tauri dev
+
+tauri-build:
+	cd frontend && pnpm tauri build
