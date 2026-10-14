@@ -1,4 +1,6 @@
-<h1 align="center">Ink &amp; Readable</h1>
+<div align="center">
+  <img src="assets/logo.png" alt="Ink &amp; Readable" width="380">
+</div>
 
 <div align="center">
   <img src="assets/hero.png" alt="Ink & Readable — split Markdown editor with live preview" width="60%">
@@ -101,6 +103,10 @@ packages pull it in). Packages are `amd64`.
 
 After installing the `.deb`/`.rpm`, launch **Ink and Readable** from your
 applications menu, or run `ink-readable` in a terminal.
+
+> **Blank/grey window?** On some GPUs and VMs WebKitGTK needs
+> `WEBKIT_DISABLE_DMABUF_RENDERER=1` (and sometimes `GDK_BACKEND=x11`). See
+> [Troubleshooting](docs/desktop.md#troubleshooting).
 
 > Signing (macOS notarization, Windows code-signing) and auto-update are planned.
 > See [`docs/desktop.md`](docs/desktop.md).
