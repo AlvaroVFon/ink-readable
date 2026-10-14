@@ -32,10 +32,11 @@ autoexplicativo.
 
 1. **Top:** app screenshots (assets existentes), “Desktop app for macOS,
    Windows & Linux built with Tauri + Go + React”.
-2. **Download:** link a GitHub Releases (drafts hasta que owner publique);
-   warnings de sin-firma por plataforma (clic-derecho/Abrir en macOS,
-   SmartScreen “More info → Run anyway” en Windows) — reseña de que la firma
-   llega con el track T12.
+2. **Installation (por SO):** link a GitHub Releases + pasos completos para
+   macOS (dmg, elegir arch, Gatekeeper/`xattr`/Privacy & Security), Windows
+   (setup.exe/msi, SmartScreen, desinstalador) y Linux (AppImage + FUSE,
+   `.deb` con apt, `.rpm` con dnf). Nota de que la firma/notarización llega con
+   el track T12.
 3. **First run:** dónde viven los datos (macOS/Windows/Linux paths con el
    identificador real de T4), y opción “Abrir carpeta de datos” si T8 lo
    añadió.
