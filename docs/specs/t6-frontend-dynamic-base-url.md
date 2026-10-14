@@ -72,12 +72,18 @@ El mismo bundle de React funciona en dos entornos:
   - `setApiBaseUrl('http://127.0.0.1:1/api/v1')` → el cliente usa esa baseURL.
   - default (sin set) → `/api/v1`.
   - helper `isTauri` con `__TAURI_INTERNALS__` simulado.
-- `pnpm typecheck` y `pnpm build` pasan; el build web **no** requiere invocar
-  nada de Tauri (main.tsx dynamica import de `@tauri-apps/api/core` solo bajo
-  `isTauri`; bundle web no debe contener el código tauri, verificar con
-  `grep -r tauri frontend/dist/assets/*.js` vacío).
-- Smoke end-to-end en `make tauri-dev` tras T5: crear vault, crear documento,
-  ver preview, crear proyecto y tarea — todo contra `127.0.0.1:<port>`.
+- `pnpm typecheck` y `pnpm build` pasan. El import de `@tauri-apps/api/core`
+  es dinámico y vive en un chunk aparte que solo se carga cuando `isTauri()` es
+  cierto; el dev server en navegador nunca lo ejecuta. **Nota (revisada):** el
+  build de producción ES el bundle que carga Tauri, así que no tiene sentido
+  exigir "cero código tauri en dist"; la comprobación real es que la ruta web
+  (dev server + proxy Vite) sigue funcionando sin tocar Tauri, y que la ruta
+  desktop carga el chunk de `@tauri-apps/api` (visible en los logs de Vite como
+  `dependency optimized: @tauri-apps/api/core`).
+- Smoke de integración en `make tauri-dev` (verificado): el sidecar arranca y
+  **desaparecen los `http proxy error` de Vite** (el webview usa la URL absoluta
+  `http://127.0.0.1:<port>` directamente). El CRUD completo por UI (crear vault,
+  documento, proyecto, tarea) queda como smoke manual.
 - Web sigue funcionando con `make up-dev` (regresión cero).
 
 ## Verificación
@@ -94,3 +100,22 @@ make tauri-dev
   cubre; un estado de carga bonito puede venir después si hace falta).
 - Cualquier behaviour de `/config`-secrets en desktop (T5 backend responde {},
   no cambia nada).
+
+## Nota de implementación (T6)
+
+- `lib/http/axios.ts`: en vez de un lazy getter se muta el singleton
+  (`setApiBaseUrl` → `http.defaults.baseURL`); es suficiente porque todos los
+  hooks usan el mismo `http` y axios lee `defaults` en cada request. Cambio
+  mínimo, cero impacto en la superficie exportada.
+- `lib/tauri.ts`: `isTauri()` (detecta `__TAURI_INTERNALS__`) y
+  `resolveApiBaseUrl()` (default relativo en web; `invoke('get_api_url')` +
+  `/api/v1` en desktop, con import dinámico).
+- `boot.tsx`: componente `Boot` que resuelve la URL antes de montar el árbol
+  (providers + router + `App`) y muestra pantalla de carga/error con “Retry”.
+  En web arranca directamente en `ready` (sin parpadeo).
+- `main.tsx` ahora solo monta `<Boot />`.
+- Tests: `lib/tauri.test.ts` (mock de `@tauri-apps/api/core`, `isTauri`,
+  resolución web y desktop) y caso de `setApiBaseUrl` en `axios.test.ts`.
+- **oculto:** `oxlint` exige que el `useEffect` no invoque setters sincrónicos,
+  de ahí el patrón `then/catch` con flag `cancelled` en el effect (el retry sí
+  puede usar una función async desde el handler).

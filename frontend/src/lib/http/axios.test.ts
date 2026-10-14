@@ -1,7 +1,14 @@
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { API_BASE_URL, API_TIMEOUT_MS, ApiError, createHttpClient } from './axios'
+import {
+  API_BASE_URL,
+  API_TIMEOUT_MS,
+  ApiError,
+  createHttpClient,
+  http,
+  setApiBaseUrl,
+} from './axios'
 
 async function captureError(request: Promise<unknown>): Promise<ApiError> {
   try {
@@ -84,5 +91,21 @@ describe('createHttpClient', () => {
     const error = await captureError(client.get('/vaults'))
 
     expect(error.status).toBe(0)
+  })
+})
+
+describe('setApiBaseUrl', () => {
+  afterEach(() => {
+    setApiBaseUrl(API_BASE_URL)
+  })
+
+  it('overrides the shared client base URL at runtime', () => {
+    setApiBaseUrl('http://127.0.0.1:4444/api/v1')
+
+    expect(http.defaults.baseURL).toBe('http://127.0.0.1:4444/api/v1')
+  })
+
+  it('defaults to the relative API path', () => {
+    expect(API_BASE_URL).toBe('/api/v1')
   })
 })
