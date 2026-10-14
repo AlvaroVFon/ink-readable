@@ -72,3 +72,18 @@ ls src-tauri/target/release/bundle
 - Firma/notarización (T12 roadmap).
 - Publicación en GitHub Releases (T11).
 - Auto-update (T12).
+
+## Nota de implementación (T9)
+
+- `tauri.conf.json → bundle`: añadidos `category: Productivity`,
+  `shortDescription` y `longDescription` (metadatos para deb/rpm);
+  `targets: "all"` y `productName: "Ink and Readable"` ya venían de T4.
+- **Verificado en Linux (host):** `make tauri-build` produjo los 3 bundles:
+  - `bundle/deb/Ink and Readable_0.1.0_amd64.deb` (18 MB)
+  - `bundle/rpm/Ink and Readable-0.1.0-1.x86_64.rpm` (18 MB)
+  - `bundle/appimage/Ink and Readable_0.1.0_amd64.AppImage` (123 MB)
+  - `rpm -qpl` confirma `/usr/bin/ink-readable`, el sidecar
+    `/usr/bin/ink-readable-api`, el `.desktop` y los iconos hicolor.
+  - Sin referencias a `5173` en `frontend/dist/assets` (bundle limpio).
+- macOS (`.app`/`.dmg`) y Windows (`.msi`/NSIS) se generan en la matriz de CI
+  de T11 (no construibles en este host). El smoke de instalación queda manual.
