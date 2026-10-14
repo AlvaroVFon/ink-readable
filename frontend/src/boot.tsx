@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
-import { BrowserRouter } from 'react-router'
+import { HashRouter } from 'react-router'
 
 import App from './App'
 import { EditorConfigProvider } from './components/editor-config/editor-config-context'
@@ -87,9 +87,9 @@ export function Boot() {
   return (
     <ThemeProvider>
       <EditorConfigProvider>
-        <BrowserRouter>
+        <HashRouter>
           <App />
-        </BrowserRouter>
+        </HashRouter>
       </EditorConfigProvider>
     </ThemeProvider>
   )

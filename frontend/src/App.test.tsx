@@ -32,6 +32,18 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
   })
 
+  it('opens a note route under the notes layout', () => {
+    renderApp(['/notes/abc'])
+
+    expect(screen.queryByRole('heading', { name: 'Page not found' })).not.toBeInTheDocument()
+  })
+
+  it('opens a project route under the planner layout', () => {
+    renderApp(['/planner/abc'])
+
+    expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
+  })
+
   it('renders not found for unknown routes', () => {
     renderApp(['/unknown'])
 
