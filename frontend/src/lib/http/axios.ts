@@ -10,7 +10,7 @@ import axios, {
  * Base URL for the backend API.
  *
  * - Development: Vite proxies `/api` to the backend (see `vite.config.ts`).
- * - Production: nginx proxies `/api/` to the backend (see `nginx.conf`).
+ * - Desktop: the bootstrap points it at the Go sidecar via `setApiBaseUrl`.
  *
  * `VITE_API_BASE_URL` can override it for environments without a proxy.
  */

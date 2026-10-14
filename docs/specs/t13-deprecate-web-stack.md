@@ -65,3 +65,20 @@ entorno dev de Go.
 make test
 make tauri-dev
 ```
+
+## Nota de implementación (T13)
+
+- **Eliminado:** `docker-compose.yml` (prod), `frontend/Dockerfile`,
+  `frontend/nginx.conf`, `frontend/.dockerignore`; targets `up`, `up-prod`,
+  `down` del Makefile.
+- **Conservado:** `docker-compose.dev.yml` y `make up-dev`/`down-dev` (dev de
+  Go/frontend). Se sigue usando `backend/Dockerfile` (stage `migrate` del
+  servicio `migrate` del compose dev) → **se conserva** (el binario solo
+  auto-migra en modo `--desktop`, y el backend del contenedor corre en
+  `ENV=development`).
+- `docker-compose.dev.yml`: se elimina la var `VAULT_URL` (no se usa en
+  `ENV=development`; era un ajuste local del owner que se reincluye aquí).
+- Comentario de `frontend/src/lib/http/axios.ts` actualizado (ya no menciona
+  nginx; apunta al bootstrap del sidecar).
+- **Verificado:** `make test` (Go) verde; frontend `lint`/`typecheck`/`format`/`test`
+  (286) verde; YAML del compose dev válido.
