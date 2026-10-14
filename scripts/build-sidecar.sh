@@ -4,6 +4,7 @@
 # for `bundle.externalBin`, into frontend/src-tauri/binaries/.
 #
 #   ./scripts/build-sidecar.sh               # host target only
+#   ./scripts/build-sidecar.sh --target <triple> # a single target (CI)
 #   ./scripts/build-sidecar.sh --targets all # every desktop target (cross-compile)
 #
 # The Go SQLite driver is pure Go, so CGO is disabled and cross-compiling works
@@ -56,6 +57,12 @@ if [ "${1:-}" = "--targets" ] && [ "${2:-}" = "all" ]; then
     triple="${entry##*:}" # rust target triple
     build_target "${pair%%/*}" "${pair##*/}" "$triple"
   done
+  exit 0
+fi
+
+if [ "${1:-}" = "--target" ] && [ -n "${2:-}" ]; then
+  goos_goarch_from_triple "$2"
+  build_target "$goos" "$goarch" "$2"
   exit 0
 fi
 
