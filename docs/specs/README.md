@@ -11,7 +11,8 @@ escritorio nativa para **macOS, Linux y Windows** con **Tauri 2**.
 | Backend | El binario Go actual se empaqueta como **sidecar** (`externalBin`) y escucha en `127.0.0.1` |
 | Base de datos | SQLite en el directorio de datos del SO, sin configuración |
 | Configuración | Cero configuración en desktop: sin Vault, sin `.env`, sin API keys |
-| Modo principal | Escritorio. El stack web se depreca en la última fase |
+| Modo principal | Escritorio. El stack web de producción se elimina (T13); `docker-compose.dev.yml` se conserva para desarrollo Go |
+| Router | **HashRouter siempre** (web y desktop) — decisión T7 |
 | Auto-update / firma / notarización | Fuera de alcance (fase futura, ver `t12-updater-signing-roadmap.md`) |
 
 ### Por qué Tauri + sidecar

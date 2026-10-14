@@ -24,21 +24,13 @@ para desarrollo.
 - Desde T2, el backend arranca sin Docker (`--desktop --port 0 --data-dir`;
   también el modo dev legacy sigue operativo con `.env` + `make run`).
 
-## Decisión pendiente del owner (marcar en el PR)
+## Decisión (confirmada por el owner)
 
-**Opción A (recomendada):** eliminar producción web por completo
-(`docker-compose.yml` + Dockerfiles de frontend/nginx) y **conservar**
-`docker-compose.dev.yml` como entorno dev de Go (la alternativa sin Docker ya
-existe vía `make run` + `scripts/run-backend-dev` de T5 — si el equipo prefiere
-cero Docker, opción B).
+**Opción A:** eliminar producción web por completo (`docker-compose.yml` +
+Dockerfiles de frontend/nginx) y **conservar** `docker-compose.dev.yml` como
+entorno dev de Go.
 
-**Opción B:** mantener ambos compose (prod/dev) como secondary deployment
-“por si acaso” durante N meses con warning de deprecación en README.
-
-En cualquiera de las dos, `docker-compose.dev.yml` es lo más probable que se
-mantenga (fuga de flujo dev Go actual); confirmar en review.
-
-## Comportamiento (opción A)
+## Comportamiento
 
 1. **Eliminar:**
    - `docker-compose.yml` (prod)

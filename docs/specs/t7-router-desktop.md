@@ -24,38 +24,28 @@ del webview no produzcan 404 ni pantallas rotas en el bundle de desktop.
   Windows) y una recarga estando en `/planner/123` pediría ese path al asset
   resolver, que no hace fallback garantizado.
 
-## Decisión pendiente del owner (elegir una en el review del PR)
+## Decisión (confirmada por el owner)
 
-**Opción A (recomendada hoy): HashRouter siempre.**
-- Un solo comportamiento en web y desktop; `#/planner/123` nunca toca el
-  asset resolver ni el fallback del nginx.
-- URLs visibles cambian (hash) — irrelevante para una app de notas sin SEO.
-- El cambio es un diff pequeñísimo en `main.tsx`.
+**Opción A: HashRouter siempre** (web y desktop). Un único comportamiento,
+`#/planner/123` nunca toca el asset resolver ni el fallback del nginx, y el
+diff es mínimo en `main.tsx`. Las URLs con hash son irrelevantes para una app
+de notas sin SEO.
 
-**Opción B: `BrowserRouter` en web + `HashRouter`/memory router en desktop.**
-- Mantiene URLs limpias en web (si publicaras la SPAe algún día).
-- Dos modos de router que mantener → el PR debe cubrir tests de ambos
-  arranques, así que solo vale la pena si la paridad de URLs importa.
-
-Vale solo grabar la decisión en el PR; el resto del spec es la base de
-cualquiera de las dos:
-
-1. Router elegido configurado con un único `App` routes tree intuido
-   (`App.tsx` no cambia: solo el tipo de router en `main.tsx`).
+1. `main.tsx` monta `HashRouter` en lugar de `BrowserRouter`. El árbol de
+   rutas de `App.tsx` no cambia.
 2. NotFound (`*`) intacto; deep links tipo `#/notes/<docId>` funcionan al
    abrir la app (test manual).
 3. Hotkeys existentes que usan `useNavigate` no cambian.
-4. `App.tsx` exporta el `Routes` tree sin instancianiento del router (refactor
-   pequeño si hace falta para testear con `MemoryRouter` en vitest).
+4. Test unitario con `MemoryRouter` (happy-dom) del árbol `App` para cubrir
+   las rutas principales (`/`, `/notes/:documentId`, `/planner`,
+   `/planner/:projectId`, NotFound).
 
 ## Criterios de aceptación
 
 - Build desktop (via `make tauri-build --no-bundle` o dev): abrir la app →
   `/` OK; navegar a notes/planner → OK; **recarga forzada (⌘R)** estando en
-  `#/planner/<id>` → OK (vuelve a renderizar essa vista).
+  `#/planner/<id>` → OK (vuelve a renderizar esa vista).
 - Build web: rutas funcionan como hoy (regresión cero en `pnpm test`).
-- (Opción B) El modo de router queda determinado por `isTauri` y existe un
-  test unitario para cada modo (happy-dom montando el `App`).
 
 ## Verificación
 
