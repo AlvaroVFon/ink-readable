@@ -1,4 +1,6 @@
-<h1 align="center">Ink &amp; Readable</h1>
+<div align="center">
+  <img src="assets/logo.png" alt="Ink &amp; Readable" width="380">
+</div>
 
 <div align="center">
   <img src="assets/hero.png" alt="Ink & Readable — split Markdown editor with live preview" width="60%">
