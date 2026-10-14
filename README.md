@@ -38,17 +38,72 @@ The Go API binary ships inside the app and is launched by the shell on startup
 (`--desktop --port 0 --data-dir <app-data>`); it listens on loopback only and is
 stopped when the app closes.
 
-## Download
+## Installation
 
-Installers are published to [GitHub Releases](https://github.com/AlvaroVFon/ink-readable/releases)
-(`.dmg`/`.app` for macOS, `.exe`/`.msi` for Windows, `.deb`/`.rpm`/`.AppImage`
-for Linux).
+Download the installer for your OS from
+[GitHub Releases](https://github.com/AlvaroVFon/ink-readable/releases).
 
-Releases are **not signed yet**, so the OS will warn on first launch:
+Releases are **not code-signed or notarized yet**, so the first launch shows the
+usual OS warnings. The steps below walk through them.
 
-- **macOS:** right-click the app → **Open** → confirm (Gatekeeper).
-- **Windows:** SmartScreen → **More info** → **Run anyway**.
-- **Linux:** AppImage needs `chmod +x`; `.deb`/`.rpm` install normally.
+### macOS
+
+Requires macOS 10.15 (Catalina) or newer.
+
+1. Download the `.dmg` matching your Mac:
+   - **Apple Silicon** (M1/M2/M3/…): the `aarch64` build.
+   - **Intel**: the `x64` build.
+2. Open the `.dmg` and drag **Ink and Readable** into **Applications**.
+3. On first launch Gatekeeper blocks the unsigned app. Either:
+   - Right-click (or Control-click) the app in **Applications** → **Open** →
+     **Open** again; or
+   - drop the quarantine flag:
+     ```bash
+     xattr -dr com.apple.quarantine "/Applications/Ink and Readable.app"
+     ```
+   - On macOS 15+, if it still refuses, allow it under
+     **System Settings → Privacy & Security → Open Anyway**.
+
+### Windows
+
+Requires Windows 10 or 11 (both ship WebView2).
+
+1. Download either installer:
+   - `..._x64-setup.exe` (NSIS), or
+   - `..._x64_en-US.msi`.
+2. Run it. If SmartScreen appears, click **More info** → **Run anyway**.
+3. Launch **Ink and Readable** from the Start menu.
+
+The installer registers an uninstaller under **Settings → Apps**.
+
+### Linux
+
+Requires WebKitGTK 4.1 (present on current distributions; the `.deb`/`.rpm`
+packages pull it in). Packages are `amd64`.
+
+- **AppImage (any distribution):**
+  ```bash
+  chmod +x "Ink and Readable_0.1.0_amd64.AppImage"
+  ./"Ink and Readable_0.1.0_amd64.AppImage"
+  ```
+  If FUSE is unavailable, run it extracted:
+  ```bash
+  ./"Ink and Readable_0.1.0_amd64.AppImage" --appimage-extract-and-run
+  ```
+- **Debian / Ubuntu (`.deb`):**
+  ```bash
+  sudo apt install "./Ink and Readable_0.1.0_amd64.deb"
+  ```
+- **Fedora / RHEL / openSUSE (`.rpm`):**
+  ```bash
+  sudo dnf install "./Ink and Readable-0.1.0-1.x86_64.rpm"
+  ```
+
+After installing the `.deb`/`.rpm`, launch **Ink and Readable** from your
+applications menu, or run `ink-readable` in a terminal.
+
+> Signing (macOS notarization, Windows code-signing) and auto-update are planned.
+> See [`docs/desktop.md`](docs/desktop.md).
 
 ## Where your data lives
 
