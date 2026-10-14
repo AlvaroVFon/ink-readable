@@ -83,3 +83,28 @@ make tauri-dev
 - Sidecar/lifecycle del backend (T5).
 - Base URL dinámica (T6).
 - Bundles instaladores reales por plataforma (T9).
+
+## Nota de implementación (T4)
+
+- **Ubicación:** `frontend/src-tauri/` (en lugar de la raíz) para que
+  `pnpm tauri dev` corra desde `frontend/` sin un `package.json` raíz:
+  `beforeDevCommand`/`beforeBuildCommand` (`pnpm dev`/`pnpm build`) y
+  `frontendDist: ../dist` resuelven relativos a `frontend/`.
+- **Nombres:** crate `ink-readable`, lib `ink_readable_lib` (main llama
+  `ink_readable_lib::run()`); `productName: "Ink and Readable"` (sin `&`, seguro
+  para nombres de fichero de bundle) y el título de ventana sigue "Ink & Readable".
+  `identifier: dev.inkreadable.app` (sin validación que lo bloquee; T8 depende de él).
+- **Iconos:** generados con `pnpm tauri icon ../assets/hero.png --fit cover`
+  (hero.png es 2211×1212, no cuadrado). Se eliminaron `icons/android` e
+  `icons/ios`. Branding definitivo puede requerir un square dedicado.
+- **Verificado:** `cargo check` OK; `pnpm tauri build --no-bundle` compila release
+  y produce `target/release/ink-readable`; `pnpm tauri dev` abre la ventana y el
+  SPA carga (las llamadas al API fallan con `ECONNREFUSED` del proxy de Vite, que
+  es lo esperado hasta T5).
+- **Gotcha de entorno (Linux/Wayland detached):** al lanzar `tauri dev` desde un
+  shell sin sesión gráfica completa, WebKit falla con
+  `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`.
+  Funciona con `GDK_BACKEND=x11` (XWayland). En una terminal normal del escritorio
+  no hace falta.
+- **Prereqs Linux (Fedora):** `webkit2gtk4.1-devel javascriptcoregtk4.1-devel
+  libsoup3-devel gtk3-devel librsvg2-devel openssl-devel`.
