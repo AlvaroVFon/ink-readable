@@ -103,3 +103,32 @@ make tauri-dev
 - Cross-compilación del sidecar por plataforma (T10).
 - Reintentos/backoff del spawn si el backend crashea (v1: error visible + kill
   de la app es aceptable; roadmap en T12).
+
+## Nota de implementación (T5)
+
+- **Nombre del sidecar:** el CLI copia `binaries/ink-readable-api-<triple>` a
+  `target/<profile>/ink-readable-api` (nombre base, sin directorio ni triple),
+  así que en Rust se invoca `app.shell().sidecar("ink-readable-api")`
+  (verificado empíricamente inspeccionando el target tras `tauri build`).
+- **Deps:** `tauri-plugin-shell` 2 y `tokio` (feature `time`). Módulo
+  `src/api.rs`: `ApiState { url, child }`, `spawn()` (en `setup`),
+  `get_api_url` (comando async; espera hasta 10s, poll 100ms),
+  `parse_ready_line()` (función pura + 2 unit tests) y `shutdown()`
+  (llamado en `RunEvent::ExitRequested`).
+- **Capabilities:** se añade `shell:allow-spawn` con `binaries/ink-readable-api`
+  (`sidecar: true`). El spawn es desde Rust (la ACL aplica al IPC del webview),
+  pero se declara igualmente para claridad/futuro uso desde JS.
+- **Makefile:** target `sidecar` **host-only** (T10 lo generaliza a toda la
+  matriz y a `scripts/build-sidecar.sh`); `tauri-dev`/`tauri-build` dependen de él.
+- **Scripts de dev sin Tauri:** `scripts/run-backend-dev.sh` y `.ps1` compilan y
+  lanzan el backend en modo desktop en el puerto `8082` (el target por defecto
+  del proxy de Vite) con data dir `.dev-data`; así `run-backend-dev` + `pnpm dev`
+  sustituyen al stack Docker de desarrollo. Overrides: `INKB_DEV_PORT`,
+  `INKB_DEV_DATA_DIR`.
+- **Verificado:** `cargo test` OK; `tauri dev` arranca el sidecar (log
+  `[backend] … API listening on http://127.0.0.1:<puerto>`), `GET /health` 200,
+  `/api/v1/vaults` 200 `[]`, `/api/v1/config` `{}`, data dir
+  `~/.local/share/dev.inkreadable.app/data`; el script de dev responde en `:8082`.
+- **Pendiente manual:** el kill del sidecar al *cerrar la ventana* no se pudo
+  automatizar en el entorno de desarrollo (sin `wmctrl`/`xdotool`); verificar
+  con `make tauri-dev` → cerrar la ventana → `pgrep ink-readable-api` vacío.

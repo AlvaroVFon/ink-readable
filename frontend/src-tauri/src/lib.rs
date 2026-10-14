@@ -1,11 +1,30 @@
 //! Tauri entry point.
 //!
-//! At this stage (T4) the shell only opens a window that loads the built SPA.
-//! The Go backend sidecar lifecycle is wired in T5.
+//! Registers the shell plugin, spawns the Go backend sidecar (see [`api`]) and
+//! kills it when the app exits.
+
+mod api;
+
+use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .run(tauri::generate_context!())
-        .expect("error while running the Ink & Readable application");
+        .plugin(tauri_plugin_shell::init())
+        .manage(api::ApiState::default())
+        .invoke_handler(tauri::generate_handler![api::get_api_url])
+        .setup(|app| {
+            if let Err(err) = api::spawn(app.handle()) {
+                eprintln!("failed to start the backend sidecar: {err}");
+                let _ = app.emit("api://error", err);
+            }
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building the Ink & Readable application")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                api::shutdown(app);
+            }
+        });
 }
