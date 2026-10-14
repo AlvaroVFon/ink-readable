@@ -31,50 +31,47 @@ otro contenedor ni asumir que el host tiene `migrate` instalado.
 
 ## Alcance
 
+- `backend/migrations/embed.go` (nuevo, paquete `migrations`)
 - `backend/internal/database/migrate.go` (nuevo)
 - `backend/internal/database/migrate_test.go` (nuevo)
-- `backend/go.mod` / `go.sum`
+- `backend/go.mod` / `go.sum` — **sin dependencias nuevas** (el runner es propio)
 - ✅ No se toca `cmd/main.go` en esta tarea (eso es T2/T3)
 - ✅ No se eliminan los contenedores `migrate` ni los targets de Make con CLI
   externa (deprecación T13); a partir de aquí, las rutas del binario pueden
   empezar a usar esta capacidad.
 
-## Comportamiento
+## Nota de implementación (T1) — desviación del plan
 
-1. **Embebido:** `//go:embed migrations/*.sql` en un paquete de
-   `backend/internal` (p. ej. `internal/database`) con Acceder a un
-   `embed.FS` que contiene *todos* los archivos `.sql` con sus nombres
-   originales (`000001_create_vaults_table.up.sql`, ...). golang-migrate tiene
-   source driver `iofs` que consume exactamente ese FS.
-   - ⚠️ `embed` exige que los archivos estén bajo el directorio del paquete
-     Go. Como `migrations/` está en `backend/` (fuera de `internal/`), el
-     patrón debe referenciar la ruta relativa correcta (`embed` no permite
-     `..`). Si es inviable desde `internal/...`, opción válida: crear un
-     paquete puente `backend/internal/database/migrations/` (espejo de
-     `backend/migrations/`, solo archivos SQL) o mover el paquete de migración
-     a `backend/migrations/doc.go` con `//go:embed`. Decidir en implementación
-     y documentar en el PR.
-2. **API pública nueva:**
-   ```go
-   package database
-   // Migrate aplica todas las migraciones up pendientes sobre db
-   // usando los archivos SQL embebidos. Es idempotente.
-   func Migrate(db Database, migrationsFS fs.FS) error
-   ```
-   - Usa `migrate.NewWithInstance` con source `iofs` y la `*sql.DB` ya abierta
-     vía `database/sqlite3` + `WithInstance` (evita segundo pool).
-   - `DirtyDatabase` (versión con dirty=true) → error explícito con mensaje
-     claro (y sugerencia de `migrate force <version>` para recuperar).
-3. **Down-migrations:** los pares `.down.sql` también viajan embebidos; se
-   registran en el schema pero no se ejecutan automáticamente.
-4. **Modo "fake":** los archivos `.sql` viven en un sub_directorio cuyo nombre
-   golang-migrate espera con formato `NNN_%s.up.sql`. Si el nombre real
-   difiere del esperado por iofs/migrate, separar por extensión igual que hace
-   el CLI (`.` separador estándar de golang-migrate para `.up.sql`/`.down.sql`).
-5. **Compatibilidad:** el sidecar `migrate` de Docker Compose ejecuta el mismo
-   SQL sobre la misma DB; los dos caminos (embebido y CLI) deben dar el mismo
-   estado final. Como comparten `schema_migrations` de golang-migrate (misma
-   herramienta, mismas numeraciones), los dos caminos son interoperables.
+El plan original usaba la librería `golang-migrate/migrate/v4` (drivers
+`source/iofs` + `database/sqlite`). **Es inviable en este repo:** el driver
+`migrate/database/sqlite` importa en blanco `modernc.org/sqlite`, que registra
+el driver `"sqlite"` — el mismo nombre que ya registra `glebarez/go-sqlite`. El
+resultado es un `panic: sql: Register called twice for driver sqlite` (probado).
+
+Decisión: implementar un **runner de migraciones propio y mínimo** (~180 LOC,
+sin dependencias nuevas) que replica la semántica de golang-migrate:
+misma tabla de control `schema_migrations (version uint64, dirty bool)`,
+`dirty=true` antes de ejecutar cada migración y `false` después, ejecución por
+transacción. Se descartaron las alternativas (goose → tabla de control distinta,
+rompe interoperabilidad; driver `sqlite3` → cgo, rompe cross-compile).
+
+## Comportamiento (implementado)
+
+1. **Embedded FS:** `backend/migrations/embed.go` (paquete `migrations`)
+   declara `//go:embed *.sql` y exporta `migrations.FS`. Consume los archivos
+   reales (up y down) sin moverlos, así el CLI/Docker y `sqlc` siguen igual.
+2. **API pública:** `database.Migrate(db Database, migrationsFS fs.FS) error`
+   (`backend/internal/database/migrate.go`), genérica sobre cualquier `fs.FS`.
+3. **Semántica:** crea `schema_migrations (version uint64, dirty bool)` si no
+   existe; lee la versión; si `dirty` → error que envuelve `ErrDirtyDatabase`
+   sin aplicar nada; en caso contrario aplica en orden ascendente cada migración
+   con versión > actual, marcando `dirty=true` → ejecutando en transacción →
+   `dirty=false`.
+4. **Down-migrations:** presentes en el FS, ignoradas (solo se consumen
+   `*.up.sql`).
+5. **Interoperabilidad:** misma tabla de control y misma secuencia numérica que
+   golang-migrate → el sidecar `migrate` de Docker Compose puede seguir
+   operando sobre la misma DB.
 
 ## Criterios de aceptación
 
