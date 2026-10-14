@@ -76,12 +76,14 @@ Ese es exactamente el contrato que Tauri (T5) usará para lanzar el sidecar.
 
 ## Criterios de aceptación
 
-- Test e2e en Go (`cmd` o `internal/…`): compilar el binario, lanzarlo con
-  `--desktop --port 0 --data-dir <tmpdir>`, parsear stdout
-  (`__INK_API_READY__`), `GET /health` 200, `GET /api/v1/vaults` 200 `[ ]`
-  (tras aplicar las migraciones, las tablas existen), exit code 0 en SIGTERM.
-- `--desktop` sin `--data-dir` → error de CLI (exit 1, mensaje claro).
-- `--port 8083` explícito respeta el puerto.
+- Test e2e en Go (`backend/cmd/main_test.go`): compila el binario, lo lanza con
+  `--desktop --port 0 --data-dir <tmpdir>`, parsea stdout
+  (`__INK_API_READY__ http://127.0.0.1:<port>`), `GET /health` 200 y
+  `GET /api/v1/vaults` 200 (las migraciones embebidas corren al arrancar).
+- `--desktop` sin `--data-dir` → error de CLI (exit != 0, mensaje menciona
+  `--data-dir`).
+- `--port 8083` explícito respeta el puerto (unit test en
+  `internal/config/desktop_test.go`).
 - Sin flags y con `.env` de desarrollo: comportamiento idéntico al actual
   (regresión cubierta por tests existentes de config).
 - Ningún log imprime secrets (regresión: `fmt.Println(*cfg)` eliminado).
@@ -99,8 +101,19 @@ curl http://127.0.0.1:<port>/health
 
 ## Fuera de alcance
 
-- Graceful shutdown (T3).
+- Graceful shutdown y exit 0 en SIGTERM (T3).
 - Terminar el proceso desde el shell (T5).
-- Auth local en la API (ver `docs/specs/README.md` → decisión: la superficie
-  de escucha es `127.0.0.1`, y en desktop el污 de autenticación local se
-  pospone; ver spec T12 para el roadmap).
+- Auth local en la API: en desktop el proceso escucha solo en `127.0.0.1`
+  (accesible únicamente desde la máquina del usuario), así que la autenticación
+  local se pospone — ver el roadmap en T12.
+
+## Nota de implementación (T2)
+
+- `runDesktop` (en `cmd/main.go`) resuelve config con
+  `config.LoadDesktopConfig`, crea el data dir (`os.MkdirAll`), abre SQLite,
+  aplica `database.Migrate(db, migrations.FS)`, hace `net.Listen` y **entonces**
+  imprime la línea `__INK_API_READY__ http://<listener.Addr()>`. El servidor
+  sirve con `http.Serve`; el shutdown limpio llega en T3.
+- `runLegacy` conserva el camino original (godotenv + ENV/Vault) y `newHandler`
+  factoriza el wiring común de servicios; se eliminó el volcado `fmt.Println(*cfg)`.
+- `/config` en desktop devuelve `{}` (mismo contrato que el frontend espera).
