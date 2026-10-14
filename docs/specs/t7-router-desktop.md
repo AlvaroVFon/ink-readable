@@ -31,7 +31,8 @@ del webview no produzcan 404 ni pantallas rotas en el bundle de desktop.
 diff es mínimo en `main.tsx`. Las URLs con hash son irrelevantes para una app
 de notas sin SEO.
 
-1. `main.tsx` monta `HashRouter` en lugar de `BrowserRouter`. El árbol de
+1. `boot.tsx` monta `HashRouter` en lugar de `BrowserRouter` (el router vive
+   en el componente `Boot` desde T6; `main.tsx` ya no lo declara). El árbol de
    rutas de `App.tsx` no cambia.
 2. NotFound (`*`) intacto; deep links tipo `#/notes/<docId>` funcionan al
    abrir la app (test manual).
@@ -59,3 +60,14 @@ make tauri-dev    # recarga manual en /planner/<id>
 - Manejo de links externos (`http(s)://`) para abrir en navegador del SO —
   eso vendría con T8/T9 si se necesita (editor: preview no tiene links
   externos clickable hoy; pendiente decidir).
+
+## Nota de implementación (T7)
+
+- Único cambio de código: `HashRouter` en `boot.tsx` (T6 movió el router ahí).
+- Tests: `boot.test.tsx` monta el `Boot` real en modo web y comprueba el root y
+  la navegación por hash (`#/planner`); `App.test.tsx` se amplía con
+  `/notes/:documentId` y `/planner/:projectId`. La ruta de nota con id no
+  mantiene el heading "Notes" (la cabecera cambia), así que se comprueba que
+  **no** cae en NotFound.
+- Verificado: `pnpm test` (284), `lint`, `typecheck`, `format:check`, `build`.
+  Recarga en `#/planner/<id>` dentro del webview queda como smoke manual.
