@@ -10,7 +10,7 @@ import axios, {
  * Base URL for the backend API.
  *
  * - Development: Vite proxies `/api` to the backend (see `vite.config.ts`).
- * - Production: nginx proxies `/api/` to the backend (see `nginx.conf`).
+ * - Desktop: the bootstrap points it at the Go sidecar via `setApiBaseUrl`.
  *
  * `VITE_API_BASE_URL` can override it for environments without a proxy.
  */
@@ -101,3 +101,14 @@ export function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
 }
 
 export const http: AxiosInstance = createHttpClient()
+
+/**
+ * Overrides the base URL of the shared client at runtime.
+ *
+ * The desktop bootstrap uses it to point the app at the Go sidecar
+ * (`http://127.0.0.1:<port>/api/v1`), discovered through the Tauri
+ * `get_api_url` command. Web keeps the relative default.
+ */
+export function setApiBaseUrl(baseUrl: string): void {
+  http.defaults.baseURL = baseUrl
+}

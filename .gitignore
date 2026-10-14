@@ -27,6 +27,7 @@ go.work.sum
 *.sqlite3
 /data/
 backend/data/
+.dev-data/
 
 # Environment / secrets
 .env

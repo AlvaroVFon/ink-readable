@@ -46,7 +46,8 @@ const vault = vaultSchema.parse(payload)
 - `src/lib/http` — shared axios instance. It centralizes the base URL
   (`/api/v1` by default, overridable with `VITE_API_BASE_URL`), the timeout and
   the JSON headers, and normalizes every failure into an `ApiError` so the UI
-  only deals with one error shape.
+  only deals with one error shape. In the desktop app the base URL is swapped at
+  runtime with `setApiBaseUrl` to point at the Go sidecar (see below).
 
 ```ts
 import { ApiError, http } from '@/lib/http'
@@ -59,6 +60,11 @@ try {
   }
 }
 ```
+
+- `src/lib/tauri` + `src/boot` — desktop bootstrap. `boot.tsx` resolves the API
+  URL before rendering the app: inside Tauri it calls the `get_api_url` command
+  and points axios at the sidecar; in the browser it keeps the relative default.
+  `isTauri()` detects the shell and `openDataDir()` opens the data folder.
 
 - `src/lib/api` — resource-agnostic `ApiClient` built on top of the axios
   instance. It exposes the HTTP verbs plus optional zod validation and knows
