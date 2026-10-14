@@ -78,3 +78,20 @@ autoexplicativo.
 ## Verificación
 
 - Review humano del PR; smoke de comandos README en el SO host.
+
+## Nota de implementación (T14)
+
+- `README.md` reescrito desktop-first: features, stack (Tauri/Go/React), download
+  + avisos de no-firma por SO, rutas de datos, migración desde el deploy web,
+  prerequisites por SO, `make tauri-dev`, loop frontend-only
+  (`run-backend-dev` + `pnpm dev`), checks, `tauri-build`, proceso de release y
+  estructura del repo.
+- `docs/desktop.md` (nuevo): arquitectura (diagrama), handshake
+  `__INK_API_READY__`, directorio de datos, modelo de seguridad (loopback, sin
+  auth local en v1), troubleshooting (Wayland/headless, WebKitGTK, reset de datos)
+  y release.
+- `backend/README.md`: modo escritorio (flags, migraciones embebidas, handshake,
+  shutdown) + aclaración de que Vault/`.env` son del modo web.
+- `frontend/README.md`: capa http con base URL dinámica + `boot`/`lib/tauri`.
+- **Verificado:** referencias a ficheros existentes; sin comandos muertos
+  (`up-prod`/`down` eliminados en T13 no se documentan).
