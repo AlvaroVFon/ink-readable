@@ -70,3 +70,16 @@ kill -TERM %1   # exit limpio en < 5s
 - Protocolo de salud/readiness para el shell (T5 usa la línea de stdout; no
   se añade endpoint extra).
 - Persistencia de “última sesión” u otro estado del shell (T5/T8).
+
+## Nota de implementación (T3)
+
+- `runDesktop` usa `http.Server{Handler}` + `signal.NotifyContext` con
+  `interruptSignals()`, que vive en `cmd/signal_unix.go` (`os.Interrupt`,
+  `syscall.SIGTERM`) y `cmd/signal_windows.go` (`os.Interrupt`) según build tag.
+- Al recibir la señal: `stop()` restaura el comportamiento por defecto (una
+  segunda señal fuerza la salida), `server.Shutdown` con `shutdownTimeout`
+  (5s) drena y luego `db.Close()`. El proceso termina con exit 0.
+- El test `cmd/shutdown_unix_test.go` envía SIGTERM, exige exit 0 y reabre la
+  DB comprobando `PRAGMA integrity_check = ok`.
+- El camino legacy (`runLegacy`) sigue con `http.ListenAndServe` (fuera del
+  objetivo de la migración a escritorio).
