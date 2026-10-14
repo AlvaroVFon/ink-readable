@@ -5,7 +5,7 @@ import App from './App'
 import { EditorConfigProvider } from './components/editor-config/editor-config-context'
 import { ThemeProvider } from './components/theme/theme-provider'
 import { setApiBaseUrl } from './lib/http'
-import { isTauri, resolveApiBaseUrl } from './lib/tauri'
+import { isTauri, openDataDir, resolveApiBaseUrl } from './lib/tauri'
 
 type BootStatus = 'ready' | 'loading' | 'error'
 
@@ -73,13 +73,24 @@ export function Boot() {
         <p className='text-sm text-muted-foreground'>
           The backend did not start{error ? `: ${error}` : '.'}
         </p>
-        <button
-          type='button'
-          onClick={retry}
-          className='rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent'
-        >
-          Retry
-        </button>
+        <div className='flex gap-2'>
+          <button
+            type='button'
+            onClick={retry}
+            className='rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent'
+          >
+            Retry
+          </button>
+          <button
+            type='button'
+            onClick={() => {
+              void openDataDir()
+            }}
+            className='rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent'
+          >
+            Open data folder
+          </button>
+        </div>
       </CenteredMessage>
     )
   }

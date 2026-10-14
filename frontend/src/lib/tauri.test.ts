@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { API_BASE_URL } from './http'
-import { isTauri, resolveApiBaseUrl } from './tauri'
+import { isTauri, openDataDir, resolveApiBaseUrl } from './tauri'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 
@@ -46,5 +46,27 @@ describe('resolveApiBaseUrl', () => {
 
     expect(await resolveApiBaseUrl()).toBe('http://127.0.0.1:4444/api/v1')
     expect(invokeMock).toHaveBeenCalledWith('get_api_url')
+  })
+})
+
+describe('openDataDir', () => {
+  afterEach(() => {
+    clearTauriInternals()
+    invokeMock.mockReset()
+  })
+
+  it('does nothing outside the desktop shell', async () => {
+    await openDataDir()
+
+    expect(invokeMock).not.toHaveBeenCalled()
+  })
+
+  it('invokes the shell command in the desktop shell', async () => {
+    setTauriInternals()
+    invokeMock.mockResolvedValue(undefined)
+
+    await openDataDir()
+
+    expect(invokeMock).toHaveBeenCalledWith('open_data_dir')
   })
 })
