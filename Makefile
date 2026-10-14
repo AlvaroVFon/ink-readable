@@ -5,7 +5,7 @@ MIGRATIONS_DIR=backend/migrations
 DB_PATH?=backend/data/ink-readable.db
 DATABASE_URL=sqlite://$(DB_PATH)
 
-.PHONY: build run test sqlc-generate sqlc-vet migrate-create migrate-up migrate-down migrate-down-all migrate-version migrate-force db-reset up up-prod up-dev down down-dev sidecar tauri-dev tauri-build
+.PHONY: build run test sqlc-generate sqlc-vet migrate-create migrate-up migrate-down migrate-down-all migrate-version migrate-force db-reset up up-prod up-dev down down-dev sidecar sidecar-all tauri-dev tauri-build
 
 build:
 	go -C backend build -o ../${BINARY_NAME} ./cmd/main.go
@@ -56,9 +56,12 @@ down:
 down-dev:
 	docker compose -f ./docker-compose.dev.yml down
 
-# Host-only sidecar build (T10 generalizes this to every target OS).
+# Sidecar builds for the Tauri shell (see scripts/build-sidecar.sh).
 sidecar:
-	CGO_ENABLED=0 go -C backend build -trimpath -o "$(CURDIR)/frontend/src-tauri/binaries/ink-readable-api-$$(rustc -vV | sed -n 's/^host: //p')" ./cmd
+	./scripts/build-sidecar.sh
+
+sidecar-all:
+	./scripts/build-sidecar.sh --targets all
 
 tauri-dev: sidecar
 	cd frontend && pnpm tauri dev

@@ -87,3 +87,17 @@ make tauri-dev
 
 - CI (T11); firma de binarios (T12).
 - Caché incremental/rust buildCache tricks (nice-to-have futuro).
+
+## Nota de implementación (T10)
+
+- `scripts/build-sidecar.sh`: sin args compila **solo el host** (usa `rustc -vV`
+  host para la tripla); `--targets all` compila la matriz completa
+  (`CGO_ENABLED=0`, `-trimpath -ldflags "-s -w"`). Salida en
+  `frontend/src-tauri/binaries/ink-readable-api-<triple>[.exe]`.
+- `scripts/build-sidecar.ps1`: host Windows (equivalente).
+- `Makefile`: `sidecar` → script (host); `sidecar-all` → `--targets all`;
+  `tauri-dev`/`tauri-build` dependen de `sidecar`.
+- **Verificado:** `make sidecar` (host) y `make sidecar-all` produjeron las 5
+  triplas (darwin arm64/x64, linux arm64/x64, windows x64). `file` confirma
+  Mach-O arm64/x64, ELF x86-64/aarch64 estáticos y PE32+; el binario host
+  imprime `__INK_API_READY__`. Tamaños ~10–11 MB cada uno.
