@@ -99,4 +99,28 @@ jobs:
           releaseBody: "Desktop installers for macOS, Windows and Linux. See the assets below to download."
           releaseDraft: true
           prerelease: false
+          # latest.json is written once by the updater-manifest job: merging it
+          # from every matrix job races and drops platforms.
+          includeUpdaterJson: false
           args: --target ${{ matrix.target }}
+
+  updater-manifest:
+    name: Updater manifest
+    needs: release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Upload latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(jq -r .version frontend/src-tauri/tauri.conf.json)"
+          tag="desktop-v${version}"
+          notes="$(gh release view "$tag" --json body --jq .body)"
+          gh release download "$tag" --pattern '*.sig' --dir sigs
+          python3 -I scripts/updater-manifest.py sigs "$GITHUB_REPOSITORY" "$tag" "$version" "$notes" > latest.json
+          gh release upload "$tag" latest.json --clobber

@@ -166,7 +166,9 @@ would have to reinstall manually.
    `frontend/src-tauri/Cargo.toml` (the updater compares semver against the
    running app).
 2. Merge to `main`: the workflow builds every target, signs the updater
-   artifacts and attaches them plus `latest.json` to the draft release.
+   artifacts and attaches them to the draft release. A final
+   `updater-manifest` job then builds `latest.json` from the uploaded `.sig`
+   files (`scripts/updater-manifest.py`) and attaches it too.
 3. Publish the draft. `releases/latest/download/latest.json` only resolves to
    published (non-draft, non-prerelease) releases, so users see the toast from
    that moment on.
