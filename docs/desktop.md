@@ -46,6 +46,11 @@ Bootstrap order in `frontend/src/boot.tsx`:
 3. If the backend fails to come up, show a minimal error screen with **Retry**
    and **Open data folder**.
 
+The sidecar is stopped on two paths: a clean quit kills it from the shell
+(`RunEvent::ExitRequested` → `api::shutdown`), and on Linux the sidecar arms
+`PR_SET_PDEATHSIG(SIGTERM)` at startup (`backend/cmd/pdeathsig_linux.go`) so a
+shell crash — like the WebKitGTK Wayland abort — cannot leave it orphaned.
+
 ## Data directory
 
 Resolved by `frontend/src-tauri/src/paths.rs` (`app_data_dir().join("data")`),
@@ -112,6 +117,13 @@ It holds `ink-readable.db` and `api.log` (the sidecar output, truncated past
   ```bash
   GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ink-readable
   ```
+
+  On Linux the app now applies both (`GDK_BACKEND=x11` and
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1`) at startup — see
+  `frontend/src-tauri/src/platform.rs` — so the bare `ink-readable` command
+  works on affected machines. Exporting either variable yourself still wins, so
+  the commands above are only needed to override the default (for example to
+  force native Wayland).
 
   These also apply to `pnpm tauri dev`, and to the AppImage (replace
   `ink-readable` with the `.AppImage` path).

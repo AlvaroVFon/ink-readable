@@ -6,12 +6,15 @@
 mod api;
 mod export;
 mod paths;
+mod platform;
 mod updater;
 
 use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    platform::apply_graphics_workarounds();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
