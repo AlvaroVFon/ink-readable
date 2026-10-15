@@ -57,6 +57,8 @@ func main() {
 // migrations applied on startup, and a loopback listener. It prints the ready
 // line once bound so the parent process knows the port.
 func runDesktop(dataDir string, port int) {
+	armParentDeathSignal()
+
 	cfg, err := config.LoadDesktopConfig(config.DesktopOptions{DataDir: dataDir, Port: port})
 	if err != nil {
 		log.Fatal(err)

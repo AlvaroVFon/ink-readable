@@ -46,6 +46,11 @@ Bootstrap order in `frontend/src/boot.tsx`:
 3. If the backend fails to come up, show a minimal error screen with **Retry**
    and **Open data folder**.
 
+The sidecar is stopped on two paths: a clean quit kills it from the shell
+(`RunEvent::ExitRequested` → `api::shutdown`), and on Linux the sidecar arms
+`PR_SET_PDEATHSIG(SIGTERM)` at startup (`backend/cmd/pdeathsig_linux.go`) so a
+shell crash — like the WebKitGTK Wayland abort — cannot leave it orphaned.
+
 ## Data directory
 
 Resolved by `frontend/src-tauri/src/paths.rs` (`app_data_dir().join("data")`),
