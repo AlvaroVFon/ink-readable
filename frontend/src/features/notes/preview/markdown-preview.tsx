@@ -8,6 +8,8 @@ import { remarkAlert } from 'remark-github-blockquote-alert'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'
 
+import { splitFrontmatter } from '../lib/frontmatter'
+import { FrontmatterProperties } from './frontmatter-properties'
 import { markdownComponents } from './markdown-components'
 import { markdownSanitizeSchema } from './sanitize-schema'
 
@@ -25,14 +27,16 @@ type MarkdownPreviewProps = {
 const MarkdownPreviewContent = memo(function MarkdownPreviewContent({
   content,
 }: MarkdownPreviewProps) {
+  const { frontmatter, body } = splitFrontmatter(content)
   return (
     <div className='markdown-preview'>
+      {frontmatter !== null && <FrontmatterProperties frontmatter={frontmatter} />}
       <ReactMarkdown
         components={markdownComponents}
         rehypePlugins={rehypePlugins}
         remarkPlugins={remarkPlugins}
       >
-        {content}
+        {body}
       </ReactMarkdown>
     </div>
   )

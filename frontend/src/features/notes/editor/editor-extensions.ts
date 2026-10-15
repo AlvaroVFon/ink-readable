@@ -2,6 +2,7 @@ import type { Compartment, Extension } from '@codemirror/state'
 
 import { indentLess, indentMore } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { yamlFrontmatter } from '@codemirror/lang-yaml'
 import { syntaxHighlighting } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view'
@@ -96,7 +97,9 @@ export function createEditorExtensions({
     vimCompartment.of(vimExtension(vimEnabled)),
     lineNumbersCompartment.of(lineNumbersExtension(relativeLineNumbers)),
     basicSetup,
-    markdown({ base: markdownLanguage, codeLanguages: languages }),
+    yamlFrontmatter({
+      content: markdown({ base: markdownLanguage, codeLanguages: languages }),
+    }),
     syntaxHighlighting(markdownHighlightStyle),
     EditorView.lineWrapping,
     editorTheme,

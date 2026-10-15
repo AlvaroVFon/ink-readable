@@ -9,6 +9,12 @@ describe('formatMarkdown', () => {
     expect(formatted).toBe('# Title\n\n- item\n\nsome text\n')
   })
 
+  it('preserves frontmatter', async () => {
+    const formatted = await formatMarkdown('---\ntitle: Hello\ntags: [a, b]\n---\n\n#  Body\n')
+
+    expect(formatted).toBe('---\ntitle: Hello\ntags: [a, b]\n---\n\n# Body\n')
+  })
+
   it('returns the same content when there is nothing to format', async () => {
     const content = '# Title\n\nBody\n'
 
