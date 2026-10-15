@@ -76,3 +76,53 @@ export async function printWindow(): Promise<void> {
   const { invoke } = await import('@tauri-apps/api/core')
   await invoke('print_webview')
 }
+
+/** Progress callback for {@link installUpdate}: bytes downloaded so far and the total, if known. */
+export type UpdateProgress = (downloaded: number, total: number | undefined) => void
+
+/** A newer desktop release, as reported by {@link checkForUpdate}. */
+export type AvailableUpdate = {
+  version: string
+  /** Downloads and installs the update, then relaunches the app. */
+  install: (onProgress?: UpdateProgress) => Promise<void>
+}
+
+/**
+ * Checks the release feed for a newer version of the desktop app. Resolves to
+ * `null` when the app is up to date, and always outside the desktop shell.
+ */
+export async function checkForUpdate(): Promise<AvailableUpdate | null> {
+  if (!isTauri()) {
+    return null
+  }
+
+  const { check } = await import('@tauri-apps/plugin-updater')
+  const update = await check()
+  if (!update) {
+    return null
+  }
+
+  return {
+    version: update.version,
+    install: async (onProgress) => {
+      const { invoke } = await import('@tauri-apps/api/core')
+      let downloaded = 0
+      let total: number | undefined
+
+      await update.download((event) => {
+        if (event.event === 'Started') {
+          total = event.data.contentLength
+        } else if (event.event === 'Progress') {
+          downloaded += event.data.chunkLength
+        }
+        onProgress?.(downloaded, total)
+      })
+
+      // The backend sidecar must be stopped before the installer replaces its
+      // binary (on Windows `install()` exits the app without the usual cleanup).
+      await invoke('stop_backend')
+      await update.install()
+      await invoke('restart_app')
+    },
+  }
+}

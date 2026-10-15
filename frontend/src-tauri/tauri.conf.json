@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "category": "Productivity",
     "shortDescription": "A calm, keyboard-first home for your Markdown notes.",
@@ -38,5 +39,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMyMjI2OEM2ODM4QTVEMTAKUldRUVhZcUR4bWdpTW45c2c3M3lsa3lIVzVmc0hRRGFjeEtnTGhOK25YZVRobHorQllOOU80ekIK",
+      "endpoints": [
+        "https://github.com/AlvaroVFon/ink-readable/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

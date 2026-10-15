@@ -14,7 +14,8 @@ futura arranque con contexto. **No es implementable ahora mismo.**
 
 ## Lo que cubrirá esa fase (a detallar entonces)
 
-1. **Updater de Tauri 2:**
+1. **Updater de Tauri 2:** ✅ implementado (ver `docs/desktop.md#updates`;
+   check solo al arrancar + toast con "Update now").
    - `tauri_plugin_updater` (Builder en Rust), target `darwin-universal` si se
      decide binario univerarch macOS.
    - Endpoints de actualización: static JSON en GitHub Releases (patrón

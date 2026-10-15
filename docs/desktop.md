@@ -69,7 +69,12 @@ It holds `ink-readable.db` and `api.log` (the sidecar output, truncated past
   This is an accepted trade-off; a token handshake is future work (see
   `docs/specs/t12-updater-signing-roadmap.md` for the broader roadmap).
 - The webview loads the bundled frontend; the only IPC commands exposed are
-  `get_api_url` and `open_data_dir`.
+  `get_api_url`, `open_data_dir`, `export_markdown`, `print_webview`,
+  `stop_backend` and `restart_app` (the last two drive in-app updates), plus the
+  updater plugin's default permissions.
+- Updates are verified against the updater public key in `tauri.conf.json`
+  before being installed; an artifact not signed with the matching private key
+  is rejected.
 - No secrets are shipped: desktop mode reads no Vault and needs no `.env`.
 
 ## Troubleshooting
@@ -125,4 +130,46 @@ make tauri-build    # bundles for the current OS
 Publishing uses GitHub Actions: pushing a `desktop-v*` tag runs
 `.github/workflows/release-desktop.yml`, which cross-builds the sidecar per
 target, runs `tauri build` on macOS/Windows/Linux and uploads the installers to
-a draft release. Signing and auto-update are not wired yet (future phase).
+a draft release. OS code-signing (notarization/Authenticode) is not wired yet
+(future phase).
+
+## Updates
+
+On startup the app checks
+`https://github.com/AlvaroVFon/ink-readable/releases/latest/download/latest.json`
+(`src/components/updater/update-notifier.tsx`). If a newer version is published
+it shows a toast with **Update now**: the app downloads the update, stops the Go
+sidecar (`stop_backend`, so the Windows installer can replace its binary),
+installs it and relaunches (`restart_app`). Check failures (offline, no
+published release) are ignored silently.
+
+### One-time setup
+
+1. Generate the updater key pair (keep the private key out of the repo):
+
+   ```bash
+   cd frontend && pnpm tauri signer generate -w ~/.tauri/ink-readable.key
+   ```
+
+2. Put the contents of `~/.tauri/ink-readable.key.pub` in
+   `plugins.updater.pubkey` (`frontend/src-tauri/tauri.conf.json`).
+3. Add the repo secrets `TAURI_SIGNING_PRIVATE_KEY` (contents of the private
+   key) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Without them the release
+   build fails, because `bundle.createUpdaterArtifacts` is on.
+
+Losing the private key means installed apps can no longer verify updates; users
+would have to reinstall manually.
+
+### Shipping an update
+
+1. Bump the version in `frontend/src-tauri/tauri.conf.json` **and**
+   `frontend/src-tauri/Cargo.toml` (the updater compares semver against the
+   running app).
+2. Merge to `main`: the workflow builds every target, signs the updater
+   artifacts and attaches them plus `latest.json` to the draft release.
+3. Publish the draft. `releases/latest/download/latest.json` only resolves to
+   published (non-draft, non-prerelease) releases, so users see the toast from
+   that moment on.
+
+Linux updates work for the AppImage, `.deb` and `.rpm` bundles (the latter two
+ask for privileges via `pkexec`).

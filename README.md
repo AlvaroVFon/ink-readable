@@ -113,8 +113,9 @@ applications menu, or run `ink-readable` in a terminal.
 > `WEBKIT_DISABLE_DMABUF_RENDERER=1` (and sometimes `GDK_BACKEND=x11`). See
 > [Troubleshooting](docs/desktop.md#troubleshooting).
 
-> Signing (macOS notarization, Windows code-signing) and auto-update are planned.
-> See [`docs/desktop.md`](docs/desktop.md).
+> Once installed, the app checks for new versions on startup and offers to
+> update itself in place. Signing (macOS notarization, Windows code-signing) is
+> planned. See [`docs/desktop.md`](docs/desktop.md).
 
 ## Where your data lives
 

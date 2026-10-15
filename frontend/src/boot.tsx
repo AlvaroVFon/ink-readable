@@ -4,6 +4,8 @@ import { HashRouter } from 'react-router'
 import App from './App'
 import { EditorConfigProvider } from './components/editor-config/editor-config-context'
 import { ThemeProvider } from './components/theme/theme-provider'
+import { Toaster } from './components/ui/sonner'
+import { UpdateNotifier } from './components/updater/update-notifier'
 import { setApiBaseUrl } from './lib/http'
 import { isTauri, openDataDir, resolveApiBaseUrl } from './lib/tauri'
 
@@ -102,6 +104,8 @@ export function Boot() {
           <App />
         </HashRouter>
       </EditorConfigProvider>
+      <Toaster />
+      <UpdateNotifier />
     </ThemeProvider>
   )
 }
