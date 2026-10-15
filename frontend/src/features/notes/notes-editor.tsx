@@ -15,6 +15,7 @@ import { useExportNote } from './export/use-export-note'
 import { useAutosave } from './hooks/use-autosave'
 import { useScrollSync } from './hooks/use-scroll-sync'
 import { formatMarkdown } from './lib/format-markdown'
+import { getStoredPreviewFirst, storePreviewFirst } from './lib/pane-order'
 import { NotesToolbar } from './notes-toolbar'
 import { useNotesVimContext } from './notes-vim-context'
 import { MarkdownPreview } from './preview/markdown-preview'
@@ -24,8 +25,9 @@ type NotesEditorProps = {
 }
 
 /**
- * Split markdown editor: CodeMirror (vim + markdown) on the left, live preview
- * on the right.
+ * Split markdown editor: CodeMirror (vim + markdown) and a live preview side by
+ * side. The editor is on the left by default; the toolbar can swap the panes
+ * (remembered across notes and restarts).
  *
  * The parent remounts this component per document id, so `document.content` is
  * the initial state and there is no external-content synchronization to worry
@@ -34,6 +36,7 @@ type NotesEditorProps = {
 export function NotesEditor({ document }: NotesEditorProps) {
   const [content, setContent] = useState(document.content)
   const [mode, setMode] = useState<ViewMode>('split')
+  const [previewFirst, setPreviewFirst] = useState(getStoredPreviewFirst)
   const previewRef = useRef<HTMLDivElement | null>(null)
 
   const { config } = useEditorConfigContext()
@@ -126,6 +129,12 @@ export function NotesEditor({ document }: NotesEditorProps) {
     await saveNow(value)
   }, [formatOnSave, getContent, replaceContent, saveNow])
 
+  const togglePaneOrder = useCallback(() => {
+    const next = !previewFirst
+    setPreviewFirst(next)
+    storePreviewFirst(next)
+  }, [previewFirst])
+
   useScrollSync(scrollElement, previewRef, mode === 'split')
 
   useEffect(() => {
@@ -147,18 +156,23 @@ export function NotesEditor({ document }: NotesEditorProps) {
           }
         }}
         onModeChange={setMode}
+        onSwapPanes={togglePaneOrder}
+        previewFirst={previewFirst}
         status={status}
         title={title}
       />
-      <div
-        className={cn(
-          'grid min-h-0 flex-1',
-          mode === 'split' ? 'grid-cols-2 divide-x' : 'grid-cols-1',
-        )}
-      >
+      <div className={cn('grid min-h-0 flex-1', mode === 'split' ? 'grid-cols-2' : 'grid-cols-1')}>
         {/* The editor stays mounted in every mode: unmounting it detaches the
-            CodeMirror DOM and leaves the pane blank when coming back. */}
-        <div className={cn('min-h-0 overflow-hidden', mode === 'preview' && 'hidden')}>
+            CodeMirror DOM and leaves the pane blank when coming back. Swapping
+            the panes only changes the CSS order for the same reason, so the
+            divider is drawn on whichever pane ends up on the right. */}
+        <div
+          className={cn(
+            'min-h-0 overflow-hidden',
+            mode === 'preview' && 'hidden',
+            mode === 'split' && previewFirst && 'order-last border-l',
+          )}
+        >
           <div
             className='h-full'
             ref={containerRef}
@@ -166,7 +180,10 @@ export function NotesEditor({ document }: NotesEditorProps) {
         </div>
         {mode !== 'edit' && (
           <div
-            className='min-h-0 overflow-auto'
+            className={cn(
+              'min-h-0 overflow-auto',
+              mode === 'split' && (previewFirst ? 'order-first' : 'border-l'),
+            )}
             ref={previewRef}
           >
             <MarkdownPreview content={content} />
