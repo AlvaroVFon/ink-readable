@@ -3,8 +3,11 @@ import { Columns2, Eye, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+import type { ExportFormat } from './components/notes-export-menu'
 import type { SaveStatus } from './hooks/use-autosave'
 import type { ViewMode } from './types'
+
+import { NotesExportMenu } from './components/notes-export-menu'
 
 const VIEW_MODES = [
   { value: 'edit', label: 'Editor only', icon: Pencil },
@@ -31,9 +34,18 @@ type NotesToolbarProps = {
   status: SaveStatus
   mode: ViewMode
   onModeChange: (mode: ViewMode) => void
+  onExport: (format: ExportFormat) => void
+  exportError: string | null
 }
 
-export function NotesToolbar({ title, status, mode, onModeChange }: NotesToolbarProps) {
+export function NotesToolbar({
+  title,
+  status,
+  mode,
+  onModeChange,
+  onExport,
+  exportError,
+}: NotesToolbarProps) {
   return (
     <div className='flex h-11 shrink-0 items-center gap-3 border-b px-3'>
       <span className='truncate text-sm font-medium'>{title}</span>
@@ -44,6 +56,14 @@ export function NotesToolbar({ title, status, mode, onModeChange }: NotesToolbar
       >
         {SAVE_LABELS[status]}
       </span>
+      {exportError !== null && (
+        <span
+          className='text-xs text-destructive'
+          role='status'
+        >
+          {exportError}
+        </span>
+      )}
       <div
         aria-label='View mode'
         className='ml-auto flex items-center gap-1'
@@ -64,6 +84,8 @@ export function NotesToolbar({ title, status, mode, onModeChange }: NotesToolbar
           </Button>
         ))}
       </div>
+      <div className='h-4 w-px bg-border' />
+      <NotesExportMenu onSelect={onExport} />
     </div>
   )
 }

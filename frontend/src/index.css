@@ -683,3 +683,85 @@
   color: var(--destructive);
   font-size: 0.85em;
 }
+
+/*
+ * Print / PDF export
+ *
+ * `PrintableNote` portals a `.print-root` copy of the note into <body>. It is
+ * hidden on screen; when printing, everything else is hidden instead. The
+ * root pins the default light tokens so the PDF reads well on paper whatever
+ * palette or mode the app is using.
+ */
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 2cm;
+  }
+
+  body > *:not(.print-root) {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-root {
+    display: block;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --border: oklch(0.922 0 0);
+    --primary: oklch(0.205 0 0);
+    --syntax-comment: oklch(0.55 0.02 265);
+    --syntax-keyword: oklch(0.5 0.2 300);
+    --syntax-string: oklch(0.5 0.14 150);
+    --syntax-number: oklch(0.55 0.16 55);
+    --syntax-heading: oklch(0.45 0.16 260);
+    --syntax-link: oklch(0.5 0.16 250);
+    --syntax-code: oklch(0.47 0.14 20);
+    --syntax-quote: oklch(0.5 0.03 265);
+    --syntax-list: oklch(0.55 0.18 300);
+    --alert-note: oklch(0.52 0.16 250);
+    --alert-tip: oklch(0.5 0.13 150);
+    --alert-important: oklch(0.5 0.2 300);
+    --alert-warning: oklch(0.56 0.14 75);
+    --alert-caution: oklch(0.55 0.2 25);
+    color: var(--foreground);
+    background: var(--background);
+  }
+
+  .print-root .markdown-preview {
+    max-width: none;
+    padding: 0;
+  }
+
+  .print-root pre {
+    white-space: pre-wrap;
+  }
+
+  .print-root pre,
+  .print-root table,
+  .print-root img,
+  .print-root .mermaid-diagram,
+  .print-root blockquote {
+    break-inside: avoid;
+  }
+
+  .print-root h1,
+  .print-root h2,
+  .print-root h3 {
+    break-after: avoid;
+  }
+}
