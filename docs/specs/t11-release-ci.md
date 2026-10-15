@@ -103,6 +103,14 @@ make sidecar && make tauri-build
   `args: --target <triple>`) que publica los instaladores en un Release draft.
 - Se añadió `--target <triple>` a `scripts/build-sidecar.sh` para reutilizarlo
   desde CI sin duplicar lógica en el workflow.
+- **Release manual (posterior):** se añadió `workflow_dispatch` con inputs
+  `bump` (patch/minor/major) y `publish` (bool). Un job `bump` (solo en
+  dispatch) actualiza la versión en `tauri.conf.json`, `Cargo.toml` y
+  `Cargo.lock`, la commitea a `main` y crea/pushea el tag `desktop-v<version>`;
+  la matriz compila ese commit y `updater-manifest` publica la release si
+  `publish`. Se eliminó el trigger `push: branches: main` (reconstruía un draft
+  en cada merge). Los push con `GITHUB_TOKEN` no re-disparan workflows, así que
+  no hay builds duplicados.
 - **Validado:** YAML parseable. No ejecutable en este entorno (requiere un tag
   y runners macOS/Windows); el `tauri build` local equivalente está verificado
   en T9. El owner debe lanzar un tag de prueba (`desktop-v0.0.1`) para validar la matriz.

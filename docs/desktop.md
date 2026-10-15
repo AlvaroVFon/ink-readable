@@ -139,11 +139,15 @@ make sidecar        # host sidecar
 make tauri-build    # bundles for the current OS
 ```
 
-Publishing uses GitHub Actions: pushing a `desktop-v*` tag runs
-`.github/workflows/release-desktop.yml`, which cross-builds the sidecar per
-target, runs `tauri build` on macOS/Windows/Linux and uploads the installers to
-a draft release. OS code-signing (notarization/Authenticode) is not wired yet
-(future phase).
+Publishing uses GitHub Actions (`.github/workflows/release-desktop.yml`). The
+normal path is the manual **Desktop Release** workflow: **Run workflow** and
+pick a `patch`/`minor`/`major` bump. A `bump` job updates the version in
+`tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, commits it to `main` and
+pushes the `desktop-v<version>` tag; the matrix then cross-builds the sidecar
+per target, runs `tauri build` on macOS/Windows/Linux and uploads the signed
+installers. Pushing a `desktop-v*` tag by hand still works and runs the same
+matrix (see *Shipping an update*). OS code-signing
+(notarization/Authenticode) is not wired yet (future phase).
 
 ## Updates
 
@@ -174,16 +178,21 @@ would have to reinstall manually.
 
 ### Shipping an update
 
-1. Bump the version in `frontend/src-tauri/tauri.conf.json` **and**
-   `frontend/src-tauri/Cargo.toml` (the updater compares semver against the
-   running app).
-2. Merge to `main`: the workflow builds every target, signs the updater
-   artifacts and attaches them to the draft release. A final
-   `updater-manifest` job then builds `latest.json` from the uploaded `.sig`
-   files (`scripts/updater-manifest.py`) and attaches it too.
-3. Publish the draft. `releases/latest/download/latest.json` only resolves to
-   published (non-draft, non-prerelease) releases, so users see the toast from
-   that moment on.
+**Manually (recommended).** Run the **Desktop Release** workflow from the
+Actions tab (**Run workflow**) and pick the bump type. The `bump` job updates
+`tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, commits the bump to `main`
+and pushes the `desktop-v<version>` tag; the matrix builds and signs every
+target and `updater-manifest` attaches `latest.json`. Leave **publish** on to
+publish the release in the same run (the updater then sees it); turn it off to
+review the draft first.
+
+**From a tag.** Bump the three files yourself, merge to `main`, push a
+`desktop-v*` tag; the same matrix runs, but the release stays a draft until you
+publish it.
+
+Either way `releases/latest/download/latest.json` only resolves to published
+(non-draft, non-prerelease) releases, so users see the toast from that moment
+on.
 
 Linux updates work for the AppImage, `.deb` and `.rpm` bundles (the latter two
 ask for privileges via `pkexec`).

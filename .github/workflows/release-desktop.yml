@@ -1,19 +1,100 @@
 name: Desktop Release
 
 on:
+  # Tag pushes stay supported for manual/expert use; the manual dispatch below
+  # is the normal path (it bumps, tags and builds in one go).
   push:
-    branches:
-      - main
     tags:
       - "desktop-v*"
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      publish:
+        description: "Publish the release (skip the draft review)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
 jobs:
+  # Manual path: bump the version, commit it to main and tag it. GITHUB_TOKEN
+  # pushes do not re-trigger workflows, so the matrix below runs once, here.
+  bump:
+    name: Bump version and tag
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      ref: ${{ steps.bump.outputs.ref }}
+      version: ${{ steps.bump.outputs.version }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          # Full history: shallow clones refuse to push new tags.
+          fetch-depth: 0
+
+      - name: Compute and apply the version bump
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          current="$(jq -r .version frontend/src-tauri/tauri.conf.json)"
+          IFS=. read -r major minor patch <<< "$current"
+          case "$BUMP" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "unsupported bump: $BUMP" >&2; exit 1 ;;
+          esac
+          next="${major}.${minor}.${patch}"
+          echo "bumping ${current} -> ${next}"
+
+          jq --arg v "$next" '.version = $v' frontend/src-tauri/tauri.conf.json > tauri.conf.json.tmp
+          mv tauri.conf.json.tmp frontend/src-tauri/tauri.conf.json
+
+          sed -i "0,/^version = \".*\"/s//version = \"${next}\"/" frontend/src-tauri/Cargo.toml
+          sed -i "/^name = \"ink-readable\"$/{n;s/^version = \".*\"/version = \"${next}\"/;}" frontend/src-tauri/Cargo.lock
+
+          echo "version=${next}" >> "$GITHUB_OUTPUT"
+          echo "ref=desktop-v${next}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag and push
+        env:
+          TAG: ${{ steps.bump.outputs.ref }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "$TAG" >/dev/null 2>&1; then
+            echo "tag $TAG already exists; nothing to do" >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src-tauri/tauri.conf.json frontend/src-tauri/Cargo.toml frontend/src-tauri/Cargo.lock
+          git commit -m "chore(desktop): bump version to ${VERSION}"
+          git tag "$TAG"
+          git push origin HEAD:main
+          git push origin "$TAG"
+
   release:
     name: ${{ matrix.target }}
+    needs: bump
+    # `bump` is skipped on tag pushes, and that is fine: the matrix must still
+    # run then. It must not run when the bump itself failed.
+    if: ${{ !cancelled() && needs.bump.result != 'failure' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
 
@@ -33,6 +114,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # On dispatch, build the just-bumped commit; otherwise the pushed ref.
+          ref: ${{ needs.bump.outputs.ref || github.ref }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -89,7 +173,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signs the updater artifacts; tauri-action then publishes latest.json.
+          # Signs the updater artifacts; tauri-action then attaches them.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
@@ -106,13 +190,16 @@ jobs:
 
   updater-manifest:
     name: Updater manifest
-    needs: release
+    needs: [release, bump]
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.bump.outputs.ref || github.ref }}
 
       - name: Upload latest.json
         env:
@@ -124,3 +211,11 @@ jobs:
           gh release download "$tag" --pattern '*.sig' --dir sigs
           python3 -I scripts/updater-manifest.py sigs "$GITHUB_REPOSITORY" "$tag" "$version" "$notes" > latest.json
           gh release upload "$tag" latest.json --clobber
+
+      - name: Publish the release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(jq -r .version frontend/src-tauri/tauri.conf.json)"
+          gh release edit "desktop-v${version}" --draft=false
