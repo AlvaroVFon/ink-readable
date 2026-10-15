@@ -1,12 +1,22 @@
 import { invoke } from '@tauri-apps/api/core'
+import { check, type Update } from '@tauri-apps/plugin-updater'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { API_BASE_URL } from './http'
-import { isTauri, openDataDir, printWindow, resolveApiBaseUrl, saveMarkdownFile } from './tauri'
+import {
+  checkForUpdate,
+  isTauri,
+  openDataDir,
+  printWindow,
+  resolveApiBaseUrl,
+  saveMarkdownFile,
+} from './tauri'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }))
 
 const invokeMock = vi.mocked(invoke)
+const checkMock = vi.mocked(check)
 
 function setTauriInternals(): void {
   Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true })
@@ -127,5 +137,54 @@ describe('printWindow', () => {
     await printWindow()
 
     expect(invokeMock).toHaveBeenCalledWith('print_webview')
+  })
+})
+
+describe('checkForUpdate', () => {
+  afterEach(() => {
+    clearTauriInternals()
+    invokeMock.mockReset()
+    checkMock.mockReset()
+  })
+
+  it('resolves to null outside the desktop shell', async () => {
+    expect(await checkForUpdate()).toBeNull()
+    expect(checkMock).not.toHaveBeenCalled()
+  })
+
+  it('resolves to null when the app is up to date', async () => {
+    setTauriInternals()
+    checkMock.mockResolvedValue(null)
+
+    expect(await checkForUpdate()).toBeNull()
+  })
+
+  it('downloads, stops the backend, installs and restarts', async () => {
+    setTauriInternals()
+    const calls: string[] = []
+    const download = vi.fn(async (onEvent: (event: unknown) => void) => {
+      calls.push('download')
+      onEvent({ event: 'Started', data: { contentLength: 200 } })
+      onEvent({ event: 'Progress', data: { chunkLength: 50 } })
+      onEvent({ event: 'Progress', data: { chunkLength: 150 } })
+      onEvent({ event: 'Finished' })
+    })
+    const install = vi.fn(async () => {
+      calls.push('install')
+    })
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only the members checkForUpdate uses
+    checkMock.mockResolvedValue({ version: '0.2.0', download, install } as unknown as Update)
+    invokeMock.mockImplementation(async (command) => {
+      calls.push(command)
+    })
+
+    const update = await checkForUpdate()
+    expect(update?.version).toBe('0.2.0')
+
+    const onProgress = vi.fn()
+    await update?.install(onProgress)
+
+    expect(calls).toEqual(['download', 'stop_backend', 'install', 'restart_app'])
+    expect(onProgress).toHaveBeenLastCalledWith(200, 200)
   })
 })
