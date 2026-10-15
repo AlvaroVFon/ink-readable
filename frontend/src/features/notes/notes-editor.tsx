@@ -10,6 +10,8 @@ import type { ViewMode } from './types'
 
 import { useCodeMirror } from './editor/use-code-mirror'
 import { setVimLeaderHandlers } from './editor/vim'
+import { PrintableNote } from './export/printable-note'
+import { useExportNote } from './export/use-export-note'
 import { useAutosave } from './hooks/use-autosave'
 import { useScrollSync } from './hooks/use-scroll-sync'
 import { formatMarkdown } from './lib/format-markdown'
@@ -89,6 +91,18 @@ export function NotesEditor({ document }: NotesEditorProps) {
     })
   }, [open, setOpen, focusEditor, focusSidebar, openFinder])
 
+  const title = document.name === '' ? 'Untitled' : document.name
+  const {
+    exportMarkdown,
+    exportPdf,
+    print,
+    printJob,
+    error: exportError,
+  } = useExportNote({
+    name: title,
+    getContent,
+  })
+
   const formatOnSave = config?.formatOnSave ?? false
 
   // Explicit save (Cmd/Ctrl+S or vim `:w`): format first when enabled, push the
@@ -123,10 +137,18 @@ export function NotesEditor({ document }: NotesEditorProps) {
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <NotesToolbar
+        exportError={exportError}
         mode={mode}
+        onExport={(format) => {
+          if (format === 'markdown') {
+            void exportMarkdown()
+          } else {
+            exportPdf()
+          }
+        }}
         onModeChange={setMode}
         status={status}
-        title={document.name === '' ? 'Untitled' : document.name}
+        title={title}
       />
       <div
         className={cn(
@@ -151,6 +173,16 @@ export function NotesEditor({ document }: NotesEditorProps) {
           </div>
         )}
       </div>
+      {printJob !== null && (
+        <PrintableNote
+          key={printJob.id}
+          content={printJob.content}
+          onReady={() => {
+            void print()
+          }}
+          title={title}
+        />
+      )}
     </div>
   )
 }

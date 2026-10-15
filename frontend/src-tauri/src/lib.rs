@@ -1,9 +1,10 @@
 //! Tauri entry point.
 //!
-//! Registers the shell/opener plugins, spawns the Go backend sidecar (see
+//! Registers the shell/opener/dialog plugins, spawns the Go backend sidecar (see
 //! [`api`]) and kills it when the app exits.
 
 mod api;
+mod export;
 mod paths;
 
 use tauri::Emitter;
@@ -13,10 +14,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(api::ApiState::default())
         .invoke_handler(tauri::generate_handler![
             api::get_api_url,
-            api::open_data_dir
+            api::open_data_dir,
+            export::export_markdown,
+            export::print_webview
         ])
         .setup(|app| {
             if let Err(err) = api::spawn(app.handle()) {

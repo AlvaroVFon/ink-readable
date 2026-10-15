@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { API_BASE_URL } from './http'
-import { isTauri, openDataDir, resolveApiBaseUrl } from './tauri'
+import { isTauri, openDataDir, printWindow, resolveApiBaseUrl, saveMarkdownFile } from './tauri'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 
@@ -68,5 +68,64 @@ describe('openDataDir', () => {
     await openDataDir()
 
     expect(invokeMock).toHaveBeenCalledWith('open_data_dir')
+  })
+})
+
+describe('saveMarkdownFile', () => {
+  afterEach(() => {
+    clearTauriInternals()
+    invokeMock.mockReset()
+    vi.restoreAllMocks()
+  })
+
+  it('downloads a blob in the browser', async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:note')
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+
+    expect(await saveMarkdownFile('note.md', '# Hi')).toBe(true)
+
+    expect(click).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:note')
+    expect(invokeMock).not.toHaveBeenCalled()
+  })
+
+  it('invokes the shell command in the desktop shell', async () => {
+    setTauriInternals()
+    invokeMock.mockResolvedValue(false)
+
+    expect(await saveMarkdownFile('note.md', '# Hi')).toBe(false)
+    expect(invokeMock).toHaveBeenCalledWith('export_markdown', {
+      fileName: 'note.md',
+      contents: '# Hi',
+    })
+  })
+})
+
+describe('printWindow', () => {
+  afterEach(() => {
+    clearTauriInternals()
+    invokeMock.mockReset()
+    vi.unstubAllGlobals()
+  })
+
+  it('uses window.print in the browser', async () => {
+    // happy-dom does not implement window.print.
+    const print = vi.fn()
+    vi.stubGlobal('print', print)
+
+    await printWindow()
+
+    expect(print).toHaveBeenCalledOnce()
+    expect(invokeMock).not.toHaveBeenCalled()
+  })
+
+  it('invokes the shell command in the desktop shell', async () => {
+    setTauriInternals()
+    invokeMock.mockResolvedValue(undefined)
+
+    await printWindow()
+
+    expect(invokeMock).toHaveBeenCalledWith('print_webview')
   })
 })
