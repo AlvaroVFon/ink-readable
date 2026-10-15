@@ -600,6 +600,34 @@
   font-weight: 600;
 }
 
+/* frontmatter properties shown above the note body */
+.markdown-preview .markdown-frontmatter {
+  margin: 0 0 1.5em;
+}
+
+.markdown-preview .markdown-frontmatter th {
+  width: 1%;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.markdown-preview .markdown-frontmatter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
+.markdown-preview .markdown-frontmatter-chip {
+  border-radius: var(--radius-sm);
+  background-color: var(--muted);
+  padding: 0.1em 0.5em;
+}
+
+.markdown-preview .markdown-frontmatter-raw {
+  margin: 0 0 1.5em;
+}
+
 .markdown-preview img {
   max-width: 100%;
   border-radius: var(--radius-md);

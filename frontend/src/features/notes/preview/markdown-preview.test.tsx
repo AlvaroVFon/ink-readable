@@ -118,6 +118,28 @@ describe('MarkdownPreview', () => {
     expect(mermaidRender.mock.calls[0]?.[1]).toContain('graph TD')
   })
 
+  it('renders frontmatter as a properties table instead of markdown', () => {
+    renderPreview('---\ntitle: Hello\ntags:\n  - one\n  - two\n---\n# Body')
+
+    const properties = screen.getByRole('table', { name: 'Properties' })
+    expect(properties).toHaveTextContent('titleHello')
+    expect(screen.getByText('one')).toBeInTheDocument()
+    expect(screen.getByText('two')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Body' })).toBeInTheDocument()
+    expect(document.querySelector('hr')).toBeNull()
+    expect(screen.queryByRole('heading', { name: /title/ })).toBeNull()
+  })
+
+  it('shows invalid frontmatter as raw YAML', () => {
+    renderPreview('---\ntitle: [unclosed\n---\nbody')
+
+    expect(screen.queryByRole('table', { name: 'Properties' })).toBeNull()
+    expect(document.querySelector('.markdown-frontmatter-raw')).toHaveTextContent(
+      'title: [unclosed',
+    )
+    expect(screen.getByText('body')).toBeInTheDocument()
+  })
+
   it('does not emit raw script tags', () => {
     renderPreview('<script>alert(1)</script>\n\ncontent')
 
