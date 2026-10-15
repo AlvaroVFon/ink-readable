@@ -1,4 +1,4 @@
-import { Columns2, Eye, Pencil } from 'lucide-react'
+import { ArrowLeftRight, Columns2, Eye, Pencil } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -34,6 +34,8 @@ type NotesToolbarProps = {
   status: SaveStatus
   mode: ViewMode
   onModeChange: (mode: ViewMode) => void
+  previewFirst: boolean
+  onSwapPanes: () => void
   onExport: (format: ExportFormat) => void
   exportError: string | null
 }
@@ -43,6 +45,8 @@ export function NotesToolbar({
   status,
   mode,
   onModeChange,
+  previewFirst,
+  onSwapPanes,
   onExport,
   exportError,
 }: NotesToolbarProps) {
@@ -64,9 +68,22 @@ export function NotesToolbar({
           {exportError}
         </span>
       )}
+      {mode === 'split' && (
+        <Button
+          aria-label='Swap panes'
+          aria-pressed={previewFirst}
+          className='ml-auto'
+          onClick={onSwapPanes}
+          size='icon-sm'
+          title={previewFirst ? 'Editor on the left' : 'Preview on the left'}
+          variant='ghost'
+        >
+          <ArrowLeftRight aria-hidden='true' />
+        </Button>
+      )}
       <div
         aria-label='View mode'
-        className='ml-auto flex items-center gap-1'
+        className={cn('flex items-center gap-1', mode !== 'split' && 'ml-auto')}
         role='group'
       >
         {VIEW_MODES.map(({ value, label, icon: Icon }) => (

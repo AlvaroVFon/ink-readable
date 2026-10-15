@@ -1,6 +1,6 @@
 import { EditorView, lineNumberMarkers } from '@codemirror/view'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UseEditorConfigResult } from '@/hooks/use-editor-config'
 import type { Document } from '@/lib/types'
@@ -112,6 +112,72 @@ describe('NotesEditor view modes', () => {
     const ranges = editorView(container).state.facet(lineNumberMarkers)
 
     expect(ranges.every((range) => range.size === 0)).toBe(true)
+  })
+})
+
+function panes(container: HTMLElement) {
+  const editorPane = container.querySelector('.cm-editor')?.closest('.overflow-hidden')
+  const previewPane = screen.getByRole('heading', { name: 'Hello world' }).closest('.overflow-auto')
+  if (!editorPane || !previewPane) {
+    throw new Error('panes not mounted')
+  }
+  return { editorPane, previewPane }
+}
+
+describe('NotesEditor pane order', () => {
+  beforeEach(() => {
+    useEditorConfigContext.mockReset()
+  })
+
+  afterEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('shows the editor on the left by default', () => {
+    const { container } = setup()
+    const { editorPane, previewPane } = panes(container)
+
+    expect(screen.getByRole('button', { name: 'Swap panes' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(editorPane).not.toHaveClass('order-last')
+    expect(previewPane).not.toHaveClass('order-first')
+  })
+
+  it('swaps the panes and remembers the order', () => {
+    const { container, unmount } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap panes' }))
+
+    const { editorPane, previewPane } = panes(container)
+    expect(editorPane).toHaveClass('order-last')
+    expect(previewPane).toHaveClass('order-first')
+    expect(window.localStorage.getItem('ink-readable-preview-first')).toBe('true')
+
+    unmount()
+    setup()
+    expect(screen.getByRole('button', { name: 'Swap panes' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('keeps the editor mounted when swapping', () => {
+    const { container } = setup()
+    const editor = container.querySelector('.cm-editor')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap panes' }))
+
+    expect(container.querySelector('.cm-editor')).toBe(editor)
+  })
+
+  it('only offers the swap in split view', () => {
+    setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editor only' }))
+
+    expect(screen.queryByRole('button', { name: 'Swap panes' })).not.toBeInTheDocument()
   })
 })
 
