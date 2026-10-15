@@ -113,6 +113,13 @@ It holds `ink-readable.db` and `api.log` (the sidecar output, truncated past
   GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ink-readable
   ```
 
+  On Linux the app now applies both (`GDK_BACKEND=x11` and
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1`) at startup — see
+  `frontend/src-tauri/src/platform.rs` — so the bare `ink-readable` command
+  works on affected machines. Exporting either variable yourself still wins, so
+  the commands above are only needed to override the default (for example to
+  force native Wayland).
+
   These also apply to `pnpm tauri dev`, and to the AppImage (replace
   `ink-readable` with the `.AppImage` path).
 - **Missing WebKitGTK** — on Linux the build fails at `libsoup-3.0`/`webkit2gtk-4.1`;
