@@ -150,10 +150,35 @@ export function useCodeMirror({
 
   const replaceContent = useCallback((value: string) => {
     const view = viewRef.current
-    if (view === null || view.state.doc.toString() === value) {
+    if (view === null) {
       return
     }
-    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } })
+    const current = view.state.doc.toString()
+    if (current === value) {
+      return
+    }
+
+    // Replace only the differing middle so CodeMirror maps the cursor (and
+    // scroll position) through the change instead of resetting them.
+    let start = 0
+    const maxStart = Math.min(current.length, value.length)
+    while (start < maxStart && current[start] === value[start]) {
+      start++
+    }
+    let endCurrent = current.length
+    let endValue = value.length
+    while (
+      endCurrent > start &&
+      endValue > start &&
+      current[endCurrent - 1] === value[endValue - 1]
+    ) {
+      endCurrent--
+      endValue--
+    }
+
+    view.dispatch({
+      changes: { from: start, to: endCurrent, insert: value.slice(start, endValue) },
+    })
   }, [])
 
   const focus = useCallback(() => {
