@@ -9,6 +9,7 @@ describe('parseDocText', () => {
     ).toEqual({
       description: 'Display name.\nShown to partners.',
       example: '"Ada"',
+      examples: ['"Ada"'],
       deprecated: 'Use `title`.',
       defaultValue: null,
     })
@@ -18,9 +19,17 @@ describe('parseDocText', () => {
     expect(parseDocText('Contact ops@example.com. @see Docs @defaultValue 3')).toEqual({
       description: 'Contact ops@example.com. @see Docs',
       example: null,
+      examples: [],
       deprecated: null,
       defaultValue: '3',
     })
+  })
+
+  it('collects every @example in order', () => {
+    expect(parseDocText('Status. @example "open" @example "closed"').examples).toEqual([
+      '"open"',
+      '"closed"',
+    ])
   })
 
   it('reads a bare @deprecated as an empty reason', () => {

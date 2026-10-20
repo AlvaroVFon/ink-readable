@@ -40,6 +40,8 @@ export type Field = {
   deprecated: string | null
   /** Literal example taken from the source docs, rendered verbatim. */
   example: string | null
+  /** Every documented `@example`, in order; the nth builds the nth sample payload. */
+  examples: string[]
   defaultValue: string | null
 }
 
@@ -90,6 +92,7 @@ export type DocComment = {
   description: string
   deprecated: string | null
   example: string | null
+  examples: string[]
   defaultValue: string | null
 }
 
@@ -97,6 +100,7 @@ export const EMPTY_DOC: DocComment = {
   description: '',
   deprecated: null,
   example: null,
+  examples: [],
   defaultValue: null,
 }
 
@@ -115,14 +119,20 @@ export function parseDocText(text: string): DocComment {
   const matches = [...text.matchAll(DOC_TAG)]
   const description = text.slice(0, matches[0]?.index ?? text.length).trim()
   const tags: Record<string, string> = {}
+  const examples: string[] = []
   matches.forEach((match, index) => {
     const end = matches[index + 1]?.index ?? text.length
-    tags[match[1].toLowerCase()] = text.slice(match.index + match[0].length, end).trim()
+    const value = text.slice(match.index + match[0].length, end).trim()
+    tags[match[1].toLowerCase()] = value
+    if (match[1].toLowerCase() === 'example') {
+      examples.push(value)
+    }
   })
   return {
     description,
     deprecated: tags.deprecated ?? null,
-    example: tags.example ?? null,
+    example: examples[0] ?? null,
+    examples,
     defaultValue: tags.default ?? tags.defaultvalue ?? null,
   }
 }

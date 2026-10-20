@@ -6,8 +6,13 @@ import { EditorView } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { useEffect, useRef } from 'react'
 
+import { useOptionalEditorConfig } from '@/components/editor-config/editor-config-context'
 import { useTheme } from '@/components/theme/theme-context'
-import { darkThemeExtension } from '@/features/notes/editor/editor-extensions'
+import {
+  darkThemeExtension,
+  lineNumbersExtension,
+  vimExtension,
+} from '@/features/notes/editor/editor-extensions'
 import { codeHighlightStyle, editorTheme } from '@/features/notes/editor/editor-theme'
 
 type CodePaneProps = {
@@ -21,24 +26,31 @@ type CodePaneProps = {
 }
 
 /**
- * Minimal CodeMirror editor for source code. Unlike the notes editor it has no
- * Vim or save handling.
+ * Minimal CodeMirror editor for source code. Editable panes follow the user's
+ * Vim motion and relative line number preferences; unlike the notes editor there is no save handling.
  *
  * Editable panes own their document after mount (`value` only seeds it);
  * read-only panes follow `value`.
  */
 export function CodePane({ label, value, loadLanguage, onChange }: CodePaneProps) {
   const { resolvedTheme } = useTheme()
+  const config = useOptionalEditorConfig()?.config
+  const vimMotion = config?.vimMotion ?? false
+  const relativeLineNumbers = config?.relativeLineNumbers ?? false
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
   const languageCompartmentRef = useRef(new Compartment())
   const darkCompartmentRef = useRef(new Compartment())
+  const vimCompartmentRef = useRef(new Compartment())
+  const lineNumbersCompartmentRef = useRef(new Compartment())
   const onChangeRef = useRef(onChange)
   const initialRef = useRef({
     label,
     value,
     readOnly: onChange === undefined,
     dark: resolvedTheme === 'dark',
+    vim: vimMotion,
+    relativeLineNumbers,
   })
 
   useEffect(() => {
@@ -50,12 +62,16 @@ export function CodePane({ label, value, loadLanguage, onChange }: CodePaneProps
     if (parent === null) {
       return () => {}
     }
-    const { label: ariaLabel, value: doc, readOnly, dark } = initialRef.current
+    const { label: ariaLabel, value: doc, readOnly, dark, vim, relativeLineNumbers: relative } =
+      initialRef.current
     const view = new EditorView({
       doc,
       parent,
       extensions: [
         darkCompartmentRef.current.of(darkThemeExtension(dark)),
+        // Before `basicSetup`, or its keymaps swallow the vim bindings.
+        vimCompartmentRef.current.of(vimExtension(vim && !readOnly)),
+        lineNumbersCompartmentRef.current.of(lineNumbersExtension(relative)),
         basicSetup,
         languageCompartmentRef.current.of([]),
         syntaxHighlighting(codeHighlightStyle),
@@ -97,6 +113,20 @@ export function CodePane({ label, value, loadLanguage, onChange }: CodePaneProps
   }, [resolvedTheme])
 
   const readOnly = onChange === undefined
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: lineNumbersCompartmentRef.current.reconfigure(
+        lineNumbersExtension(relativeLineNumbers),
+      ),
+    })
+  }, [relativeLineNumbers])
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: vimCompartmentRef.current.reconfigure(vimExtension(vimMotion && !readOnly)),
+    })
+  }, [vimMotion, readOnly])
+
   useEffect(() => {
     const view = viewRef.current
     if (!readOnly || view === null || view.state.doc.toString() === value) {

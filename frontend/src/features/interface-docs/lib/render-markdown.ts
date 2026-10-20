@@ -186,8 +186,15 @@ class MarkdownRenderer {
         }
         if (this.options.examples) {
           const builder = new ExampleBuilder(this.declarations, (object) => this.fieldsOf(object))
-          const example = JSON.stringify(builder.forDeclaration(declaration), null, 2)
-          blocks.push(`**${t.example}**`, `\`\`\`json\n${example}\n\`\`\``)
+          const samples = Array.from({ length: builder.countFor(declaration) }, (_, index) => ({
+            name: String(index + 1),
+            value: builder.forDeclaration(declaration, index),
+          }))
+          for (const sample of samples) {
+            const label = samples.length === 1 ? t.example : `${t.example}: ${sample.name}`
+            const json = JSON.stringify(sample.value, null, 2)
+            blocks.push(`**${label}**`, `\`\`\`json\n${json}\n\`\`\``)
+          }
         }
         break
       }
@@ -227,9 +234,6 @@ class MarkdownRenderer {
       }
       if (field.defaultValue !== null) {
         notes.push(`${t.defaultValue}: ${code(field.defaultValue)}.`)
-      }
-      if (field.example !== null) {
-        notes.push(`${t.example}: ${code(field.example)}.`)
       }
       const row = [
         code(path),

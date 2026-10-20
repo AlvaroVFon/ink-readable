@@ -283,6 +283,7 @@ class TypeScriptParser {
         description: fieldDoc.description,
         deprecated: fieldDoc.deprecated,
         example: fieldDoc.example,
+        examples: fieldDoc.examples,
         defaultValue: fieldDoc.defaultValue,
       })
     }
