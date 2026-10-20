@@ -1,6 +1,8 @@
-import { Check, Copy } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
+import { Check, Copy } from 'lucide-react'
+
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
 type CodeBlockProps = {
@@ -19,26 +21,10 @@ type CodeBlockProps = {
  * render as a plain `pre`.
  */
 export function CodeBlock({ language, code, children }: CodeBlockProps) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopyToClipboard()
 
   if (language === null) {
     return <pre>{children}</pre>
-  }
-
-  const handleCopy = async () => {
-    if (navigator.clipboard === undefined) {
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      window.setTimeout(() => {
-        setCopied(false)
-      }, 1500)
-    } catch {
-      // The clipboard can reject (permissions, insecure context); the block
-      // stays readable, so there is nothing to recover from.
-    }
   }
 
   return (
@@ -47,7 +33,7 @@ export function CodeBlock({ language, code, children }: CodeBlockProps) {
         aria-label={`Copy ${language} code`}
         className={cn('code-block-language', copied && 'code-block-language-copied')}
         onClick={() => {
-          void handleCopy()
+          void copy(code)
         }}
         type='button'
       >

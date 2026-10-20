@@ -44,6 +44,12 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
   })
 
+  it('opens the JSON to types generator under /tools', async () => {
+    renderApp(['/tools'])
+
+    expect(await screen.findByRole('heading', { name: 'JSON → Types' })).toBeInTheDocument()
+  })
+
   it('renders not found for unknown routes', () => {
     renderApp(['/unknown'])
 
@@ -56,5 +62,13 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Planner' }))
 
     expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
+  })
+
+  it('navigates to the tools section from the header', async () => {
+    renderApp()
+
+    fireEvent.click(screen.getByRole('link', { name: 'Tools' }))
+
+    expect(await screen.findByRole('heading', { name: 'JSON → Types' })).toBeInTheDocument()
   })
 })
