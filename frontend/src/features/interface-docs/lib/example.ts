@@ -12,7 +12,7 @@ const FORMAT_EXAMPLES: Record<string, unknown> = {
  * Reads a documented `@example`/`@default`: JSON when it parses, otherwise the
  * raw text as a string (`@example Ada` and `@example "Ada"` both work).
  */
-function parseDocumentedValue(text: string): unknown {
+export function parseDocumentedValue(text: string): unknown {
   try {
     return JSON.parse(text)
   } catch {

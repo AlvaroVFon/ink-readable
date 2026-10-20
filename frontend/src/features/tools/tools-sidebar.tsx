@@ -1,4 +1,4 @@
-import { Braces, FileText, Wrench } from 'lucide-react'
+import { Braces, FileJson, FileText, Wrench } from 'lucide-react'
 import { Link, useMatch } from 'react-router'
 
 import {
@@ -14,6 +14,7 @@ import {
 const TOOLS = [
   { path: 'json-types', label: 'JSON → Types', icon: Braces },
   { path: 'interface-docs', label: 'Interfaces → Docs', icon: FileText },
+  { path: 'json-schema', label: '→ JSON Schema', icon: FileJson },
 ]
 
 export function ToolsSidebar() {
