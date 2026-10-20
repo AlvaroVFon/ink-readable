@@ -50,6 +50,14 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'JSON → Types' })).toBeInTheDocument()
   })
 
+  it('opens the interface docs generator from the tools sidebar', async () => {
+    renderApp(['/tools'])
+
+    fireEvent.click(await screen.findByRole('link', { name: 'Interfaces → Docs' }))
+
+    expect(await screen.findByRole('heading', { name: 'Interfaces → Docs' })).toBeInTheDocument()
+  })
+
   it('renders not found for unknown routes', () => {
     renderApp(['/unknown'])
 

@@ -11,14 +11,22 @@ const ITEM_CLASS =
 
 type NotesExportMenuProps = {
   onSelect: (format: ExportFormat) => void
+  /** Accessible name of the trigger button. */
+  label?: string
+  disabled?: boolean
 }
 
-/** Toolbar menu to export the open note as Markdown or PDF. */
-export function NotesExportMenu({ onSelect }: NotesExportMenuProps) {
+/** Toolbar menu to export the open note (or any Markdown) as Markdown or PDF. */
+export function NotesExportMenu({
+  onSelect,
+  label = 'Export note',
+  disabled = false,
+}: NotesExportMenuProps) {
   return (
     <Menu.Root>
       <Menu.Trigger
-        aria-label='Export note'
+        aria-label={label}
+        disabled={disabled}
         className={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }))}
       >
         <Download aria-hidden='true' />
