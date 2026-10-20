@@ -131,3 +131,22 @@ export const markdownHighlightStyle = HighlightStyle.define([
     color: 'var(--syntax-comment)',
   },
 ])
+
+/**
+ * Colors for source code (JSON, TypeScript, Go) shown in CodeMirror outside the
+ * markdown editor, drawn from the same `--syntax-*` palette.
+ */
+export const codeHighlightStyle = HighlightStyle.define([
+  { tag: [tags.comment, tags.meta], color: 'var(--syntax-comment)', fontStyle: 'italic' },
+  {
+    tag: [tags.keyword, tags.operatorKeyword, tags.modifier, tags.definitionKeyword],
+    color: 'var(--syntax-keyword)',
+  },
+  { tag: [tags.string, tags.special(tags.string)], color: 'var(--syntax-string)' },
+  { tag: [tags.number, tags.bool, tags.null], color: 'var(--syntax-number)' },
+  {
+    tag: [tags.typeName, tags.className, tags.definition(tags.typeName)],
+    color: 'var(--syntax-heading)',
+  },
+  { tag: [tags.propertyName, tags.definition(tags.propertyName)], color: 'var(--syntax-link)' },
+])

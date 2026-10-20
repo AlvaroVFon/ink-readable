@@ -1,4 +1,4 @@
-import { BookOpen, SquareKanban } from 'lucide-react'
+import { BookOpen, SquareKanban, Wrench } from 'lucide-react'
 import { NavLink } from 'react-router'
 
 import { buttonVariants } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 const sections = [
   { to: '/', label: 'Notes', icon: BookOpen, end: true },
   { to: '/planner', label: 'Planner', icon: SquareKanban, end: false },
+  { to: '/tools', label: 'Tools', icon: Wrench, end: false },
 ]
 
 export function SectionNav() {
