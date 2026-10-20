@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { NotesLayout } from '@/components/layout/notes-layout'
 import { PlannerLayout } from '@/components/layout/planner-layout'
 import { ToolsLayout } from '@/components/layout/tools-layout'
+import { InterfaceDocsPage } from '@/features/interface-docs/interface-docs-page'
 import { JsonTypesPage } from '@/features/json-types/json-types-page'
 import { NotesWorkspace } from '@/features/notes/notes-workspace'
 import { PlannerBoard, PlannerEmpty } from '@/features/planner/planner-board'
@@ -53,6 +54,10 @@ function App() {
         <Route
           path='json-types'
           element={<JsonTypesPage />}
+        />
+        <Route
+          path='interface-docs'
+          element={<InterfaceDocsPage />}
         />
       </Route>
       <Route

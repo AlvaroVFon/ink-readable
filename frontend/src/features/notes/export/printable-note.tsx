@@ -10,7 +10,8 @@ const MAX_WAIT_MS = 3000
 const POLL_MS = 50
 
 type PrintableNoteProps = {
-  title: string
+  /** Printed as a heading above the content; omit when the content has its own. */
+  title?: string
   content: string
   /** Called once the note (including diagrams) is laid out. */
   onReady: () => void
@@ -62,9 +63,11 @@ export function PrintableNote({ title, content, onReady }: PrintableNoteProps) {
         className='print-root'
         ref={rootRef}
       >
-        <div className='markdown-preview'>
-          <h1>{title}</h1>
-        </div>
+        {title !== undefined && (
+          <div className='markdown-preview'>
+            <h1>{title}</h1>
+          </div>
+        )}
         <MarkdownPreview content={content} />
       </div>
     </ThemeContext.Provider>,
