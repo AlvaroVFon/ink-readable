@@ -6,8 +6,9 @@ The **Tools** section of the app (`/tools`) holds small, offline generators. Eve
 | :------------------ | :-------------------- | :-------------------------- | :------------------------------- |
 | JSON → Types        | `/tools/json-types`   | A JSON sample               | TypeScript or Go type definitions |
 | Interfaces → Docs   | `/tools/interface-docs` | TypeScript or Go declarations | A Markdown API contract (preview, `.md`, PDF) |
+| → JSON Schema       | `/tools/json-schema`  | A JSON sample, or TypeScript or Go declarations | A JSON Schema (2020-12 or draft 07) |
 
-Code lives in `frontend/src/features/json-types/` and `frontend/src/features/interface-docs/`. Both share the `CodePane` CodeMirror editor.
+Code lives in `frontend/src/features/{json-types,interface-docs,json-schema}/`. They share the `CodePane` CodeMirror editor, and JSON Schema reuses the inference of JSON → Types and the parsers of Interfaces → Docs.
 
 ## JSON → Types
 
@@ -88,9 +89,19 @@ The settings popover controls: title, version, document language, table of conte
 - **Markdown**: downloads the generated `.md`, named after the title.
 - **PDF / print**: paginated A4 layout with page numbers and working in-document links. Typography and header image are applied.
 
+## → JSON Schema
+
+Pick the input (JSON sample, TypeScript or Go) and the schema appears on the right, ready to copy.
+
+- **From a JSON sample**: same inference as JSON → Types. Keys present in every object are `required`; mixed primitives become a `type` list; nested objects become definitions referenced with `$ref`.
+- **From declarations**: the root type is the schema itself (blank *Root type* picks the first declaration); every declaration it reaches goes to `$defs` (`definitions` in draft 07). Recursive types point back with `"$ref": "#"`. Inherited fields are merged in.
+- **Doc comments**: description → `description`, `@deprecated` → `deprecated` (2020-12 only), `@default` → `default`, every `@example` → `examples`.
+- **Types**: literal unions and enums become `enum`, `T | null` and Go pointers without `omitempty` become `["t", "null"]`, `Record`/`map` become `additionalProperties`, `A & B` becomes `allOf`, `date-time`/`date`/`uuid` become `format`, base64 becomes `contentEncoding`. Types the source does not declare become `{}`.
+- **Options**: draft (2020-12 / draft 07) and *Forbid additional properties* (`additionalProperties: false` on every object).
+
 ## Tests
 
 ```bash
 cd frontend
-pnpm vitest run src/features/json-types src/features/interface-docs
+pnpm vitest run src/features/json-types src/features/interface-docs src/features/json-schema
 ```
