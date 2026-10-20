@@ -218,3 +218,41 @@ Allowed values:
     expect(render('const x = 1')).toContain('## Data types\n\n_No declarations found._\n')
   })
 })
+
+describe('multiple examples', () => {
+  const SOURCE = `
+    interface Order {
+      /** @example "open" @example "closed" */
+      status: string
+      meta: { qty: number; note: string }
+    }
+  `
+
+  it('renders one block per documented @example', () => {
+    const output = render(SOURCE)
+
+    expect(output).toContain('**Example: 1**')
+    expect(output).toContain('**Example: 2**')
+    expect(output).toContain('"status": "open"')
+    expect(output).toContain('"status": "closed"')
+  })
+
+  it('counts @example tags of nested and referenced objects', () => {
+    const output = render(`
+      interface Address {
+        /** @example "Madrid" @example "Oslo" */
+        city: string
+      }
+      interface User {
+        address: Address
+        meta: {
+          /** @example 1 @example 2 @example 3 */
+          n: number
+        }
+      }
+    `)
+
+    expect(output).toContain('**Example: 3**')
+    expect(output).toMatch(/"city": "Oslo"[\s\S]*"n": 2/)
+  })
+})

@@ -258,6 +258,7 @@ class GoParser {
       description: doc.description,
       deprecated: doc.deprecated,
       example: doc.example,
+      examples: doc.examples,
       defaultValue: doc.defaultValue,
     }
   }

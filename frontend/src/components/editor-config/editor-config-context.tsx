@@ -30,6 +30,11 @@ export function EditorConfigProvider({ children }: { children: ReactNode }) {
   )
 }
 
+/** Like `useEditorConfigContext`, but `null` outside a provider instead of throwing. */
+export function useOptionalEditorConfig(): UseEditorConfigResult | null {
+  return useContext(EditorConfigContext)
+}
+
 export function useEditorConfigContext(): UseEditorConfigResult {
   const context = useContext(EditorConfigContext)
   if (context === null) {

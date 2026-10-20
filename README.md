@@ -25,6 +25,7 @@
 - **GitHub-flavored Markdown** — tables, task lists, strikethrough and GitHub alerts (`> [!NOTE]`, `[!TIP]`, `[!WARNING]`…).
 - **Diagrams, math and code** — Mermaid diagrams, KaTeX math (`$…$`, `$$…$$`) and syntax-highlighted code blocks with a copy button and language label.
 - **Planner** — projects and a drag-and-drop Kanban task board.
+- **Developer tools** — JSON → TypeScript/Go types and TypeScript/Go interfaces → Markdown/PDF API docs, fully offline. See [docs/tools.md](docs/tools.md).
 - **Multi-palette theming** — several color palettes with light and dark variants.
 
 ## Tech stack

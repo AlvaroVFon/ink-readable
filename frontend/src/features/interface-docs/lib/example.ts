@@ -28,6 +28,7 @@ export class ExampleBuilder {
   private readonly declarations: Map<string, Declaration>
   /** Resolves a declaration's own and inherited fields. */
   private readonly fieldsOf: (declaration: Declaration & { kind: 'object' }) => Field[]
+  private index = 0
 
   constructor(
     declarations: Map<string, Declaration>,
@@ -37,7 +38,49 @@ export class ExampleBuilder {
     this.fieldsOf = fieldsOf
   }
 
-  forDeclaration(declaration: Declaration): unknown {
+  /** Number of documented `@example` payloads the declaration supports (at least 1). */
+  countFor(declaration: Declaration & { kind: 'object' }): number {
+    return this.countFields(this.fieldsOf(declaration), [declaration.name])
+  }
+
+  /** Largest `@example` count among the fields, including nested and referenced objects. */
+  private countFields(fields: Field[], visiting: string[]): number {
+    return Math.max(
+      1,
+      ...fields.map((field) =>
+        Math.max(field.examples.length, this.countType(field.type, visiting)),
+      ),
+    )
+  }
+
+  private countType(type: TypeExpr, visiting: string[]): number {
+    switch (type.kind) {
+      case 'array':
+        return this.countType(type.items, visiting)
+      case 'map':
+        return this.countType(type.values, visiting)
+      case 'object':
+        return this.countFields(type.fields, visiting)
+      case 'union':
+      case 'intersection':
+        return Math.max(1, ...type.members.map((member) => this.countType(member, visiting)))
+      case 'ref': {
+        const declaration = this.declarations.get(type.name)
+        if (declaration?.kind === 'object' && !visiting.includes(type.name)) {
+          return this.countFields(this.fieldsOf(declaration), [...visiting, type.name])
+        }
+        return declaration?.kind === 'alias' && !visiting.includes(type.name)
+          ? this.countType(declaration.type, [...visiting, type.name])
+          : 1
+      }
+      default:
+        return 1
+    }
+  }
+
+  /** The `index`th sample: each field uses its `index`th `@example`, else its first. */
+  forDeclaration(declaration: Declaration, index = 0): unknown {
+    this.index = index
     return this.forRef(declaration.name, [])
   }
 
@@ -65,7 +108,7 @@ export class ExampleBuilder {
   private forFields(fields: Field[], visiting: string[]): Record<string, unknown> {
     const value: Record<string, unknown> = {}
     for (const field of fields) {
-      const documented = field.example ?? field.defaultValue
+      const documented = field.examples[this.index] ?? field.example ?? field.defaultValue
       value[field.name] =
         documented === null ? this.forType(field.type, visiting) : parseDocumentedValue(documented)
     }
