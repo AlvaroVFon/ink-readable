@@ -356,8 +356,10 @@
   margin-inline: auto;
   padding: 1.5rem;
   color: var(--foreground);
-  font-size: 0.95rem;
-  line-height: 1.75;
+  /* `--doc-*` come from the document settings; without them the defaults apply. */
+  font-family: var(--doc-font-body, inherit);
+  font-size: var(--doc-font-size, 0.95rem);
+  line-height: var(--doc-line-height, 1.75);
   overflow-wrap: break-word;
 }
 
@@ -372,29 +374,30 @@
 .markdown-preview h5,
 .markdown-preview h6 {
   margin: 1.8em 0 0.7em;
+  font-family: var(--doc-font-heading, inherit);
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
 .markdown-preview h1 {
-  font-size: 1.9em;
+  font-size: calc(1.9em * var(--doc-heading-scale, 1));
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.3em;
 }
 
 .markdown-preview h2 {
-  font-size: 1.5em;
+  font-size: calc(1.5em * var(--doc-heading-scale, 1));
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.3em;
 }
 
 .markdown-preview h3 {
-  font-size: 1.25em;
+  font-size: calc(1.25em * var(--doc-heading-scale, 1));
 }
 
 .markdown-preview h4 {
-  font-size: 1.1em;
+  font-size: calc(1.1em * var(--doc-heading-scale, 1));
 }
 
 .markdown-preview p,
@@ -515,7 +518,7 @@
   border-radius: var(--radius-sm);
   padding: 0.15em 0.4em;
   font-family: var(--font-mono);
-  font-size: 0.875em;
+  font-size: calc(0.875em * var(--doc-code-size, 1));
 }
 
 .markdown-preview pre {
@@ -530,7 +533,7 @@
   background: none;
   border-radius: 0;
   padding: 0;
-  font-size: 0.85em;
+  font-size: calc(0.85em * var(--doc-code-size, 1));
   line-height: 1.6;
 }
 
@@ -724,9 +727,97 @@
   display: none;
 }
 
+/* Laid out like a printed page but kept off-screen, to measure page numbers. */
+.print-root.is-measuring {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  width: 17cm;
+  visibility: hidden;
+}
+
+.print-root .markdown-preview {
+  max-width: none;
+  padding: 0;
+}
+
+.print-root pre {
+  white-space: pre-wrap;
+}
+
+/* Header image of generated documents. */
+.doc-header-image {
+  display: block;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  border-radius: var(--radius-md);
+  break-inside: avoid;
+}
+
+/* On paper the image spans the page, keeping a small margin from its edges. */
+.print-root .doc-header-image {
+  width: calc(100% + 3cm);
+  max-width: none;
+  margin-inline: -1.5cm;
+}
+
+/* Fixed-size pages built by paginatePrint; the source copy is hidden once they exist. */
+.print-pages {
+  display: none;
+}
+
+.print-root.is-paged .print-pages {
+  display: block;
+}
+
+.print-root.is-paged > .print-source {
+  display: none;
+}
+
+.print-page {
+  position: relative;
+  height: 25.6cm;
+  break-after: page;
+}
+
+.print-page:last-child {
+  break-after: auto;
+}
+
+.print-page-footer {
+  position: absolute;
+  inset-inline: 0;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-family: var(--doc-font-body, inherit);
+  font-size: 9pt;
+}
+
+/* Table of contents with page numbers (PDF only). */
+.print-pages h2 + ul a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  text-decoration: none;
+  color: inherit;
+}
+
+.print-root .toc-leader {
+  flex: 1;
+  min-width: 1em;
+  border-bottom: 1px dotted var(--muted-foreground);
+}
+
+.print-root .toc-page {
+  font-variant-numeric: tabular-nums;
+}
+
 @media print {
   @page {
+    size: A4;
     margin: 2cm;
+
   }
 
   body > *:not(.print-root) {
@@ -770,21 +861,22 @@
     background: var(--background);
   }
 
-  .print-root .markdown-preview {
-    max-width: none;
-    padding: 0;
-  }
-
-  .print-root pre {
-    white-space: pre-wrap;
-  }
-
   .print-root pre,
   .print-root table,
+  .print-root .code-block,
   .print-root img,
   .print-root .mermaid-diagram,
   .print-root blockquote {
     break-inside: avoid;
+  }
+
+  .print-root tr {
+    break-inside: avoid;
+  }
+
+  /* Taller than a page: keeping it whole would clip it (see allow-oversized-breaks). */
+  .print-root .allow-break {
+    break-inside: auto;
   }
 
   .print-root h1,

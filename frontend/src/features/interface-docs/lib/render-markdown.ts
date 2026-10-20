@@ -1,3 +1,5 @@
+import { Slugger } from '@/features/notes/lib/slugger'
+
 import type { DocMessages } from './messages'
 import type { Contract, Declaration, Field, TypeExpr } from './model'
 
@@ -15,21 +17,6 @@ export type DocOptions = {
 }
 
 type ObjectDeclaration = Declaration & { kind: 'object' }
-
-/** Heading anchors the way GitHub (and most renderers) generate them. */
-class Slugger {
-  private readonly used = new Map<string, number>()
-
-  slug(heading: string): string {
-    const base = heading
-      .toLowerCase()
-      .replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, '')
-      .replace(/ /g, '-')
-    const count = this.used.get(base) ?? 0
-    this.used.set(base, count + 1)
-    return count === 0 ? base : `${base}-${count}`
-  }
-}
 
 /** Makes text safe inside a table cell: one line, no column breaks. */
 function cell(text: string): string {

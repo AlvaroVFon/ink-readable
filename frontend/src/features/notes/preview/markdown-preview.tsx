@@ -11,10 +11,12 @@ import 'katex/dist/katex.min.css'
 import { splitFrontmatter } from '../lib/frontmatter'
 import { FrontmatterProperties } from './frontmatter-properties'
 import { markdownComponents } from './markdown-components'
+import { rehypeHeadingIds } from './rehype-heading-ids'
 import { markdownSanitizeSchema } from './sanitize-schema'
 
 const remarkPlugins: NonNullable<Options['remarkPlugins']> = [remarkGfm, remarkAlert, remarkMath]
 const rehypePlugins: NonNullable<Options['rehypePlugins']> = [
+  rehypeHeadingIds,
   rehypeKatex,
   rehypeHighlight,
   [rehypeSanitize, markdownSanitizeSchema],

@@ -3,7 +3,6 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'rea
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { CodePane } from '@/features/json-types/components/code-pane'
 import { SegmentedControl } from '@/features/json-types/components/segmented-control'
 import { NotesExportMenu } from '@/features/notes/components/notes-export-menu'
@@ -14,10 +13,18 @@ import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 
 import type { InterfaceDocsPreferences } from './lib/preferences'
 
+import { DocHeaderImage } from './components/doc-header-image'
+import { DocSettingsPopover } from './components/doc-settings-popover'
 import { generateDocs } from './lib/generate'
-import { DOC_LOCALES, getMessages } from './lib/messages'
-import { getStoredPreferences, storePreferences } from './lib/preferences'
+import { getMessages } from './lib/messages'
+import {
+  getStoredHeaderImage,
+  getStoredPreferences,
+  storeHeaderImage,
+  storePreferences,
+} from './lib/preferences'
 import { getSourceLanguage, sourceLanguages } from './lib/sources'
+import { typographyStyle } from './lib/typography'
 
 const VIEWS = [
   { value: 'preview', label: 'Preview' },
@@ -39,13 +46,6 @@ function today(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
-type Toggle = { key: 'tableOfContents' | 'examples'; label: string }
-
-const TOGGLES: Toggle[] = [
-  { key: 'tableOfContents', label: 'Table of contents' },
-  { key: 'examples', label: 'JSON examples' },
-]
-
 /**
  * Turns interface declarations (TypeScript, Go, ...) into a Markdown document
  * to agree on the contract with a third party.
@@ -59,7 +59,9 @@ export function InterfaceDocsPage() {
   const language = getSourceLanguage(preferences.sourceId)
   const source = drafts[language.id] ?? language.sample
   const deferredSource = useDeferredValue(source)
-  const [date] = useState(today)
+  // Not persisted: a remembered date would go stale; it starts as today each visit.
+  const [date, setDate] = useState(today)
+  const [headerImage, setHeaderImage] = useState(getStoredHeaderImage)
 
   useEffect(() => {
     storePreferences(preferences)
@@ -79,6 +81,24 @@ export function InterfaceDocsPage() {
     [deferredSource, language, title, version, date, locale, tableOfContents, examples],
   )
   const markdown = result.ok ? result.markdown : ''
+
+  const changeHeaderImage = (image: string | null) => {
+    setHeaderImage(image)
+    storeHeaderImage(image)
+  }
+
+  const typography = useMemo(
+    () => typographyStyle(preferences.typography),
+    [preferences.typography],
+  )
+  const header =
+    headerImage === null ? null : (
+      <DocHeaderImage
+        fit={preferences.headerImageFit}
+        height={preferences.headerImageHeight}
+        src={headerImage}
+      />
+    )
 
   const update = (changes: Partial<InterfaceDocsPreferences>) => {
     setPreferences((current) => ({ ...current, ...changes }))
@@ -129,32 +149,23 @@ export function InterfaceDocsPage() {
             value={version}
           />
         </label>
-        <div className='flex items-center gap-2 text-sm'>
-          Document language
-          <SegmentedControl
-            choices={[...DOC_LOCALES]}
-            label='Document language'
-            onChange={(value) => {
-              update({ locale: value })
+        <label className='flex items-center gap-2 text-sm'>
+          Date
+          <Input
+            className='w-40'
+            onChange={(event) => {
+              setDate(event.target.value)
             }}
-            value={locale}
+            type='date'
+            value={date}
           />
-        </div>
-        {TOGGLES.map(({ key, label }) => (
-          <div
-            key={key}
-            className='flex items-center gap-2 text-sm'
-          >
-            <Switch
-              aria-label={label}
-              checked={preferences[key]}
-              onCheckedChange={(checked) => {
-                update({ [key]: checked })
-              }}
-            />
-            <span aria-hidden='true'>{label}</span>
-          </div>
-        ))}
+        </label>
+        <DocSettingsPopover
+          headerImage={headerImage}
+          onChange={update}
+          onHeaderImageChange={changeHeaderImage}
+          preferences={preferences}
+        />
       </header>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
         <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
@@ -231,7 +242,9 @@ export function InterfaceDocsPage() {
               aria-label='Document preview'
               className='min-h-0 flex-1 overflow-auto px-6 py-4'
               role='region'
+              style={typography}
             >
+              {header !== null && <div className='mx-auto max-w-3xl px-6 pt-6'>{header}</div>}
               <MarkdownPreview content={markdown} />
             </div>
           )}
@@ -241,9 +254,12 @@ export function InterfaceDocsPage() {
         <PrintableNote
           key={printJob.id}
           content={printJob.content}
+          header={header}
           onReady={() => {
             void print()
           }}
+          paginated
+          style={typography}
         />
       )}
     </div>

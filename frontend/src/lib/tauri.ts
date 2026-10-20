@@ -77,6 +77,20 @@ export async function printWindow(): Promise<void> {
   await invoke('print_webview')
 }
 
+/**
+ * Opens an external URL in the system browser. In the browser build the
+ * anchor's own `target="_blank"` already does it, so this is a no-op there.
+ */
+export async function openExternal(url: string): Promise<void> {
+  if (!isTauri()) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return
+  }
+
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('open_url', { url })
+}
+
 /** Progress callback for {@link installUpdate}: bytes downloaded so far and the total, if known. */
 export type UpdateProgress = (downloaded: number, total: number | undefined) => void
 

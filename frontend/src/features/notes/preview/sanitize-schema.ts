@@ -84,10 +84,13 @@ function append<T>(list: readonly T[] | null | undefined, ...items: T[]): T[] {
  */
 export const markdownSanitizeSchema: Options = {
   ...defaultSchema,
+  // Heading ids must stay as generated so `[text](#heading)` links resolve
+  // (the default would prefix them with `user-content-`).
+  clobberPrefix: '',
   tagNames: append(defaultSchema.tagNames, ...MATHML_TAGS, ...SVG_TAGS),
   attributes: {
     ...defaultSchema.attributes,
-    '*': append(defaultSchema.attributes?.['*'], 'className', 'style', 'ariaHidden'),
+    '*': append(defaultSchema.attributes?.['*'], 'className', 'style', 'ariaHidden', 'id'),
     input: append(defaultSchema.attributes?.['input'], ['type', 'checkbox'], 'checked', 'disabled'),
     math: append(defaultSchema.attributes?.['math'], 'xmlns', 'display'),
     ...Object.fromEntries(
