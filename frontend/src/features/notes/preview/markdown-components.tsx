@@ -1,6 +1,8 @@
 import type { Components } from 'react-markdown'
 
-import { Children, isValidElement, type ReactNode } from 'react'
+import { Children, isValidElement, type MouseEvent, type ReactNode } from 'react'
+
+import { openExternal } from '@/lib/tauri'
 
 import { CodeBlock } from './code-block'
 import { MermaidDiagram } from './mermaid-diagram'
@@ -45,14 +47,48 @@ function getCodeLanguage(children: ReactNode): string | null {
 }
 
 /**
+ * `#heading` links scroll inside the document instead of changing the URL
+ * (the app uses client-side routing); other links open in the system browser.
+ */
+function handleLinkClick(event: MouseEvent<HTMLAnchorElement>, href: string | undefined) {
+  if (href === undefined) {
+    return
+  }
+  if (href.startsWith('#')) {
+    event.preventDefault()
+    const root = event.currentTarget.closest('.markdown-preview')
+    const target = root?.querySelector(`[id="${CSS.escape(decodeURIComponent(href.slice(1)))}"]`)
+    target?.scrollIntoView({ block: 'start' })
+    return
+  }
+  if (/^(https?:|mailto:)/.test(href)) {
+    event.preventDefault()
+    void openExternal(href)
+  }
+}
+
+/**
  * Overrides for react-markdown.
  *
- * Only `pre` needs custom logic: a ```mermaid fenced block is replaced by a
+ * `a` keeps in-document and external links working; `pre` needs custom logic: a ```mermaid fenced block is replaced by a
  * rendered diagram, and every other fenced block gets a language header that
  * copies the code on click. Everything else is styled through
  * `.markdown-preview` CSS so the markup stays semantic.
  */
 export const markdownComponents: Components = {
+  a({ href, children, node: _node, ...props }) {
+    return (
+      <a
+        {...props}
+        href={href}
+        onClick={(event) => {
+          handleLinkClick(event, href)
+        }}
+      >
+        {children}
+      </a>
+    )
+  },
   pre({ children }) {
     const chart = getMermaidChart(children)
     if (chart !== null) {

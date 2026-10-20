@@ -24,6 +24,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             api::get_api_url,
             api::open_data_dir,
+            api::open_url,
             export::export_markdown,
             export::print_webview,
             updater::stop_backend,

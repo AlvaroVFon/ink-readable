@@ -6,15 +6,16 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import { InterfaceDocsPage } from './interface-docs-page'
 import { INTERFACE_DOCS_STORAGE_KEY } from './lib/preferences'
 
-const { saveMarkdownFile, printWindow } = vi.hoisted(() => ({
+const { saveMarkdownFile, printWindow, openExternal } = vi.hoisted(() => ({
   saveMarkdownFile: vi.fn(),
   printWindow: vi.fn(),
+  openExternal: vi.fn(),
 }))
 
 vi.mock('mermaid', () => ({
   default: { initialize: vi.fn(), render: vi.fn() },
 }))
-vi.mock('@/lib/tauri', () => ({ saveMarkdownFile, printWindow }))
+vi.mock('@/lib/tauri', () => ({ saveMarkdownFile, printWindow, openExternal }))
 
 function renderPage() {
   return render(
@@ -22,6 +23,10 @@ function renderPage() {
       <InterfaceDocsPage />
     </ThemeProvider>,
   )
+}
+
+function openSettings() {
+  fireEvent.click(screen.getByRole('button', { name: 'Document settings' }))
 }
 
 function generatedMarkdown(): string {
@@ -51,8 +56,9 @@ describe('InterfaceDocsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Markdown' }))
     fireEvent.click(screen.getByRole('button', { name: 'Go' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Español' }))
-    fireEvent.click(screen.getByRole('switch', { name: 'JSON examples' }))
+    openSettings()
+    fireEvent.click(await screen.findByText('Español'))
+    fireEvent.click(screen.getByRole('switch', { name: 'JSON examples', hidden: true }))
 
     await waitFor(() => {
       expect(generatedMarkdown()).toContain('# Acuerdo de interfaz')
@@ -84,6 +90,73 @@ describe('InterfaceDocsPage', () => {
       tableOfContents: true,
       examples: true,
       view: 'markdown',
+      typography: {
+        bodyFont: 'geist',
+        headingFont: 'geist',
+        baseSize: 15.2,
+        codeSize: 100,
+        lineHeight: 1.75,
+        headingScale: 1,
+      },
+      headerImageHeight: 140,
+      headerImageFit: 'cover',
+    })
+  })
+
+  it('lets the document date be edited', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Markdown' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-01-31' } })
+
+    await waitFor(() => {
+      expect(generatedMarkdown()).toContain('**Date:** 2026-01-31')
+    })
+  })
+
+  it('gives headings ids so the contents links resolve', async () => {
+    renderPage()
+
+    const preview = screen.getByRole('region', { name: 'Document preview' })
+    await waitFor(() => {
+      expect(preview.querySelector('h3')?.id).toBe('user')
+    })
+    const link = preview.querySelector('a[href="#user"]')
+    expect(link).not.toBeNull()
+    expect(preview.querySelector('#user')).toBe(preview.querySelector('h3'))
+  })
+
+  it('applies the typography settings to the preview', async () => {
+    renderPage()
+
+    openSettings()
+    fireEvent.change(await screen.findByLabelText('Body font'), { target: { value: 'serif' } })
+    fireEvent.change(screen.getByLabelText('Text size'), { target: { value: '18' } })
+
+    const preview = screen.getByRole('region', { name: 'Document preview' })
+    await waitFor(() => {
+      expect(preview.style.getPropertyValue('--doc-font-size')).toBe('18px')
+    })
+    expect(preview.style.getPropertyValue('--doc-font-body')).toContain('Georgia')
+  })
+
+  it('shows the chosen header image in the preview and removes it', async () => {
+    renderPage()
+
+    openSettings()
+    const input = await screen.findByLabelText('Header image file')
+    fireEvent.change(input, {
+      target: { files: [new File(['x'], 'cover.png', { type: 'image/png' })] },
+    })
+
+    const preview = screen.getByRole('region', { name: 'Document preview' })
+    await waitFor(() => {
+      expect(preview.querySelector('img.doc-header-image')).not.toBeNull()
+    })
+
+    fireEvent.click(screen.getByText('Remove'))
+    await waitFor(() => {
+      expect(preview.querySelector('img.doc-header-image')).toBeNull()
     })
   })
 
@@ -113,7 +186,8 @@ describe('InterfaceDocsPage', () => {
     await waitFor(() => {
       expect(printWindow).toHaveBeenCalledTimes(1)
     })
-    const printed = document.querySelector('.print-root')
+    // The printed pages are built from the measured source, which stays hidden.
+    const printed = document.querySelector('.print-root .print-pages')
     expect(printed?.querySelectorAll('h1')).toHaveLength(1)
     expect(printed?.querySelector('h1')?.textContent).toBe('Interface agreement')
   })

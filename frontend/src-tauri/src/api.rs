@@ -157,6 +157,21 @@ pub fn open_data_dir(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("open data dir: {e}"))
 }
 
+/// Opens an `http(s)`/`mailto` link in the default browser. The webview itself
+/// must not navigate away from the app, so rendered documents go through here.
+#[tauri::command]
+pub fn open_url(app: AppHandle, url: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+
+    let allowed = ["http://", "https://", "mailto:"];
+    if !allowed.iter().any(|scheme| url.starts_with(scheme)) {
+        return Err("unsupported link scheme".to_string());
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| format!("open url: {e}"))
+}
+
 /// Extracts the base URL from a backend stdout line, only when it is the
 /// canonical ready line. Any other line (logs, partial output) yields `None`.
 pub fn parse_ready_line(line: &str) -> Option<String> {
