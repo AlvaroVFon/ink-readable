@@ -11,7 +11,7 @@ describe('Boot', () => {
   it('renders the app at the root route in the browser', () => {
     render(<Boot />)
 
-    expect(screen.getByRole('heading', { name: 'Notes' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No note open' })).toBeInTheDocument()
   })
 
   it('routes to the hash target (HashRouter)', () => {
@@ -19,6 +19,6 @@ describe('Boot', () => {
 
     render(<Boot />)
 
-    expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No project selected' })).toBeInTheDocument()
   })
 })

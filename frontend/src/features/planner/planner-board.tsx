@@ -5,12 +5,13 @@ import { useParams } from 'react-router'
 import type { Task, TaskStatus } from '@/lib/types'
 
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 
 import { TaskCard } from './components/task-card'
 import { TaskDialog, type TaskDialogSubmit } from './components/task-dialog'
 import { useProjectTasks } from './hooks/use-project-tasks'
-import { TASK_STATUSES, TASK_STATUS_LABELS } from './lib/task-order'
+import { TASK_STATUSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from './lib/task-order'
 import { usePlannerProjectsContext } from './planner-projects-context'
 
 function toMessage(cause: unknown): string {
@@ -22,12 +23,10 @@ type DropTarget = { status: TaskStatus; index: number }
 /** Placeholder shown at `/planner` before a project is selected. */
 export function PlannerEmpty() {
   return (
-    <div className='flex flex-1 items-center justify-center p-6'>
-      <section className='flex max-w-md flex-col items-center gap-2 text-center'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Planner</h1>
-        <p className='text-muted-foreground'>Select or create a project to start planning.</p>
-      </section>
-    </div>
+    <EmptyState
+      description='Choose a project in the sidebar, or create one there to start planning. Tasks live in four lanes and move by drag or from the task dialog.'
+      title='No project selected'
+    />
   )
 }
 
@@ -123,10 +122,21 @@ export function PlannerBoard() {
     return <PlannerEmpty />
   }
 
+  const totalTasks = Object.values(tasksByStatus).reduce((total, tasks) => total + tasks.length, 0)
+
   return (
-    <div className='flex flex-1 flex-col gap-4 p-6'>
-      <div className='flex items-center justify-between gap-2'>
-        <h1 className='text-2xl font-semibold tracking-tight'>{project?.name ?? 'Planner'}</h1>
+    <div className='flex flex-1 flex-col gap-5 p-6'>
+      <div className='flex items-end justify-between gap-3'>
+        <div>
+          <h1 className='font-heading text-3xl leading-tight font-semibold tracking-tight'>
+            {project?.name ?? 'Planner'}
+          </h1>
+          {!isLoading && (
+            <p className='mt-1 text-xs text-graphite'>
+              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}, {tasksByStatus.done.length} done
+            </p>
+          )}
+        </div>
         <Button
           onClick={() => {
             openCreate('backlog')
@@ -140,7 +150,7 @@ export function PlannerBoard() {
       {actionError !== null && <p className='text-sm text-destructive'>{actionError}</p>}
       {error !== null && <p className='text-sm text-destructive'>{error.message}</p>}
 
-      <div className='grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid flex-1 grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2 xl:grid-cols-4'>
         {TASK_STATUSES.map((status) => (
           <PlannerColumn
             key={status}
@@ -220,9 +230,10 @@ function PlannerColumn({
   return (
     <section
       className={cn(
-        'flex flex-col gap-2 rounded-lg border bg-muted/30 p-3 transition-colors',
-        isDropTarget && 'border-ring bg-muted/60',
+        'flex flex-col gap-2 border-t-2 pt-3 transition-colors',
+        isDropTarget && 'bg-accent/30',
       )}
+      style={{ borderTopColor: TASK_STATUS_COLORS[status] }}
       onDragOver={(event) => {
         if (draggingId === null) {
           return
@@ -239,9 +250,16 @@ function PlannerColumn({
       }}
     >
       <div className='flex items-center justify-between gap-1'>
-        <h2 className='text-sm font-medium text-muted-foreground'>
+        <h2 className='flex items-center gap-2 text-xs font-medium text-graphite'>
+          <span
+            aria-hidden='true'
+            className='size-1.5 rounded-full'
+            style={{ backgroundColor: TASK_STATUS_COLORS[status] }}
+          />
           {TASK_STATUS_LABELS[status]}
-          <span className='ml-1.5 text-xs text-muted-foreground/70'>{tasks.length}</span>
+          <span className='text-[11px] font-normal text-graphite/70 tabular-nums'>
+            {tasks.length}
+          </span>
         </h2>
         <Button
           aria-label={`New task in ${TASK_STATUS_LABELS[status]}`}
@@ -256,9 +274,9 @@ function PlannerColumn({
       </div>
 
       <div className='flex min-h-8 flex-col gap-2'>
-        {isLoading && <p className='text-xs text-muted-foreground'>Loading…</p>}
+        {isLoading && <p className='text-xs text-graphite'>Loading…</p>}
         {!isLoading && tasks.length === 0 && (
-          <p className='rounded-md border border-dashed px-2 py-3 text-center text-xs text-muted-foreground'>
+          <p className='rounded-md border border-dashed border-rule/80 px-2 py-5 text-center text-xs text-graphite/80'>
             No tasks
           </p>
         )}

@@ -4,7 +4,9 @@ import { z } from 'zod'
 
 /** Fonts the document can use; the PDF embeds whichever the system resolves. */
 export const FONT_FAMILIES = [
-  { value: 'geist', label: 'Geist', css: "'Geist Variable', sans-serif" },
+  // `geist` is the persisted key from earlier versions; it now resolves to the
+  // reading serif so existing settings keep working.
+  { value: 'geist', label: 'Literata', css: "'Literata Variable', Georgia, serif" },
   {
     value: 'system',
     label: 'System sans',

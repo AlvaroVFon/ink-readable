@@ -22,16 +22,17 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
   error: 'Save failed',
 }
 
-const SAVE_TONES: Record<SaveStatus, string> = {
-  dirty: 'text-muted-foreground',
-  saving: 'text-muted-foreground',
-  saved: 'text-muted-foreground',
-  error: 'text-destructive',
+const SAVE_DOTS: Record<SaveStatus, string> = {
+  dirty: 'bg-muted-foreground',
+  saving: 'animate-pulse bg-muted-foreground',
+  saved: 'bg-accent-ink',
+  error: 'bg-destructive',
 }
 
 type NotesToolbarProps = {
   title: string
   status: SaveStatus
+  wordCount: number
   mode: ViewMode
   onModeChange: (mode: ViewMode) => void
   previewFirst: boolean
@@ -43,6 +44,7 @@ type NotesToolbarProps = {
 export function NotesToolbar({
   title,
   status,
+  wordCount,
   mode,
   onModeChange,
   previewFirst,
@@ -51,18 +53,27 @@ export function NotesToolbar({
   exportError,
 }: NotesToolbarProps) {
   return (
-    <div className='flex h-11 shrink-0 items-center gap-3 border-b px-3'>
-      <span className='truncate text-sm font-medium'>{title}</span>
+    <div className='flex h-11 shrink-0 items-center gap-3 border-b border-rule/70 px-3.5'>
+      <span className='min-w-0 truncate font-heading text-[15px] font-medium tracking-tight'>
+        {title}
+      </span>
       <span
-        className={cn('text-xs', SAVE_TONES[status])}
+        className='inline-flex shrink-0 items-center gap-1.5 text-[11px] text-graphite'
         data-status={status}
         role='status'
       >
+        <span
+          aria-hidden='true'
+          className={cn('size-1.5 rounded-full', SAVE_DOTS[status])}
+        />
         {SAVE_LABELS[status]}
+      </span>
+      <span className='hidden shrink-0 text-[11px] text-graphite tabular-nums sm:inline'>
+        {wordCount} {wordCount === 1 ? 'word' : 'words'}
       </span>
       {exportError !== null && (
         <span
-          className='text-xs text-destructive'
+          className='truncate text-xs text-destructive'
           role='status'
         >
           {exportError}
@@ -83,7 +94,10 @@ export function NotesToolbar({
       )}
       <div
         aria-label='View mode'
-        className={cn('flex items-center gap-1', mode !== 'split' && 'ml-auto')}
+        className={cn(
+          'flex items-center gap-0.5 rounded-md border border-rule/80 bg-desk/50 p-0.5',
+          mode !== 'split' && 'ml-auto',
+        )}
         role='group'
       >
         {VIEW_MODES.map(({ value, label, icon: Icon }) => (
@@ -91,17 +105,24 @@ export function NotesToolbar({
             key={value}
             aria-label={label}
             aria-pressed={mode === value}
+            className={cn(
+              'rounded-[min(var(--radius),5px)]',
+              mode === value && 'bg-sheet text-ink shadow-[0_1px_0_var(--rule)] hover:bg-sheet',
+            )}
             onClick={() => {
               onModeChange(value)
             }}
-            size='icon-sm'
-            variant={mode === value ? 'secondary' : 'ghost'}
+            size='icon-xs'
+            variant='ghost'
           >
             <Icon aria-hidden='true' />
           </Button>
         ))}
       </div>
-      <div className='h-4 w-px bg-border' />
+      <span
+        aria-hidden='true'
+        className='h-4 w-px bg-rule/80'
+      />
       <NotesExportMenu onSelect={onExport} />
     </div>
   )

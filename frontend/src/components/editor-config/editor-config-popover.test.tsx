@@ -45,19 +45,9 @@ describe('EditorConfigPopover', () => {
     setup()
     openPopover()
 
-    expect(screen.getByRole('switch', { name: 'Dark theme' })).toBeChecked()
     expect(screen.getByRole('switch', { name: 'Vim motion' })).not.toBeChecked()
     expect(screen.getByRole('switch', { name: 'Format on save' })).toBeChecked()
     expect(screen.getByRole('switch', { name: 'Relative line numbers' })).not.toBeChecked()
-  })
-
-  it('updates the dark theme preference', () => {
-    const value = setup()
-    openPopover()
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Dark theme' }))
-
-    expect(value.updateDarkTheme).toHaveBeenCalledWith(false)
   })
 
   it('updates the vim motion preference', () => {
@@ -91,10 +81,6 @@ describe('EditorConfigPopover', () => {
     setup({ config: null, isLoading: true })
     openPopover()
 
-    expect(screen.getByRole('switch', { name: 'Dark theme' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
     expect(screen.getByRole('switch', { name: 'Vim motion' })).toHaveAttribute(
       'aria-disabled',
       'true',

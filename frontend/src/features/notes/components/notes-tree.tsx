@@ -79,10 +79,10 @@ type NotesTreeNodeProps = {
 const MENU_ITEM_CLASS =
   'flex w-full cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50'
 
-// VS Code-like rows: flat, full-width, no rounding, with a left accent bar
-// marking the active note/folder and a background for the keyboard cursor.
+// Manuscript-index rows: flat and full-width, with a verdigris bar marking the
+// active note/folder and a quiet tint for the keyboard cursor.
 const TREE_ROW_CLASS =
-  'rounded-none border-l-2 border-transparent focus-visible:ring-inset data-active:border-sidebar-primary data-cursor:bg-sidebar-accent data-cursor:text-sidebar-accent-foreground data-cursor:ring-1 data-cursor:ring-sidebar-ring/50 data-cursor:ring-inset'
+  'rounded-none border-l-2 border-transparent pr-2 focus-visible:ring-inset data-active:border-accent-ink data-active:bg-sidebar-accent data-active:font-medium data-active:[&_svg]:text-accent-ink data-cursor:bg-sidebar-accent/70 data-cursor:text-sidebar-accent-foreground data-cursor:ring-1 data-cursor:ring-sidebar-ring/40 data-cursor:ring-inset [&_svg]:text-graphite'
 
 const LEADER_TIMEOUT_MS = 1000
 
@@ -623,7 +623,10 @@ function NotesTreeNode({
     >
       {renameForm ?? (
         <div
-          className={cn('rounded-none', isDropTarget && 'bg-accent ring-1 ring-ring/50 ring-inset')}
+          className={cn(
+            'rounded-none',
+            isDropTarget && 'bg-accent ring-1 ring-accent-ink/40 ring-inset',
+          )}
           onDragLeave={() => {
             onDragLeaveFolder(node.path)
           }}

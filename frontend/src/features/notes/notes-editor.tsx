@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Document } from '@/lib/types'
 
 import { useEditorConfigContext } from '@/components/editor-config/editor-config-context'
+import { useTheme } from '@/components/theme/theme-context'
 import { useSidebar } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 
 import type { ViewMode } from './types'
 
+import { DocumentOutline } from './components/document-outline'
 import { useCodeMirror } from './editor/use-code-mirror'
 import { setVimLeaderHandlers } from './editor/vim'
 import { PrintableNote } from './export/printable-note'
@@ -16,6 +18,7 @@ import { useAutosave } from './hooks/use-autosave'
 import { useScrollSync } from './hooks/use-scroll-sync'
 import { formatMarkdown } from './lib/format-markdown'
 import { getStoredPreviewFirst, storePreviewFirst } from './lib/pane-order'
+import { countWords } from './lib/word-count'
 import { NotesToolbar } from './notes-toolbar'
 import { useNotesVimContext } from './notes-vim-context'
 import { MarkdownPreview } from './preview/markdown-preview'
@@ -40,6 +43,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
   const previewRef = useRef<HTMLDivElement | null>(null)
 
   const { config } = useEditorConfigContext()
+  const { resolvedTheme } = useTheme()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
   const { containerRef, scrollElement, requestMeasure, getContent, replaceContent, focus } =
     useCodeMirror({
@@ -50,7 +54,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
       },
       vimEnabled: config?.vimMotion ?? true,
       relativeLineNumbers: config?.relativeLineNumbers ?? false,
-      darkTheme: config?.darkTheme ?? true,
+      darkTheme: resolvedTheme === 'dark',
     })
 
   const {
@@ -95,6 +99,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
   }, [open, setOpen, focusEditor, focusSidebar, openFinder])
 
   const title = document.name === '' ? 'Untitled' : document.name
+  const wordCount = useMemo(() => countWords(content), [content])
   const {
     exportMarkdown,
     exportPdf,
@@ -160,17 +165,27 @@ export function NotesEditor({ document }: NotesEditorProps) {
         previewFirst={previewFirst}
         status={status}
         title={title}
+        wordCount={wordCount}
       />
-      <div className={cn('grid min-h-0 flex-1', mode === 'split' ? 'grid-cols-2' : 'grid-cols-1')}>
+      <div
+        className={cn(
+          'grid min-h-0 flex-1',
+          mode === 'split'
+            ? previewFirst
+              ? 'grid-cols-[55fr_45fr]'
+              : 'grid-cols-[45fr_55fr]'
+            : 'grid-cols-1',
+        )}
+      >
         {/* The editor stays mounted in every mode: unmounting it detaches the
             CodeMirror DOM and leaves the pane blank when coming back. Swapping
             the panes only changes the CSS order for the same reason, so the
             divider is drawn on whichever pane ends up on the right. */}
         <div
           className={cn(
-            'min-h-0 overflow-hidden',
+            'min-h-0 overflow-hidden bg-paper',
             mode === 'preview' && 'hidden',
-            mode === 'split' && previewFirst && 'order-last border-l',
+            mode === 'split' && previewFirst && 'order-last border-l border-rule/70',
           )}
         >
           <div
@@ -181,12 +196,17 @@ export function NotesEditor({ document }: NotesEditorProps) {
         {mode !== 'edit' && (
           <div
             className={cn(
-              'min-h-0 overflow-auto',
-              mode === 'split' && (previewFirst ? 'order-first' : 'border-l'),
+              'min-h-0 overflow-auto bg-desk/40',
+              mode === 'split' && (previewFirst ? 'order-first' : 'border-l border-rule/70'),
             )}
             ref={previewRef}
           >
-            <MarkdownPreview content={content} />
+            <div className='flex min-h-full items-start'>
+              <DocumentOutline scrollRef={previewRef} />
+              <div className='note-sheet min-w-0 flex-1'>
+                <MarkdownPreview content={content} />
+              </div>
+            </div>
           </div>
         )}
       </div>

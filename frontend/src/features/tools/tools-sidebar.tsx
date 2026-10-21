@@ -31,6 +31,7 @@ export function ToolsSidebar() {
           {TOOLS.map(({ path, label, icon: Icon }) => (
             <SidebarMenuItem key={path}>
               <SidebarMenuButton
+                className='data-active:font-medium data-active:[&_svg]:text-accent-ink'
                 isActive={path === activeTool}
                 render={<Link to={`/tools/${path}`} />}
                 tooltip={label}

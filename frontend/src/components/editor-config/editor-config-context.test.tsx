@@ -5,6 +5,7 @@ import type { UseEditorConfigResult } from '@/hooks/use-editor-config'
 
 import { useTheme } from '@/components/theme/theme-context'
 import { ThemeProvider } from '@/components/theme/theme-provider'
+import { MODE_STORAGE_KEY } from '@/lib/theme'
 
 const { useEditorConfig } = vi.hoisted(() => ({ useEditorConfig: vi.fn() }))
 
@@ -51,15 +52,18 @@ function renderProvider(value: UseEditorConfigResult) {
 describe('EditorConfigProvider', () => {
   beforeEach(() => {
     useEditorConfig.mockReset()
+    window.localStorage.clear()
   })
 
-  it('applies the persisted dark theme', async () => {
+  it('leaves the appearance mode to the theme provider when the saved editor theme is dark', async () => {
+    window.localStorage.setItem(MODE_STORAGE_KEY, 'light')
     renderProvider(configValue())
 
-    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('dark'))
+    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('light'))
   })
 
-  it('applies the persisted light theme', async () => {
+  it('leaves the appearance mode to the theme provider when the saved editor theme is light', async () => {
+    window.localStorage.setItem(MODE_STORAGE_KEY, 'dark')
     renderProvider(
       configValue({
         config: {
@@ -72,6 +76,6 @@ describe('EditorConfigProvider', () => {
       }),
     )
 
-    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('light'))
+    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('dark'))
   })
 })

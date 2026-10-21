@@ -11,6 +11,17 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
 }
 
 /**
+ * Signal colors for each lane, drawn from the shared semantic tokens so they
+ * follow every palette and both color modes.
+ */
+export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
+  backlog: 'var(--muted-foreground)',
+  todo: 'var(--syntax-link)',
+  in_progress: 'var(--alert-warning)',
+  done: 'var(--alert-tip)',
+}
+
+/**
  * Orders tasks by `position`, falling back to `createdAt`.
  *
  * The fallback matters because the backend gives every newly created task

@@ -40,7 +40,6 @@ export function EditorConfigPopover() {
     config,
     isLoading,
     error,
-    updateDarkTheme,
     updateVimMotion,
     updateFormatOnSave,
     updateRelativeLineNumbers,
@@ -57,19 +56,10 @@ export function EditorConfigPopover() {
       </PopoverTrigger>
       <PopoverContent align='end'>
         <div className='mb-3'>
-          <p className='font-heading text-sm font-medium'>Editor settings</p>
-          <p className='text-xs text-muted-foreground'>Synced to your account</p>
+          <p className='font-heading text-base font-medium'>Editor settings</p>
+          <p className='text-xs text-graphite'>Stored on this device</p>
         </div>
         <div className='flex flex-col gap-3'>
-          <SettingRow
-            checked={config?.darkTheme ?? false}
-            description='Use the dark theme across the app'
-            disabled={disabled}
-            label='Dark theme'
-            onCheckedChange={(checked) => {
-              void updateDarkTheme(checked)
-            }}
-          />
           <SettingRow
             checked={config?.vimMotion ?? false}
             description='Enable vim keybindings in the editor'

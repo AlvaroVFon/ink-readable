@@ -10,7 +10,7 @@ export const MODE_ORDER: readonly ThemeMode[] = ['light', 'dark', 'system']
 export const PALETTE_ORDER: readonly Palette[] = ['default', 'nord', 'catppuccin', 'tokyo']
 
 export const PALETTE_LABEL: Record<Palette, string> = {
-  default: 'Default',
+  default: 'Ink',
   nord: 'Nord',
   catppuccin: 'Catppuccin',
   tokyo: 'Tokyo Night',
@@ -21,7 +21,7 @@ export const PALETTE_LABEL: Record<Palette, string> = {
  * used by the theme picker so every palette is recognizable at a glance.
  */
 export const PALETTE_PREVIEW: Record<Palette, string> = {
-  default: 'linear-gradient(135deg, #ffffff 0 50%, #1c1c1c 50% 100%)',
+  default: 'linear-gradient(135deg, #f4f6f2 0 50%, #101714 50% 100%)',
   nord: 'linear-gradient(135deg, #eceff4 0 50%, #2e3440 50% 100%)',
   catppuccin: 'linear-gradient(135deg, #eff1f5 0 50%, #1e1e2e 50% 100%)',
   tokyo: 'linear-gradient(135deg, #d5d6db 0 50%, #1a1b26 50% 100%)',

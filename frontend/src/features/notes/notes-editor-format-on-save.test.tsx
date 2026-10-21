@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseEditorConfigResult } from '@/hooks/use-editor-config'
 import type { Document } from '@/lib/types'
 
+import { ThemeProvider } from '@/components/theme/theme-provider'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
 const { useEditorConfigContext } = vi.hoisted(() => ({ useEditorConfigContext: vi.fn() }))
@@ -52,11 +53,13 @@ function setup(formatOnSave: boolean) {
   } satisfies UseEditorConfigResult)
 
   return render(
-    <NotesVimProvider>
-      <SidebarProvider>
-        <NotesEditor document={document} />
-      </SidebarProvider>
-    </NotesVimProvider>,
+    <ThemeProvider>
+      <NotesVimProvider>
+        <SidebarProvider>
+          <NotesEditor document={document} />
+        </SidebarProvider>
+      </NotesVimProvider>
+    </ThemeProvider>,
   )
 }
 

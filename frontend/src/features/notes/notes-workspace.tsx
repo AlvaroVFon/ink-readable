@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router'
 
+import { EmptyState } from '@/components/ui/empty-state'
+import { Kbd } from '@/components/ui/kbd'
 import { useDocument } from '@/hooks/use-document'
 
 import { NotesEditor } from './notes-editor'
@@ -8,12 +10,15 @@ import { useNotesWorkspaceContext } from './notes-workspace-context'
 
 function NotesPlaceholder() {
   return (
-    <div className='flex flex-1 items-center justify-center p-6'>
-      <section className='flex max-w-md flex-col items-center gap-2 text-center'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Notes</h1>
-        <p className='text-muted-foreground'>Select or create a document to start writing.</p>
-      </section>
-    </div>
+    <EmptyState
+      description='Choose a note in the sidebar, or create one with the + button. Search across every vault without leaving the keyboard.'
+      title='No note open'
+    >
+      <span className='inline-flex items-center gap-2 text-xs text-graphite'>
+        <Kbd>⌘K</Kbd>
+        Search notes
+      </span>
+    </EmptyState>
   )
 }
 
@@ -21,7 +26,8 @@ function NotesStatus({ message, tone = 'muted' }: { message: string; tone?: 'mut
   return (
     <div className='flex flex-1 items-center justify-center p-6'>
       <p
-        className={tone === 'error' ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
+        className={tone === 'error' ? 'text-sm text-destructive' : 'text-sm text-graphite'}
+        role='status'
       >
         {message}
       </p>

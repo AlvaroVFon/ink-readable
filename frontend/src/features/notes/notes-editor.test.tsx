@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseEditorConfigResult } from '@/hooks/use-editor-config'
 import type { Document } from '@/lib/types'
 
+import { ThemeProvider } from '@/components/theme/theme-provider'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { MODE_STORAGE_KEY } from '@/lib/theme'
 
 const { useEditorConfigContext } = vi.hoisted(() => ({ useEditorConfigContext: vi.fn() }))
 
@@ -47,12 +49,16 @@ function setup(relativeLineNumbers = false, vimMotion = false, darkTheme = true)
     reload: vi.fn(),
   } satisfies UseEditorConfigResult)
 
+  window.localStorage.setItem(MODE_STORAGE_KEY, darkTheme ? 'dark' : 'light')
+
   return render(
-    <NotesVimProvider>
-      <SidebarProvider>
-        <NotesEditor document={document} />
-      </SidebarProvider>
-    </NotesVimProvider>,
+    <ThemeProvider>
+      <NotesVimProvider>
+        <SidebarProvider>
+          <NotesEditor document={document} />
+        </SidebarProvider>
+      </NotesVimProvider>
+    </ThemeProvider>,
   )
 }
 
@@ -229,13 +235,13 @@ describe('NotesEditor dark theme', () => {
     useEditorConfigContext.mockReset()
   })
 
-  it('reports the editor as dark when the preference is on', () => {
+  it('reports the editor as dark when the app theme is dark', () => {
     const { container } = setup(false, false, true)
 
     expect(editorView(container).state.facet(EditorView.darkTheme)).toBe(true)
   })
 
-  it('reports the editor as light when the preference is off', () => {
+  it('reports the editor as light when the app theme is light', () => {
     const { container } = setup(false, false, false)
 
     expect(editorView(container).state.facet(EditorView.darkTheme)).toBe(false)

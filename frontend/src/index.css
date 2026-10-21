@@ -1,38 +1,49 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/geist';
+@import '@fontsource-variable/instrument-sans';
+@import '@fontsource-variable/literata/opsz.css';
+@import '@fontsource-variable/literata/opsz-italic.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Ink & Readable — "The margin" design system.
+ *
+ * Three surface tones carry the metaphor: the desk (sidebar and chrome), the
+ * paper (editor and content), and the sheet (cards and the preview). The accent
+ * is a signal for the active object, never a decorative wash.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f4f6f2;
+  --foreground: #16211d;
+  --card: #fbfcf9;
+  --card-foreground: #16211d;
+  --popover: #fbfcf9;
+  --popover-foreground: #16211d;
+  --primary: #16211d;
+  --primary-foreground: #f4f6f2;
+  --secondary: #e9ede8;
+  --secondary-foreground: #16211d;
+  --muted: #e9ede8;
+  --muted-foreground: #5a6660;
+  --accent: #dfe6de;
+  --accent-foreground: #16211d;
+  --destructive: #b42318;
+  --border: #d3dbd4;
+  --input: #cfd8d1;
+  --ring: #2b6a59;
+  --radius: 0.5rem;
+  --sidebar: #e9ede8;
+  --sidebar-foreground: #16211d;
+  --sidebar-primary: #2b6a59;
+  --sidebar-primary-foreground: #f4f6f2;
+  --sidebar-accent: #dfe6de;
+  --sidebar-accent-foreground: #16211d;
+  --sidebar-border: #cfd8d1;
+  --sidebar-ring: #2b6a59;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -52,35 +63,36 @@
   --alert-important: oklch(0.5 0.2 300);
   --alert-warning: oklch(0.56 0.14 75);
   --alert-caution: oklch(0.55 0.2 25);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #17201c;
+  --foreground: #e7ede8;
+  --card: #1c2622;
+  --card-foreground: #e7ede8;
+  --popover: #1c2622;
+  --popover-foreground: #e7ede8;
+  --primary: #e7ede8;
+  --primary-foreground: #121a17;
+  --secondary: #1f2a25;
+  --secondary-foreground: #e7ede8;
+  --muted: #1f2a25;
+  --muted-foreground: #9aa8a1;
+  --accent: #24312b;
+  --accent-foreground: #e7ede8;
+  --destructive: #f27d73;
+  --border: #2a3530;
+  --input: #2a3530;
+  --ring: #7cc3ac;
+  --sidebar: #101714;
+  --sidebar-foreground: #e7ede8;
+  --sidebar-primary: #7cc3ac;
+  --sidebar-primary-foreground: #121a17;
+  --sidebar-accent: #1c2622;
+  --sidebar-accent-foreground: #e7ede8;
+  --sidebar-border: #2a3530;
+  --sidebar-ring: #7cc3ac;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -102,14 +114,6 @@
   --alert-caution: oklch(0.7 0.18 25);
 }
 
-/*
- * Color palettes
- *
- * The `data-palette` attribute on <html> swaps the whole token set, while the
- * `.dark` class (applied alongside it) selects the dark variant of each
- * palette. Palettes only redefine the surface tokens; syntax and alert colors
- * are inherited from the default palette via `:root` / `.dark`.
- */
 [data-palette='nord'] {
   --background: oklch(0.96 0.007 250);
   --foreground: oklch(0.32 0.02 260);
@@ -285,10 +289,18 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist Variable', sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-  --font-heading: var(--font-sans);
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-reading: 'Literata Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-heading: var(--font-reading);
+  /* Semantic aliases for the three surfaces and the accent signal. */
+  --color-paper: var(--background);
+  --color-desk: var(--sidebar);
+  --color-sheet: var(--card);
+  --color-ink: var(--foreground);
+  --color-graphite: var(--muted-foreground);
+  --color-rule: var(--border);
+  --color-accent-ink: var(--sidebar-primary);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -335,11 +347,58 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
   }
 
   html {
     @apply font-sans;
+  }
+
+  kbd {
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--sidebar-primary) 24%, transparent);
+    color: var(--foreground);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+    background-color: color-mix(in oklab, var(--muted-foreground) 32%, transparent);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -352,15 +411,16 @@
  * editor).
  */
 .markdown-preview {
-  max-width: 48rem;
+  max-width: 68ch;
   margin-inline: auto;
-  padding: 1.5rem;
+  padding: 2.25rem 1.5rem;
   color: var(--foreground);
   /* `--doc-*` come from the document settings; without them the defaults apply. */
-  font-family: var(--doc-font-body, inherit);
-  font-size: var(--doc-font-size, 0.95rem);
+  font-family: var(--doc-font-body, var(--font-reading));
+  font-size: var(--doc-font-size, 1.0625rem);
   line-height: var(--doc-line-height, 1.75);
   overflow-wrap: break-word;
+  font-optical-sizing: auto;
 }
 
 .markdown-preview > :first-child {
@@ -373,23 +433,21 @@
 .markdown-preview h4,
 .markdown-preview h5,
 .markdown-preview h6 {
-  margin: 1.8em 0 0.7em;
-  font-family: var(--doc-font-heading, inherit);
+  margin: 1.9em 0 0.65em;
+  font-family: var(--doc-font-heading, var(--font-reading));
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  scroll-margin-top: 1.5rem;
 }
 
 .markdown-preview h1 {
-  font-size: calc(1.9em * var(--doc-heading-scale, 1));
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.3em;
+  font-size: calc(2.15em * var(--doc-heading-scale, 1));
+  line-height: 1.15;
 }
 
 .markdown-preview h2 {
-  font-size: calc(1.5em * var(--doc-heading-scale, 1));
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.3em;
+  font-size: calc(1.55em * var(--doc-heading-scale, 1));
 }
 
 .markdown-preview h3 {
@@ -432,9 +490,126 @@
 }
 
 .markdown-preview a {
-  color: var(--syntax-link);
+  color: var(--sidebar-primary);
+  text-decoration-color: color-mix(in oklab, var(--sidebar-primary) 45%, transparent);
   text-underline-offset: 3px;
   text-decoration: underline;
+  transition: text-decoration-color 140ms var(--ease-out);
+}
+
+.markdown-preview a:hover {
+  text-decoration-color: var(--sidebar-primary);
+}
+
+.markdown-preview tbody tr:nth-child(even) {
+  background-color: color-mix(in oklab, var(--muted) 42%, transparent);
+}
+
+/*
+ * The note sheet: the preview is a page lifted off the desk. It is the only
+ * element in the notes workspace that gets elevation, so the metaphor stays
+ * quiet and the reading column stays the focus.
+ */
+.note-sheet {
+  margin: 1.25rem 1.25rem 2rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-radius: calc(var(--radius) * 1.5);
+  background-color: var(--card);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.03),
+    0 24px 48px -32px rgb(0 0 0 / 0.28);
+  animation: sheet-in 200ms var(--ease-out) both;
+}
+
+.note-sheet .markdown-preview {
+  padding: 2.5rem 1.75rem 3.25rem;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Preview-only mode has no editor pane, so the sheet gets a little more air. */
+@media (max-width: 1100px) {
+  .note-sheet {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .note-sheet .markdown-preview {
+    padding: 2rem 1.5rem 3rem;
+  }
+}
+
+/* The document outline lives in the margin, between the editor and the sheet. */
+.document-outline {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  display: flex;
+  max-height: calc(100svh - 7.5rem);
+  width: 2.75rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+  padding: 4.15rem 0.5rem;
+}
+
+.document-outline-item {
+  display: flex;
+  height: 1.5rem;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0 0.2rem;
+  outline: none;
+}
+
+.document-outline-item::before {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 1.5rem;
+  border-radius: 9999px;
+  background-color: color-mix(in oklab, var(--muted-foreground) 38%, transparent);
+  transition:
+    width 140ms var(--ease-out),
+    background-color 140ms var(--ease-out);
+}
+
+.document-outline-item[data-level='2']::before {
+  width: 1.1rem;
+}
+
+.document-outline-item[data-level='3']::before {
+  width: 0.75rem;
+}
+
+.document-outline-item:hover::before,
+.document-outline-item[data-active='true']::before {
+  width: 1.5rem;
+  background-color: var(--sidebar-primary);
+}
+
+.document-outline-item:focus-visible::before {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1279px) {
+  .document-outline {
+    display: none;
+  }
 }
 
 .markdown-preview strong {
@@ -451,10 +626,10 @@
 }
 
 .markdown-preview blockquote {
-  border-left: 3px solid var(--border);
-  padding-left: 1em;
-  color: var(--muted-foreground);
-  font-style: italic;
+  border-left: 2px solid color-mix(in oklab, var(--sidebar-primary) 55%, var(--border));
+  padding: 0.1em 0 0.1em 1.25em;
+  color: color-mix(in oklab, var(--foreground) 72%, var(--muted-foreground));
+  font-style: normal;
 }
 
 /* GitHub-style alerts (> [!NOTE], > [!WARNING], ...) */
@@ -559,16 +734,14 @@
   justify-content: flex-end;
   gap: 0.4em;
   border-bottom: 1px solid var(--border);
-  padding: 0.35em 0.75em;
+  padding: 0.4em 0.85em;
   color: var(--muted-foreground);
   font-family: var(--font-mono);
-  font-size: 0.7em;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.72em;
   cursor: pointer;
   transition:
-    color 150ms ease,
-    background-color 150ms ease;
+    color 140ms var(--ease-out),
+    background-color 140ms var(--ease-out);
 }
 
 .markdown-preview .code-block-language:hover {
@@ -577,7 +750,7 @@
 }
 
 .markdown-preview .code-block-language-copied {
-  color: var(--primary);
+  color: var(--sidebar-primary);
 }
 
 .markdown-preview .code-block-language svg {
@@ -593,14 +766,23 @@
 
 .markdown-preview th,
 .markdown-preview td {
-  border: 1px solid var(--border);
-  padding: 0.5em 0.75em;
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  padding: 0.55em 0.85em;
   text-align: left;
 }
 
 .markdown-preview th {
-  background-color: var(--muted);
+  background-color: transparent;
+  border-bottom-color: var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.82em;
   font-weight: 600;
+}
+
+.markdown-preview .markdown-frontmatter th,
+.markdown-preview .markdown-frontmatter td {
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
 }
 
 /* frontmatter properties shown above the note body */
@@ -637,8 +819,31 @@
 }
 
 .markdown-preview input[type='checkbox'] {
-  margin-right: 0.5em;
-  accent-color: var(--primary);
+  display: inline-grid;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.55em;
+  place-content: center;
+  border: 1px solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  border-radius: 3px;
+  background-color: var(--background);
+  opacity: 1;
+  appearance: none;
+  vertical-align: -0.08em;
+}
+
+.markdown-preview input[type='checkbox']:checked {
+  border-color: var(--sidebar-primary);
+  background-color: var(--sidebar-primary);
+}
+
+.markdown-preview input[type='checkbox']:checked::after {
+  content: '';
+  width: 0.45em;
+  height: 0.24em;
+  border-bottom: 1.5px solid var(--sidebar-primary-foreground);
+  border-left: 1.5px solid var(--sidebar-primary-foreground);
+  transform: translateY(-0.05em) rotate(-45deg);
 }
 
 .markdown-preview .contains-task-list {
@@ -817,7 +1022,6 @@
   @page {
     size: A4;
     margin: 2cm;
-
   }
 
   body > *:not(.print-root) {
@@ -843,6 +1047,7 @@
     --accent-foreground: oklch(0.205 0 0);
     --border: oklch(0.922 0 0);
     --primary: oklch(0.205 0 0);
+    --sidebar-primary: oklch(0.5 0.16 250);
     --syntax-comment: oklch(0.55 0.02 265);
     --syntax-keyword: oklch(0.5 0.2 300);
     --syntax-string: oklch(0.5 0.14 150);

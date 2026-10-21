@@ -103,6 +103,11 @@ export function PlannerSidebar() {
         <SidebarGroupLabel className='gap-2 px-1'>
           <FolderKanban aria-hidden='true' />
           Projects
+          {projects.length > 0 && (
+            <span className='text-[10px] font-normal text-graphite/80 tabular-nums'>
+              {projects.length}
+            </span>
+          )}
         </SidebarGroupLabel>
         <Button
           aria-label='New project'
@@ -190,6 +195,7 @@ export function PlannerSidebar() {
               ) : (
                 <SidebarMenuItem key={project.id}>
                   <SidebarMenuButton
+                    className='data-active:font-medium data-active:[&_svg]:text-accent-ink'
                     isActive={project.id === activeProjectId}
                     render={<Link to={`/planner/${project.id}`} />}
                   >

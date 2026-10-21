@@ -41,8 +41,8 @@ export function TaskDialog({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogPopup>
-        <DialogTitle>{task === null ? 'New task' : 'Edit task'}</DialogTitle>
+      <DialogPopup className='max-w-lg gap-5 p-6'>
+        <DialogTitle className='text-lg'>{task === null ? 'New task' : 'Edit task'}</DialogTitle>
         <TaskForm
           defaultStatus={defaultStatus}
           onCancel={() => {
@@ -92,11 +92,11 @@ function TaskForm({ task, defaultStatus, onSubmit, onCancel }: TaskFormProps) {
 
   return (
     <form
-      className='flex flex-col gap-3'
+      className='flex flex-col gap-4'
       onSubmit={handleSubmit}
     >
       <label className='flex flex-col gap-1.5'>
-        <span className='text-xs font-medium text-muted-foreground'>Title</span>
+        <span className='text-[11px] font-medium text-graphite'>Title</span>
         <Input
           autoFocus
           disabled={isSubmitting}
@@ -109,7 +109,7 @@ function TaskForm({ task, defaultStatus, onSubmit, onCancel }: TaskFormProps) {
       </label>
 
       <label className='flex flex-col gap-1.5'>
-        <span className='text-xs font-medium text-muted-foreground'>Description</span>
+        <span className='text-[11px] font-medium text-graphite'>Description</span>
         <Textarea
           disabled={isSubmitting}
           onChange={(event) => {
@@ -122,7 +122,7 @@ function TaskForm({ task, defaultStatus, onSubmit, onCancel }: TaskFormProps) {
       </label>
 
       <div className='flex flex-col gap-1.5'>
-        <span className='text-xs font-medium text-muted-foreground'>Status</span>
+        <span className='text-[11px] font-medium text-graphite'>Status</span>
         <TaskStatusSelect
           disabled={isSubmitting}
           onChange={setStatus}
@@ -132,7 +132,7 @@ function TaskForm({ task, defaultStatus, onSubmit, onCancel }: TaskFormProps) {
 
       {error !== null && <p className='text-xs text-destructive'>{error}</p>}
 
-      <div className='flex justify-end gap-2'>
+      <div className='flex justify-end gap-2 border-t border-rule/70 pt-4'>
         <DialogClose
           render={
             <Button

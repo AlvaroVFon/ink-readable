@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Kbd } from '@/components/ui/kbd'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -252,7 +253,8 @@ export function NotesSidebar() {
   }
 
   const hasVaults = vaults.length > 0
-  const hasDocuments = collectDocumentPaths(tree).size > 0
+  const documentCount = collectDocumentPaths(tree).size
+  const hasDocuments = documentCount > 0
   const hasFilteredDocuments = collectDocumentPaths(filteredTree).size > 0
   const showTree = !isLoading && error === null && hasFilteredDocuments
   const showNoNotes = !isLoading && error === null && hasVaults && !hasDocuments
@@ -261,22 +263,28 @@ export function NotesSidebar() {
 
   return (
     <SidebarGroup className='p-2'>
-      <div className='sticky top-0 z-10 flex flex-col gap-2 bg-sidebar pb-3 group-data-[collapsible=icon]:hidden'>
+      <div className='sticky top-0 z-10 flex flex-col gap-2 bg-sidebar/95 pb-3 backdrop-blur-sm group-data-[collapsible=icon]:hidden'>
         <div className='flex items-center gap-1'>
-          <SidebarInput
-            ref={searchRef}
-            aria-label='Search notes'
-            onChange={(event) => {
-              setQuery(event.target.value)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                setQuery('')
-              }
-            }}
-            placeholder='Search notes'
-            value={query}
-          />
+          <div className='relative min-w-0 flex-1'>
+            <SidebarInput
+              ref={searchRef}
+              aria-label='Search notes'
+              className='bg-paper/60 pr-11'
+              onChange={(event) => {
+                setQuery(event.target.value)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setQuery('')
+                }
+              }}
+              placeholder='Search notes'
+              value={query}
+            />
+            <Kbd className='pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-graphite/80'>
+              ⌘K
+            </Kbd>
+          </div>
           <NotesNewMenu
             canCreateScoped={scope !== null}
             onSelect={handleSelectAction}
@@ -313,7 +321,14 @@ export function NotesSidebar() {
         )}
       </div>
 
-      <SidebarGroupLabel className='mb-1'>Notes</SidebarGroupLabel>
+      <SidebarGroupLabel className='mb-1'>
+        Notes
+        {documentCount > 0 && (
+          <span className='ml-auto text-[10px] font-normal text-graphite/80 tabular-nums'>
+            {documentCount}
+          </span>
+        )}
+      </SidebarGroupLabel>
 
       <SidebarGroupContent className='group-data-[collapsible=icon]:hidden'>
         {isLoading && (

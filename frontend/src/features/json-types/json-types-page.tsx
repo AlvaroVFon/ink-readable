@@ -3,13 +3,15 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Switch } from '@/components/ui/switch'
+import { ToolField, ToolHeader } from '@/features/tools/components/tool-header'
+import { ToolPane } from '@/features/tools/components/tool-pane'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 
 import type { LanguageOptions, OptionValue } from './lib/languages'
 
 import { CodePane } from './components/code-pane'
-import { SegmentedControl } from './components/segmented-control'
 import { generateTypes } from './lib/generate'
 import { getLanguage, languages, resolveOptions } from './lib/languages'
 import { getStoredPreferences, storePreferences } from './lib/preferences'
@@ -63,32 +65,36 @@ export function JsonTypesPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>JSON → Types</h1>
-        <SegmentedControl
-          choices={languages.map(({ id, label }) => ({ value: id, label }))}
-          label='Language'
-          onChange={(languageId) => {
-            setPreferences((current) => ({ ...current, languageId }))
-          }}
-          value={language.id}
-        />
-        <label className='flex items-center gap-2 text-sm'>
-          Root type
+      <ToolHeader
+        description='Turn a JSON sample into TypeScript or Go types.'
+        title='JSON → Types'
+      >
+        <ToolField label='Language'>
+          <SegmentedControl
+            choices={languages.map(({ id, label }) => ({ value: id, label }))}
+            label='Language'
+            onChange={(languageId) => {
+              setPreferences((current) => ({ ...current, languageId }))
+            }}
+            value={language.id}
+          />
+        </ToolField>
+        <ToolField label='Root type'>
           <Input
-            className='w-36'
+            aria-label='Root type'
+            className='h-7 w-36 text-xs'
             onChange={(event) => {
               const rootName = event.target.value
               setPreferences((current) => ({ ...current, rootName }))
             }}
             value={preferences.rootName}
           />
-        </label>
+        </ToolField>
         {language.options.map((option) =>
           option.kind === 'boolean' ? (
             <div
               key={option.key}
-              className='flex items-center gap-2 text-sm'
+              className='flex items-center gap-2 text-xs'
             >
               <Switch
                 aria-label={option.label}
@@ -100,11 +106,10 @@ export function JsonTypesPage() {
               <span aria-hidden='true'>{option.label}</span>
             </div>
           ) : (
-            <div
+            <ToolField
               key={option.key}
-              className='flex items-center gap-2 text-sm'
+              label={option.label}
             >
-              {option.label}
               <SegmentedControl
                 choices={option.choices}
                 label={option.label}
@@ -113,23 +118,24 @@ export function JsonTypesPage() {
                 }}
                 value={String(options[option.key])}
               />
-            </div>
+            </ToolField>
           ),
         )}
-      </header>
+      </ToolHeader>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>JSON</h2>
+        <ToolPane
+          className='border-b border-rule/70 md:border-r md:border-b-0'
+          title='JSON'
+        >
           <CodePane
             label='JSON input'
             loadLanguage={loadJson}
             onChange={setInput}
             value={input}
           />
-        </section>
-        <section className='flex min-h-0 flex-col'>
-          <div className='flex items-center justify-between px-6 pt-3'>
-            <h2 className='text-sm font-medium text-muted-foreground'>{language.label}</h2>
+        </ToolPane>
+        <ToolPane
+          actions={
             <Button
               disabled={!result.ok || result.code === ''}
               onClick={() => {
@@ -137,16 +143,18 @@ export function JsonTypesPage() {
                   void copy(result.code)
                 }
               }}
-              size='sm'
+              size='xs'
               variant='ghost'
             >
               {copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'Copied' : 'Copy'}
             </Button>
-          </div>
+          }
+          title={language.label}
+        >
           {!result.ok && (
             <p
-              className='mx-6 mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive'
+              className='shrink-0 border-b border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive'
               role='alert'
             >
               {result.error}
@@ -157,7 +165,7 @@ export function JsonTypesPage() {
             loadLanguage={language.loadHighlighting}
             value={result.ok ? result.code : ''}
           />
-        </section>
+        </ToolPane>
       </div>
     </div>
   )

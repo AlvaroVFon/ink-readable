@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun, type LucideIcon } from 'lucide-react'
+import { Check, Monitor, Moon, Sun, type LucideIcon } from 'lucide-react'
 
 import { useTheme } from '@/components/theme/theme-context'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -42,15 +42,15 @@ export function ThemePicker() {
       </PopoverTrigger>
       <PopoverContent
         align='end'
-        className='w-64'
+        className='w-72 p-4'
       >
         <div className='mb-3'>
-          <p className='font-heading text-sm font-medium'>Appearance</p>
-          <p className='text-xs text-muted-foreground'>Color mode and palette</p>
+          <p className='font-heading text-base font-medium'>Appearance</p>
+          <p className='text-xs text-graphite'>Color mode and palette</p>
         </div>
         <div
           aria-label='Color mode'
-          className='grid grid-cols-3 gap-1 rounded-lg bg-muted p-1'
+          className='grid grid-cols-3 gap-1 rounded-lg bg-desk/70 p-1'
           role='radiogroup'
         >
           {MODE_ORDER.map((value) => {
@@ -60,13 +60,18 @@ export function ThemePicker() {
               <Button
                 key={value}
                 aria-checked={active}
-                className={cn('justify-center', !active && 'text-muted-foreground')}
+                className={cn(
+                  'justify-center',
+                  active
+                    ? 'bg-sheet text-ink shadow-[0_1px_0_var(--rule)] hover:bg-sheet'
+                    : 'text-graphite',
+                )}
                 onClick={() => {
                   setMode(value)
                 }}
                 role='radio'
                 size='sm'
-                variant={active ? 'secondary' : 'ghost'}
+                variant='ghost'
               >
                 <Icon aria-hidden='true' />
                 {MODE_LABEL[value]}
@@ -86,8 +91,10 @@ export function ThemePicker() {
                 key={value}
                 aria-checked={active}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border p-2 text-left text-sm transition-colors hover:bg-muted',
-                  active ? 'border-ring ring-2 ring-ring/40' : 'border-border',
+                  'flex items-center gap-2 rounded-lg border p-2 text-left text-sm transition-colors',
+                  active
+                    ? 'border-accent-ink/60 bg-accent/40 ring-1 ring-accent-ink/20'
+                    : 'border-rule/80 hover:bg-desk/60',
                 )}
                 onClick={() => {
                   setPalette(value)
@@ -101,6 +108,12 @@ export function ThemePicker() {
                   style={{ background: PALETTE_PREVIEW[value] }}
                 />
                 <span className='truncate'>{PALETTE_LABEL[value]}</span>
+                {active && (
+                  <Check
+                    aria-hidden='true'
+                    className='ml-auto size-3.5 text-accent-ink'
+                  />
+                )}
               </button>
             )
           })}

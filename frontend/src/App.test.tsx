@@ -23,13 +23,13 @@ describe('App', () => {
   it('opens the notes editor at the root route', () => {
     renderApp()
 
-    expect(screen.getByRole('heading', { name: 'Notes' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No note open' })).toBeInTheDocument()
   })
 
   it('opens the planner board at /planner', () => {
     renderApp(['/planner'])
 
-    expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No project selected' })).toBeInTheDocument()
   })
 
   it('opens a note route under the notes layout', () => {
@@ -69,7 +69,7 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Planner' }))
 
-    expect(screen.getByRole('heading', { name: 'Planner' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No project selected' })).toBeInTheDocument()
   })
 
   it('navigates to the tools section from the header', async () => {

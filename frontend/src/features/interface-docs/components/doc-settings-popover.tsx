@@ -3,8 +3,8 @@ import { useRef, useState, type ReactNode } from 'react'
 
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Switch } from '@/components/ui/switch'
-import { SegmentedControl } from '@/features/json-types/components/segmented-control'
 
 import type { InterfaceDocsPreferences } from '../lib/preferences'
 import type { Typography } from '../lib/typography'

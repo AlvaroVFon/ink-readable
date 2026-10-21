@@ -6,7 +6,7 @@ import type { TaskStatus } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-import { TASK_STATUSES, TASK_STATUS_LABELS } from '../lib/task-order'
+import { TASK_STATUSES, TASK_STATUS_COLORS, TASK_STATUS_LABELS } from '../lib/task-order'
 
 const ITEM_CLASS =
   'flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground'
@@ -31,7 +31,14 @@ export function TaskStatusSelect({ value, onChange, disabled = false }: TaskStat
           />
         }
       >
-        <span>{TASK_STATUS_LABELS[value]}</span>
+        <span className='flex items-center gap-2'>
+          <span
+            aria-hidden='true'
+            className='size-1.5 rounded-full'
+            style={{ backgroundColor: TASK_STATUS_COLORS[value] }}
+          />
+          {TASK_STATUS_LABELS[value]}
+        </span>
         <ChevronDown
           aria-hidden='true'
           className='ml-auto'
@@ -52,6 +59,11 @@ export function TaskStatusSelect({ value, onChange, disabled = false }: TaskStat
                   onChange(status)
                 }}
               >
+                <span
+                  aria-hidden='true'
+                  className='size-1.5 rounded-full'
+                  style={{ backgroundColor: TASK_STATUS_COLORS[status] }}
+                />
                 {TASK_STATUS_LABELS[status]}
               </Menu.Item>
             ))}

@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { CornerDownLeft, FileText, Search } from 'lucide-react'
 import {
   useEffect,
   useMemo,
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router'
 
 import { Dialog, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Kbd } from '@/components/ui/kbd'
 import { cn } from '@/lib/utils'
 
 import { fuzzyRank } from '../lib/fuzzy-match'
@@ -126,17 +127,17 @@ export function NotesFileFinder() {
         }
       }}
     >
-      <DialogPopup className='max-w-xl gap-2 p-3'>
+      <DialogPopup className='max-w-xl gap-0 overflow-hidden border-rule/80 p-0'>
         <DialogTitle className='sr-only'>File finder</DialogTitle>
-        <div className='flex items-center gap-2 border-b pb-2'>
+        <div className='flex items-center gap-2.5 border-b border-rule/70 bg-desk/30 px-4 py-3'>
           <Search
             aria-hidden='true'
-            className='size-4 text-muted-foreground'
+            className='size-4 shrink-0 text-graphite'
           />
           <Input
             aria-label='Find file'
             autoFocus
-            className='h-8 border-0 bg-transparent shadow-none focus-visible:ring-0'
+            className='h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 dark:bg-transparent'
             onChange={(event) => {
               setQuery(event.target.value)
               setActiveIndex(0)
@@ -146,15 +147,15 @@ export function NotesFileFinder() {
             value={query}
           />
         </div>
-        <ul className='flex max-h-80 flex-col gap-0.5 overflow-auto'>
+        <ul className='flex max-h-80 flex-col gap-0.5 overflow-auto p-2'>
           {results.length === 0 && (
-            <li className='px-2 py-4 text-center text-sm text-muted-foreground'>No files found.</li>
+            <li className='px-2 py-6 text-center text-sm text-graphite'>No files found.</li>
           )}
           {results.map((item, index) => (
             <li key={item.id}>
               <button
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-hidden',
+                  'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm outline-hidden transition-colors',
                   index === selectedIndex
                     ? 'bg-accent text-accent-foreground'
                     : 'hover:bg-accent/50',
@@ -167,12 +168,37 @@ export function NotesFileFinder() {
                 }}
                 type='button'
               >
+                <FileText
+                  aria-hidden='true'
+                  className={cn(
+                    'size-3.5 shrink-0',
+                    index === selectedIndex ? 'text-accent-ink' : 'text-graphite/80',
+                  )}
+                />
                 <span className='truncate'>{item.name}</span>
-                <span className='ml-auto truncate text-xs text-muted-foreground'>{item.path}</span>
+                <span className='ml-auto truncate text-[11px] text-graphite'>{item.path}</span>
               </button>
             </li>
           ))}
         </ul>
+        <div className='flex items-center gap-4 border-t border-rule/70 px-4 py-2 text-[10px] text-graphite'>
+          <span className='inline-flex items-center gap-1.5'>
+            <Kbd>↑</Kbd>
+            <Kbd>↓</Kbd>
+            Move
+          </span>
+          <span className='inline-flex items-center gap-1.5'>
+            <CornerDownLeft
+              aria-hidden='true'
+              className='size-3'
+            />
+            Open
+          </span>
+          <span className='ml-auto inline-flex items-center gap-1.5'>
+            <Kbd>Esc</Kbd>
+            Close
+          </span>
+        </div>
       </DialogPopup>
     </Dialog>
   )

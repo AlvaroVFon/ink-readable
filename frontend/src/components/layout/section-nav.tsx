@@ -1,7 +1,6 @@
 import { BookOpen, SquareKanban, Wrench } from 'lucide-react'
 import { NavLink } from 'react-router'
 
-import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const sections = [
@@ -14,7 +13,7 @@ export function SectionNav() {
   return (
     <nav
       aria-label='Sections'
-      className='flex items-center gap-1'
+      className='flex h-full items-center gap-0.5'
     >
       {sections.map(({ to, label, icon: Icon, end }) => (
         <NavLink
@@ -23,12 +22,15 @@ export function SectionNav() {
           to={to}
           className={({ isActive }) =>
             cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              isActive && 'bg-muted text-foreground',
+              'relative inline-flex h-full items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors outline-none after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent-ink after:opacity-0 after:transition-opacity focus-visible:ring-2 focus-visible:ring-ring/50',
+              isActive ? 'text-ink after:opacity-100' : 'text-graphite hover:text-ink',
             )
           }
         >
-          <Icon aria-hidden='true' />
+          <Icon
+            aria-hidden='true'
+            className='size-3.5'
+          />
           {label}
         </NavLink>
       ))}

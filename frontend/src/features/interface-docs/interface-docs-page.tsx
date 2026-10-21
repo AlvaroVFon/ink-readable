@@ -3,12 +3,14 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'rea
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { CodePane } from '@/features/json-types/components/code-pane'
-import { SegmentedControl } from '@/features/json-types/components/segmented-control'
 import { NotesExportMenu } from '@/features/notes/components/notes-export-menu'
 import { PrintableNote } from '@/features/notes/export/printable-note'
 import { useExportNote } from '@/features/notes/export/use-export-note'
 import { MarkdownPreview } from '@/features/notes/preview/markdown-preview'
+import { ToolField, ToolHeader } from '@/features/tools/components/tool-header'
+import { ToolPane } from '@/features/tools/components/tool-pane'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 
 import type { InterfaceDocsPreferences } from './lib/preferences'
@@ -118,58 +120,66 @@ export function InterfaceDocsPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>Interfaces → Docs</h1>
-        <SegmentedControl
-          choices={sourceLanguages.map(({ id, label }) => ({ value: id, label }))}
-          label='Source language'
-          onChange={(sourceId) => {
-            update({ sourceId })
-          }}
-          value={language.id}
-        />
-        <label className='flex items-center gap-2 text-sm'>
-          Title
+      <ToolHeader
+        actions={
+          <DocSettingsPopover
+            headerImage={headerImage}
+            onChange={update}
+            onHeaderImageChange={changeHeaderImage}
+            preferences={preferences}
+          />
+        }
+        description='Turn TypeScript or Go declarations into a Markdown contract, ready to export as PDF.'
+        title='Interfaces → Docs'
+      >
+        <ToolField label='Source'>
+          <SegmentedControl
+            choices={sourceLanguages.map(({ id, label }) => ({ value: id, label }))}
+            label='Source language'
+            onChange={(sourceId) => {
+              update({ sourceId })
+            }}
+            value={language.id}
+          />
+        </ToolField>
+        <ToolField label='Title'>
           <Input
-            className='w-48'
+            aria-label='Title'
+            className='h-7 w-48 text-xs'
             onChange={(event) => {
               update({ title: event.target.value })
             }}
             placeholder={getMessages(locale).defaultTitle}
             value={title}
           />
-        </label>
-        <label className='flex items-center gap-2 text-sm'>
-          Version
+        </ToolField>
+        <ToolField label='Version'>
           <Input
-            className='w-24'
+            aria-label='Version'
+            className='h-7 w-24 text-xs'
             onChange={(event) => {
               update({ version: event.target.value })
             }}
             value={version}
           />
-        </label>
-        <label className='flex items-center gap-2 text-sm'>
-          Date
+        </ToolField>
+        <ToolField label='Date'>
           <Input
-            className='w-40'
+            aria-label='Date'
+            className='h-7 w-40 text-xs'
             onChange={(event) => {
               setDate(event.target.value)
             }}
             type='date'
             value={date}
           />
-        </label>
-        <DocSettingsPopover
-          headerImage={headerImage}
-          onChange={update}
-          onHeaderImageChange={changeHeaderImage}
-          preferences={preferences}
-        />
-      </header>
+        </ToolField>
+      </ToolHeader>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>{language.label}</h2>
+        <ToolPane
+          className='border-b border-rule/70 md:border-r md:border-b-0'
+          title={language.label}
+        >
           <CodePane
             key={language.id}
             label='Interface source'
@@ -179,36 +189,36 @@ export function InterfaceDocsPage() {
             }}
             value={source}
           />
-        </section>
-        <section className='flex min-h-0 flex-col'>
-          <div className='flex flex-wrap items-center justify-between gap-2 px-6 pt-3'>
-            <SegmentedControl
-              choices={VIEWS}
-              label='Output view'
-              onChange={(view) => {
-                update({ view: view === 'markdown' ? 'markdown' : 'preview' })
-              }}
-              value={preferences.view}
-            />
-            <div className='flex items-center gap-1'>
+        </ToolPane>
+        <ToolPane
+          actions={
+            <>
               {exportError !== null && (
                 <span
-                  className='text-xs text-destructive'
+                  className='mr-1 text-[11px] text-destructive'
                   role='status'
                 >
                   {exportError}
                 </span>
               )}
+              <SegmentedControl
+                choices={VIEWS}
+                label='Output view'
+                onChange={(view) => {
+                  update({ view: view === 'markdown' ? 'markdown' : 'preview' })
+                }}
+                value={preferences.view}
+              />
               <Button
                 disabled={markdown === ''}
                 onClick={() => {
                   void copy(markdown)
                 }}
-                size='sm'
+                size='xs'
                 variant='ghost'
               >
                 {copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? 'Copied' : 'Copy'}
               </Button>
               <NotesExportMenu
                 disabled={markdown === ''}
@@ -221,11 +231,14 @@ export function InterfaceDocsPage() {
                   }
                 }}
               />
-            </div>
-          </div>
+            </>
+          }
+          bare={preferences.view === 'preview'}
+          title={preferences.view === 'markdown' ? 'Markdown' : 'Preview'}
+        >
           {!result.ok && (
             <p
-              className='mx-6 mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive'
+              className='shrink-0 border-b border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive'
               role='alert'
             >
               {result.error}
@@ -240,15 +253,17 @@ export function InterfaceDocsPage() {
           ) : (
             <div
               aria-label='Document preview'
-              className='min-h-0 flex-1 overflow-auto px-6 py-4'
+              className='min-h-0 flex-1 overflow-auto bg-desk/40 p-4'
               role='region'
               style={typography}
             >
-              {header !== null && <div className='mx-auto max-w-3xl px-6 pt-6'>{header}</div>}
-              <MarkdownPreview content={markdown} />
+              <article className='mx-auto max-w-4xl overflow-hidden rounded-xl border border-rule/80 bg-paper shadow-[0_12px_32px_-24px_rgb(0_0_0/0.35)]'>
+                {header !== null && <div className='px-6 pt-6'>{header}</div>}
+                <MarkdownPreview content={markdown} />
+              </article>
             </div>
           )}
-        </section>
+        </ToolPane>
       </div>
       {printJob !== null && (
         <PrintableNote

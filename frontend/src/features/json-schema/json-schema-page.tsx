@@ -3,10 +3,12 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Switch } from '@/components/ui/switch'
 import { getSourceLanguage, sourceLanguages } from '@/features/interface-docs/lib/sources'
 import { CodePane } from '@/features/json-types/components/code-pane'
-import { SegmentedControl } from '@/features/json-types/components/segmented-control'
+import { ToolField, ToolHeader } from '@/features/tools/components/tool-header'
+import { ToolPane } from '@/features/tools/components/tool-pane'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 
 import type { Draft } from './lib/schema'
@@ -79,29 +81,32 @@ export function JsonSchemaPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>→ JSON Schema</h1>
-        <SegmentedControl
-          choices={SOURCES}
-          label='Input'
-          onChange={(value) => {
-            update({ sourceId: value })
-          }}
-          value={activeId}
-        />
-        <label className='flex items-center gap-2 text-sm'>
-          Root type
+      <ToolHeader
+        description='Describe a contract as a JSON Schema from a sample or existing declarations.'
+        title='→ JSON Schema'
+      >
+        <ToolField label='Input'>
+          <SegmentedControl
+            choices={SOURCES}
+            label='Input'
+            onChange={(value) => {
+              update({ sourceId: value })
+            }}
+            value={activeId}
+          />
+        </ToolField>
+        <ToolField label='Root type'>
           <Input
-            className='w-36'
+            aria-label='Root type'
+            className='h-7 w-36 text-xs'
             onChange={(event) => {
               update({ rootName: event.target.value })
             }}
             placeholder={isJson ? 'Root' : 'First declaration'}
             value={rootName}
           />
-        </label>
-        <div className='flex items-center gap-2 text-sm'>
-          Draft
+        </ToolField>
+        <ToolField label='Draft'>
           <SegmentedControl
             choices={DRAFT_CHOICES}
             label='Draft'
@@ -110,8 +115,8 @@ export function JsonSchemaPage() {
             }}
             value={draft}
           />
-        </div>
-        <div className='flex items-center gap-2 text-sm'>
+        </ToolField>
+        <div className='flex items-center gap-2 text-xs'>
           <Switch
             aria-label='Forbid additional properties'
             checked={strict}
@@ -121,12 +126,12 @@ export function JsonSchemaPage() {
           />
           <span aria-hidden='true'>Forbid additional properties</span>
         </div>
-      </header>
+      </ToolHeader>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>
-            {isJson ? 'JSON' : language.label}
-          </h2>
+        <ToolPane
+          className='border-b border-rule/70 md:border-r md:border-b-0'
+          title={isJson ? 'JSON' : language.label}
+        >
           <CodePane
             key={activeId}
             label='Schema source'
@@ -136,10 +141,9 @@ export function JsonSchemaPage() {
             }}
             value={input}
           />
-        </section>
-        <section className='flex min-h-0 flex-col'>
-          <div className='flex items-center justify-between px-6 pt-3'>
-            <h2 className='text-sm font-medium text-muted-foreground'>JSON Schema</h2>
+        </ToolPane>
+        <ToolPane
+          actions={
             <Button
               disabled={!result.ok || result.code === ''}
               onClick={() => {
@@ -147,16 +151,18 @@ export function JsonSchemaPage() {
                   void copy(result.code)
                 }
               }}
-              size='sm'
+              size='xs'
               variant='ghost'
             >
               {copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'Copied' : 'Copy'}
             </Button>
-          </div>
+          }
+          title='JSON Schema'
+        >
           {!result.ok && (
             <p
-              className='mx-6 mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive'
+              className='shrink-0 border-b border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive'
               role='alert'
             >
               {result.error}
@@ -167,7 +173,7 @@ export function JsonSchemaPage() {
             loadLanguage={loadJson}
             value={result.ok ? result.code : ''}
           />
-        </section>
+        </ToolPane>
       </div>
     </div>
   )
