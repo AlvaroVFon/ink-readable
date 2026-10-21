@@ -774,7 +774,7 @@ function NodeContextMenu({
       }}
     >
       <div
-        className='absolute min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md'
+        className='absolute min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)]'
         onClick={(event) => {
           event.stopPropagation()
         }}

@@ -37,7 +37,7 @@ export function NotesExportMenu({
           className='z-50'
           sideOffset={6}
         >
-          <Menu.Popup className='z-50 min-w-44 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-hidden'>
+          <Menu.Popup className='z-50 min-w-44 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)] outline-hidden'>
             <Menu.Item
               className={ITEM_CLASS}
               onClick={() => {

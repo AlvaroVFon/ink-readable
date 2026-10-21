@@ -16,8 +16,8 @@ describe('parseDocText', () => {
   })
 
   it('accepts @defaultValue and leaves unknown tags and e-mails alone', () => {
-    expect(parseDocText('Contact ops@example.com. @see Docs @defaultValue 3')).toEqual({
-      description: 'Contact ops@example.com. @see Docs',
+    expect(parseDocText('Contact ops@inkreadable.dev. @see Docs @defaultValue 3')).toEqual({
+      description: 'Contact ops@inkreadable.dev. @see Docs',
       example: null,
       examples: [],
       deprecated: null,

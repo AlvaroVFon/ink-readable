@@ -43,7 +43,7 @@ export function TaskStatusSelect({ value, onChange, disabled = false }: TaskStat
           className='z-50'
           sideOffset={4}
         >
-          <Menu.Popup className='z-50 min-w-[var(--anchor-width)] rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-hidden'>
+          <Menu.Popup className='z-50 min-w-[var(--anchor-width)] rounded-lg border bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)] outline-hidden'>
             {TASK_STATUSES.map((status) => (
               <Menu.Item
                 key={status}

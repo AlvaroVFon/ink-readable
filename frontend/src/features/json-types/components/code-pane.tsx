@@ -62,8 +62,14 @@ export function CodePane({ label, value, loadLanguage, onChange }: CodePaneProps
     if (parent === null) {
       return () => {}
     }
-    const { label: ariaLabel, value: doc, readOnly, dark, vim, relativeLineNumbers: relative } =
-      initialRef.current
+    const {
+      label: ariaLabel,
+      value: doc,
+      readOnly,
+      dark,
+      vim,
+      relativeLineNumbers: relative,
+    } = initialRef.current
     const view = new EditorView({
       doc,
       parent,
@@ -76,6 +82,7 @@ export function CodePane({ label, value, loadLanguage, onChange }: CodePaneProps
         languageCompartmentRef.current.of([]),
         syntaxHighlighting(codeHighlightStyle),
         editorTheme,
+        EditorView.lineWrapping,
         EditorState.readOnly.of(readOnly),
         EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
         EditorView.updateListener.of((update) => {

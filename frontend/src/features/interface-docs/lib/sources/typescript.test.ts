@@ -54,7 +54,13 @@ describe('typescript source', () => {
         extends: ['Entity', 'Timestamps'],
         additionalProperties: null,
         fields: [
-          field({ name: 'email', type: STRING, description: 'Login e-mail.', example: '"a@b.c"', examples: ['"a@b.c"'] }),
+          field({
+            name: 'email',
+            type: STRING,
+            description: 'Login e-mail.',
+            example: '"a@b.c"',
+            examples: ['"a@b.c"'],
+          }),
           field({ name: 'name', type: STRING, required: false, description: 'Display name.' }),
           field({ name: 'avatar', type: STRING, nullable: true }),
           field({ name: 'nickname', type: STRING, required: false }),

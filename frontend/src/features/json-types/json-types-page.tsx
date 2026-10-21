@@ -63,7 +63,7 @@ export function JsonTypesPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
+      <header className='flex flex-wrap items-center gap-x-5 gap-y-2.5 px-5 py-4 sm:px-6'>
         <h1 className='text-xl font-semibold tracking-tight'>JSON → Types</h1>
         <SegmentedControl
           choices={languages.map(({ id, label }) => ({ value: id, label }))}
@@ -73,10 +73,10 @@ export function JsonTypesPage() {
           }}
           value={language.id}
         />
-        <label className='flex items-center gap-2 text-sm'>
+        <label className='flex min-w-0 items-center gap-2 text-sm'>
           Root type
           <Input
-            className='w-36'
+            className='w-32 sm:w-36'
             onChange={(event) => {
               const rootName = event.target.value
               setPreferences((current) => ({ ...current, rootName }))
@@ -118,8 +118,8 @@ export function JsonTypesPage() {
         )}
       </header>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>JSON</h2>
+        <section className='flex min-h-0 flex-col border-b border-border/70 md:border-r md:border-b-0'>
+          <h2 className='px-5 pt-3 text-xs font-medium text-muted-foreground sm:px-6'>JSON</h2>
           <CodePane
             label='JSON input'
             loadLanguage={loadJson}
@@ -128,8 +128,8 @@ export function JsonTypesPage() {
           />
         </section>
         <section className='flex min-h-0 flex-col'>
-          <div className='flex items-center justify-between px-6 pt-3'>
-            <h2 className='text-sm font-medium text-muted-foreground'>{language.label}</h2>
+          <div className='flex items-center justify-between px-5 pt-3 sm:px-6'>
+            <h2 className='text-xs font-medium text-muted-foreground'>{language.label}</h2>
             <Button
               disabled={!result.ok || result.code === ''}
               onClick={() => {
@@ -146,7 +146,7 @@ export function JsonTypesPage() {
           </div>
           {!result.ok && (
             <p
-              className='mx-6 mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive'
+              className='mx-5 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:mx-6'
               role='alert'
             >
               {result.error}

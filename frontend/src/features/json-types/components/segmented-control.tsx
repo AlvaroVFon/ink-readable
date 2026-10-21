@@ -13,7 +13,7 @@ export function SegmentedControl({ label, value, choices, onChange }: SegmentedC
   return (
     <div
       aria-label={label}
-      className='inline-flex rounded-lg border p-0.5'
+      className='inline-flex max-w-full rounded-md bg-muted p-0.5'
       role='group'
     >
       {choices.map((choice) => (
@@ -22,7 +22,10 @@ export function SegmentedControl({ label, value, choices, onChange }: SegmentedC
           aria-pressed={choice.value === value}
           className={cn(
             buttonVariants({ variant: 'ghost', size: 'sm' }),
-            choice.value === value && 'bg-muted text-foreground',
+            'h-6 rounded-[5px] px-2 text-xs',
+            choice.value === value
+              ? 'bg-sheet text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
           )}
           onClick={() => {
             onChange(choice.value)

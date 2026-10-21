@@ -1,9 +1,10 @@
 import { Plus } from 'lucide-react'
 import { useState, type DragEvent as ReactDragEvent } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import type { Task, TaskStatus } from '@/lib/types'
 
+import { InlineNameForm } from '@/components/forms/inline-name-form'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -21,11 +22,59 @@ type DropTarget = { status: TaskStatus; index: number }
 
 /** Placeholder shown at `/planner` before a project is selected. */
 export function PlannerEmpty() {
+  const { createProject } = usePlannerProjectsContext()
+  const navigate = useNavigate()
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const create = async (name: string) => {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const project = await createProject(name)
+      setCreating(false)
+      void navigate(`/planner/${project.id}`)
+    } catch (cause) {
+      setError(toMessage(cause))
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className='flex flex-1 items-center justify-center p-6'>
-      <section className='flex max-w-md flex-col items-center gap-2 text-center'>
+      <section className='flex max-w-sm flex-col items-center gap-3 text-center'>
         <h1 className='text-2xl font-semibold tracking-tight'>Planner</h1>
-        <p className='text-muted-foreground'>Select or create a project to start planning.</p>
+        <p className='text-sm text-muted-foreground'>
+          Select or create a project to start planning.
+        </p>
+        {creating ? (
+          <div className='w-full pt-1 text-left'>
+            <InlineNameForm
+              error={error}
+              isBusy={isSubmitting}
+              label='Project name'
+              onCancel={() => {
+                setCreating(false)
+                setError(null)
+              }}
+              onSubmit={(name) => {
+                void create(name)
+              }}
+              placeholder='Project name'
+              submitLabel='Create project'
+            />
+          </div>
+        ) : (
+          <Button
+            onClick={() => {
+              setCreating(true)
+            }}
+          >
+            New project
+          </Button>
+        )}
+        <p className='text-xs text-muted-foreground'>Projects live in the sidebar.</p>
       </section>
     </div>
   )
@@ -123,10 +172,25 @@ export function PlannerBoard() {
     return <PlannerEmpty />
   }
 
+  const totalTasks = TASK_STATUSES.reduce(
+    (total, status) => total + tasksByStatus[status].length,
+    0,
+  )
+  const doneTasks = tasksByStatus.done.length
+  const liveTasks = tasksByStatus.todo.length + tasksByStatus.in_progress.length
+
   return (
-    <div className='flex flex-1 flex-col gap-4 p-6'>
-      <div className='flex items-center justify-between gap-2'>
-        <h1 className='text-2xl font-semibold tracking-tight'>{project?.name ?? 'Planner'}</h1>
+    <div className='flex flex-1 flex-col gap-5 p-4 sm:p-6'>
+      <div className='flex flex-wrap items-end justify-between gap-3'>
+        <div className='flex min-w-0 flex-col gap-1'>
+          <h1 className='truncate text-2xl font-semibold tracking-tight'>
+            {project?.name ?? 'Planner'}
+          </h1>
+          <p className='text-sm text-muted-foreground tabular-nums'>
+            {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'} · {liveTasks} in play · {doneTasks}{' '}
+            done
+          </p>
+        </div>
         <Button
           onClick={() => {
             openCreate('backlog')
@@ -140,7 +204,7 @@ export function PlannerBoard() {
       {actionError !== null && <p className='text-sm text-destructive'>{actionError}</p>}
       {error !== null && <p className='text-sm text-destructive'>{error.message}</p>}
 
-      <div className='grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4'>
         {TASK_STATUSES.map((status) => (
           <PlannerColumn
             key={status}
@@ -220,8 +284,8 @@ function PlannerColumn({
   return (
     <section
       className={cn(
-        'flex flex-col gap-2 rounded-lg border bg-muted/30 p-3 transition-colors',
-        isDropTarget && 'border-ring bg-muted/60',
+        'flex flex-col gap-2.5 rounded-lg bg-muted/60 p-2.5 transition-colors',
+        isDropTarget && 'bg-accent',
       )}
       onDragOver={(event) => {
         if (draggingId === null) {
@@ -239,9 +303,9 @@ function PlannerColumn({
       }}
     >
       <div className='flex items-center justify-between gap-1'>
-        <h2 className='text-sm font-medium text-muted-foreground'>
+        <h2 className='flex items-baseline gap-1.5 text-sm font-medium text-muted-foreground'>
           {TASK_STATUS_LABELS[status]}
-          <span className='ml-1.5 text-xs text-muted-foreground/70'>{tasks.length}</span>
+          <span className='text-xs tabular-nums text-muted-foreground'>{tasks.length}</span>
         </h2>
         <Button
           aria-label={`New task in ${TASK_STATUS_LABELS[status]}`}
@@ -258,7 +322,7 @@ function PlannerColumn({
       <div className='flex min-h-8 flex-col gap-2'>
         {isLoading && <p className='text-xs text-muted-foreground'>Loading…</p>}
         {!isLoading && tasks.length === 0 && (
-          <p className='rounded-md border border-dashed px-2 py-3 text-center text-xs text-muted-foreground'>
+          <p className='rounded-md border border-dashed border-border px-2 py-3 text-center text-[13px] text-muted-foreground'>
             No tasks
           </p>
         )}

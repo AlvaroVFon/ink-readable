@@ -4,6 +4,7 @@ import type { Document } from '@/lib/types'
 
 import { useEditorConfigContext } from '@/components/editor-config/editor-config-context'
 import { useSidebar } from '@/components/ui/sidebar'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/utils'
 
 import type { ViewMode } from './types'
@@ -37,6 +38,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
   const [content, setContent] = useState(document.content)
   const [mode, setMode] = useState<ViewMode>('split')
   const [previewFirst, setPreviewFirst] = useState(getStoredPreviewFirst)
+  const compact = useMediaQuery('(max-width: 1023px)')
   const previewRef = useRef<HTMLDivElement | null>(null)
 
   const { config } = useEditorConfigContext()
@@ -135,19 +137,22 @@ export function NotesEditor({ document }: NotesEditorProps) {
     storePreviewFirst(next)
   }, [previewFirst])
 
-  useScrollSync(scrollElement, previewRef, mode === 'split')
+  // Below 1024px two panes would each be too narrow to read; show one at a time.
+  const effectiveMode: ViewMode = compact && mode === 'split' ? 'edit' : mode
+
+  useScrollSync(scrollElement, previewRef, effectiveMode === 'split')
 
   useEffect(() => {
-    if (mode !== 'preview') {
+    if (effectiveMode !== 'preview') {
       requestMeasure()
     }
-  }, [mode, requestMeasure])
+  }, [effectiveMode, requestMeasure])
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <NotesToolbar
         exportError={exportError}
-        mode={mode}
+        mode={effectiveMode}
         onExport={(format) => {
           if (format === 'markdown') {
             void exportMarkdown()
@@ -160,8 +165,14 @@ export function NotesEditor({ document }: NotesEditorProps) {
         previewFirst={previewFirst}
         status={status}
         title={title}
+        compact={compact}
       />
-      <div className={cn('grid min-h-0 flex-1', mode === 'split' ? 'grid-cols-2' : 'grid-cols-1')}>
+      <div
+        className={cn(
+          'grid min-h-0 flex-1',
+          effectiveMode === 'split' ? 'grid-cols-2' : 'grid-cols-1',
+        )}
+      >
         {/* The editor stays mounted in every mode: unmounting it detaches the
             CodeMirror DOM and leaves the pane blank when coming back. Swapping
             the panes only changes the CSS order for the same reason, so the
@@ -169,8 +180,8 @@ export function NotesEditor({ document }: NotesEditorProps) {
         <div
           className={cn(
             'min-h-0 overflow-hidden',
-            mode === 'preview' && 'hidden',
-            mode === 'split' && previewFirst && 'order-last border-l',
+            effectiveMode === 'preview' && 'hidden',
+            effectiveMode === 'split' && previewFirst && 'order-last border-l border-border/70',
           )}
         >
           <div
@@ -178,11 +189,12 @@ export function NotesEditor({ document }: NotesEditorProps) {
             ref={containerRef}
           />
         </div>
-        {mode !== 'edit' && (
+        {effectiveMode !== 'edit' && (
           <div
             className={cn(
-              'min-h-0 overflow-auto',
-              mode === 'split' && (previewFirst ? 'order-first' : 'border-l'),
+              'min-h-0 overflow-auto bg-sheet',
+              effectiveMode === 'split' &&
+                (previewFirst ? 'order-first' : 'border-l border-border/70'),
             )}
             ref={previewRef}
           >

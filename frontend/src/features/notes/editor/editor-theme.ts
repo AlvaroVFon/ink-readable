@@ -12,26 +12,28 @@ import { tags } from '@lezer/highlight'
 export const editorTheme = EditorView.theme({
   '&': {
     height: '100%',
-    backgroundColor: 'var(--background)',
+    backgroundColor: 'var(--sheet)',
     color: 'var(--foreground)',
-    fontSize: '0.95rem',
+    fontSize: '0.875rem',
   },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': {
     fontFamily: 'var(--font-mono)',
     lineHeight: '1.7',
+    fontVariantNumeric: 'tabular-nums',
     overflowY: 'auto',
     minHeight: '0',
   },
   '.cm-content': {
-    padding: '1.5rem 0',
+    padding: '1.5rem 0 3rem',
     caretColor: 'var(--foreground)',
   },
-  '.cm-line': { padding: '0 1.5rem' },
+  '.cm-line': { padding: '0 1.75rem' },
   '.cm-gutters': {
-    backgroundColor: 'var(--background)',
+    backgroundColor: 'var(--sheet)',
     color: 'var(--muted-foreground)',
     border: 'none',
+    fontSize: '0.75rem',
   },
   '.cm-activeLine': {
     backgroundColor: 'color-mix(in oklab, var(--muted) 45%, transparent)',
@@ -82,13 +84,12 @@ export const editorTheme = EditorView.theme({
     gap: '0.5rem',
     minHeight: '1.75rem',
     padding: '0 0.75rem',
-    backgroundColor: 'color-mix(in oklab, var(--muted) 85%, var(--background))',
+    backgroundColor: 'var(--muted)',
     color: 'var(--muted-foreground)',
     borderTop: '1px solid var(--border)',
     fontFamily: 'var(--font-mono)',
     fontSize: '0.75rem',
     letterSpacing: '0.02em',
-    backdropFilter: 'blur(6px)',
   },
   '.cm-vim-panel > span:first-child': {
     padding: '0.05rem 0.45rem',

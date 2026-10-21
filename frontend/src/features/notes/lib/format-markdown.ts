@@ -1,4 +1,4 @@
-import type { Plugin } from "prettier";
+import type { Plugin } from 'prettier'
 
 /**
  * Formats markdown with Prettier, including fenced code blocks.
@@ -14,19 +14,19 @@ import type { Plugin } from "prettier";
  */
 export async function formatMarkdown(content: string): Promise<string> {
   const [prettier, ...plugins] = await Promise.all([
-    import("prettier/standalone"),
-    import("prettier/plugins/markdown"),
-    import("prettier/plugins/babel"),
-    import("prettier/plugins/estree"),
-    import("prettier/plugins/typescript"),
-    import("prettier/plugins/postcss"),
-    import("prettier/plugins/yaml"),
-    import("prettier/plugins/html"),
-    import("prettier/plugins/graphql"),
-  ]);
+    import('prettier/standalone'),
+    import('prettier/plugins/markdown'),
+    import('prettier/plugins/babel'),
+    import('prettier/plugins/estree'),
+    import('prettier/plugins/typescript'),
+    import('prettier/plugins/postcss'),
+    import('prettier/plugins/yaml'),
+    import('prettier/plugins/html'),
+    import('prettier/plugins/graphql'),
+  ])
 
   return prettier.format(content, {
-    parser: "markdown",
+    parser: 'markdown',
     plugins: plugins.map((plugin) => plugin.default as Plugin),
-  });
+  })
 }

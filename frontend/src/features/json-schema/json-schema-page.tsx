@@ -79,7 +79,7 @@ export function JsonSchemaPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
+      <header className='flex flex-wrap items-center gap-x-5 gap-y-2.5 px-5 py-4 sm:px-6'>
         <h1 className='text-xl font-semibold tracking-tight'>→ JSON Schema</h1>
         <SegmentedControl
           choices={SOURCES}
@@ -89,10 +89,10 @@ export function JsonSchemaPage() {
           }}
           value={activeId}
         />
-        <label className='flex items-center gap-2 text-sm'>
+        <label className='flex min-w-0 items-center gap-2 text-sm'>
           Root type
           <Input
-            className='w-36'
+            className='w-32 sm:w-36'
             onChange={(event) => {
               update({ rootName: event.target.value })
             }}
@@ -123,8 +123,8 @@ export function JsonSchemaPage() {
         </div>
       </header>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>
+        <section className='flex min-h-0 flex-col border-b border-border/70 md:border-r md:border-b-0'>
+          <h2 className='px-5 pt-3 text-xs font-medium text-muted-foreground sm:px-6'>
             {isJson ? 'JSON' : language.label}
           </h2>
           <CodePane
@@ -139,7 +139,7 @@ export function JsonSchemaPage() {
         </section>
         <section className='flex min-h-0 flex-col'>
           <div className='flex items-center justify-between px-6 pt-3'>
-            <h2 className='text-sm font-medium text-muted-foreground'>JSON Schema</h2>
+            <h2 className='text-xs font-medium text-muted-foreground'>JSON Schema</h2>
             <Button
               disabled={!result.ok || result.code === ''}
               onClick={() => {

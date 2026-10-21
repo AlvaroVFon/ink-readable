@@ -118,7 +118,7 @@ export function InterfaceDocsPage() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
-      <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
+      <header className='flex flex-wrap items-center gap-x-5 gap-y-2.5 px-5 py-4 sm:px-6'>
         <h1 className='text-xl font-semibold tracking-tight'>Interfaces → Docs</h1>
         <SegmentedControl
           choices={sourceLanguages.map(({ id, label }) => ({ value: id, label }))}
@@ -128,10 +128,10 @@ export function InterfaceDocsPage() {
           }}
           value={language.id}
         />
-        <label className='flex items-center gap-2 text-sm'>
+        <label className='flex min-w-0 items-center gap-2 text-sm'>
           Title
           <Input
-            className='w-48'
+            className='w-40 sm:w-48'
             onChange={(event) => {
               update({ title: event.target.value })
             }}
@@ -139,20 +139,20 @@ export function InterfaceDocsPage() {
             value={title}
           />
         </label>
-        <label className='flex items-center gap-2 text-sm'>
+        <label className='flex min-w-0 items-center gap-2 text-sm'>
           Version
           <Input
-            className='w-24'
+            className='w-20 sm:w-24'
             onChange={(event) => {
               update({ version: event.target.value })
             }}
             value={version}
           />
         </label>
-        <label className='flex items-center gap-2 text-sm'>
+        <label className='flex min-w-0 items-center gap-2 text-sm'>
           Date
           <Input
-            className='w-40'
+            className='w-36 sm:w-40'
             onChange={(event) => {
               setDate(event.target.value)
             }}
@@ -168,8 +168,10 @@ export function InterfaceDocsPage() {
         />
       </header>
       <div className='grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2'>
-        <section className='flex min-h-0 flex-col border-b md:border-r md:border-b-0'>
-          <h2 className='px-6 pt-3 text-sm font-medium text-muted-foreground'>{language.label}</h2>
+        <section className='flex min-h-0 flex-col border-b border-border/70 md:border-r md:border-b-0'>
+          <h2 className='px-5 pt-3 text-xs font-medium text-muted-foreground sm:px-6'>
+            {language.label}
+          </h2>
           <CodePane
             key={language.id}
             label='Interface source'

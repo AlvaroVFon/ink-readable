@@ -47,12 +47,20 @@ export function TaskCard({
   return (
     <div
       className={cn(
-        'group/card flex cursor-pointer flex-col gap-1 rounded-lg border bg-card p-2.5 text-left shadow-xs transition-colors hover:border-ring/50',
+        'group/card flex cursor-pointer flex-col gap-1.5 rounded-md border border-border bg-sheet p-3 text-left transition-colors hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none',
         isDragging && 'opacity-50',
       )}
       draggable
+      role='button'
+      tabIndex={0}
       onClick={() => {
         onOpen(task)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen(task)
+        }
       }}
       onDragEnd={onDragEnd}
       onDragOver={(event) => {
@@ -70,7 +78,7 @@ export function TaskCard({
             aria-label={`Actions for ${task.title}`}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'icon-xs' }),
-              'shrink-0 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100',
+              'shrink-0 opacity-60 group-hover/card:opacity-100 focus-visible:opacity-100 sm:opacity-0',
             )}
             onClick={stopPropagation}
           >
@@ -82,7 +90,7 @@ export function TaskCard({
               className='z-50'
               sideOffset={4}
             >
-              <Menu.Popup className='z-50 min-w-36 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-hidden'>
+              <Menu.Popup className='z-50 min-w-36 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)] outline-hidden'>
                 <Menu.Item
                   className={cn(MENU_ITEM_CLASS, 'text-destructive')}
                   onClick={(event) => {
@@ -102,7 +110,7 @@ export function TaskCard({
         </Menu.Root>
       </div>
       {task.description !== '' && (
-        <p className='line-clamp-3 text-xs whitespace-pre-wrap text-muted-foreground'>
+        <p className='line-clamp-3 text-[13px] leading-5 whitespace-pre-wrap text-muted-foreground'>
           {task.description}
         </p>
       )}

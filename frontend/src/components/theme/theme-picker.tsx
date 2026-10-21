@@ -50,7 +50,7 @@ export function ThemePicker() {
         </div>
         <div
           aria-label='Color mode'
-          className='grid grid-cols-3 gap-1 rounded-lg bg-muted p-1'
+          className='grid grid-cols-3 gap-1 rounded-md bg-muted p-1'
           role='radiogroup'
         >
           {MODE_ORDER.map((value) => {
@@ -86,8 +86,8 @@ export function ThemePicker() {
                 key={value}
                 aria-checked={active}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border p-2 text-left text-sm transition-colors hover:bg-muted',
-                  active ? 'border-ring ring-2 ring-ring/40' : 'border-border',
+                  'flex items-center gap-2 rounded-md border p-2 text-left text-sm transition-colors hover:bg-muted',
+                  active ? 'border-ring ring-1 ring-ring/40' : 'border-border',
                 )}
                 onClick={() => {
                   setPalette(value)
@@ -97,9 +97,17 @@ export function ThemePicker() {
               >
                 <span
                   aria-hidden='true'
-                  className='size-5 shrink-0 rounded-full border border-black/10'
-                  style={{ background: PALETTE_PREVIEW[value] }}
-                />
+                  className='flex size-5 shrink-0 overflow-hidden rounded-full border border-black/10'
+                >
+                  <span
+                    className='h-full w-1/2'
+                    style={{ background: PALETTE_PREVIEW[value].light }}
+                  />
+                  <span
+                    className='h-full w-1/2'
+                    style={{ background: PALETTE_PREVIEW[value].dark }}
+                  />
+                </span>
                 <span className='truncate'>{PALETTE_LABEL[value]}</span>
               </button>
             )

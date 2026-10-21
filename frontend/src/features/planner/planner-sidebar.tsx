@@ -209,7 +209,7 @@ export function PlannerSidebar() {
                         className='z-50'
                         sideOffset={4}
                       >
-                        <Menu.Popup className='z-50 min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-hidden'>
+                        <Menu.Popup className='z-50 min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)] outline-hidden'>
                           <Menu.Item
                             className={MENU_ITEM_CLASS}
                             onClick={() => {

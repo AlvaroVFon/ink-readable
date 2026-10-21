@@ -58,7 +58,7 @@ export function EditorConfigPopover() {
       <PopoverContent align='end'>
         <div className='mb-3'>
           <p className='font-heading text-sm font-medium'>Editor settings</p>
-          <p className='text-xs text-muted-foreground'>Synced to your account</p>
+          <p className='text-xs text-muted-foreground'>Stored on this device</p>
         </div>
         <div className='flex flex-col gap-3'>
           <SettingRow
