@@ -10,6 +10,7 @@ import { PrintableNote } from '@/features/notes/export/printable-note'
 import { useExportNote } from '@/features/notes/export/use-export-note'
 import { MarkdownPreview } from '@/features/notes/preview/markdown-preview'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { useRetainedState } from '@/hooks/use-retained-state'
 
 import type { InterfaceDocsPreferences } from './lib/preferences'
 
@@ -53,14 +54,14 @@ function today(): string {
 export function InterfaceDocsPage() {
   const [preferences, setPreferences] = useState(getStoredPreferences)
   // One draft per language: switching languages keeps what was typed in each.
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [drafts, setDrafts] = useRetainedState<Record<string, string>>('interface-docs:drafts', {})
   const { copied, copy } = useCopyToClipboard()
 
   const language = getSourceLanguage(preferences.sourceId)
   const source = drafts[language.id] ?? language.sample
   const deferredSource = useDeferredValue(source)
-  // Not persisted: a remembered date would go stale; it starts as today each visit.
-  const [date, setDate] = useState(today)
+  // Not persisted: a remembered date would go stale; it starts as today each launch.
+  const [date, setDate] = useRetainedState('interface-docs:date', today())
   const [headerImage, setHeaderImage] = useState(getStoredHeaderImage)
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export function InterfaceDocsPage() {
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>Interfaces → Docs</h1>
+        <h1 className='text-xl font-semibold tracking-tight'>Interfaces to Docs</h1>
         <SegmentedControl
           choices={sourceLanguages.map(({ id, label }) => ({ value: id, label }))}
           label='Source language'
