@@ -47,15 +47,15 @@ describe('App', () => {
   it('opens the JSON to types generator under /tools', async () => {
     renderApp(['/tools'])
 
-    expect(await screen.findByRole('heading', { name: 'JSON → Types' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'JSON to Types' })).toBeInTheDocument()
   })
 
   it('opens the interface docs generator from the tools sidebar', async () => {
     renderApp(['/tools'])
 
-    fireEvent.click(await screen.findByRole('link', { name: 'Interfaces → Docs' }))
+    fireEvent.click(await screen.findByRole('link', { name: /^Interfaces to Docs/ }))
 
-    expect(await screen.findByRole('heading', { name: 'Interfaces → Docs' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Interfaces to Docs' })).toBeInTheDocument()
   })
 
   it('renders not found for unknown routes', () => {
@@ -77,6 +77,6 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Tools' }))
 
-    expect(await screen.findByRole('heading', { name: 'JSON → Types' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'JSON to Types' })).toBeInTheDocument()
   })
 })
