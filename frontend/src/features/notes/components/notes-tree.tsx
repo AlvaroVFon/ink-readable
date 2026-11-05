@@ -86,6 +86,12 @@ const TREE_ROW_CLASS =
 
 const LEADER_TIMEOUT_MS = 1000
 
+// Horizontal offset per nesting level, and the slot a folder's chevron takes
+// (icon + gap). Documents skip the chevron, so they are pushed right by the
+// same amount to line their icon up with the folder icons around them.
+const INDENT_STEP = 16
+const CHEVRON_SLOT = 24
+
 function isTextEntry(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false
@@ -525,7 +531,7 @@ function NotesTreeNode({
   onDragLeaveFolder,
   onDropOnFolder,
 }: NotesTreeNodeProps) {
-  const indent = depth * 12
+  const indent = depth * INDENT_STEP
   const isRenaming = renamingPath === node.path
   const isDragging = draggingNode?.id === node.id
   const isCursor = cursorPath === node.path
@@ -598,10 +604,13 @@ function NotesTreeNode({
             data-cursor={isCursor ? '' : undefined}
             isActive={node.id === activeDocumentId}
             render={<Link to={`/notes/${node.id}`} />}
-            style={{ paddingLeft: indent + 8 }}
+            style={{ paddingLeft: indent + 8 + CHEVRON_SLOT }}
             tooltip={{ children: node.name, hidden: false }}
           >
-            <FileText aria-hidden='true' />
+            <FileText
+              aria-hidden='true'
+              className='text-muted-foreground'
+            />
             <span>{node.name}</span>
           </SidebarMenuButton>
         )}
@@ -653,12 +662,18 @@ function NotesTreeNode({
             ) : (
               <Folder aria-hidden='true' />
             )}
-            <span>{node.name}</span>
+            <span className='font-medium'>{node.name}</span>
           </SidebarMenuButton>
         </div>
       )}
       {isExpanded && (node.children.length > 0 || isCreating) && (
-        <ul className='flex flex-col gap-0.5'>
+        <ul className='relative flex flex-col gap-0.5'>
+          {/* Guide line under the parent's chevron, linking its children. */}
+          <span
+            aria-hidden='true'
+            className='pointer-events-none absolute inset-y-0 w-px bg-sidebar-border'
+            style={{ left: indent + 8 + 8 }}
+          />
           {isCreatingNote && (
             <li data-tree-path={`${node.path}/__new_note__`}>
               <InlineCreateName
@@ -673,7 +688,7 @@ function NotesTreeNode({
                   }
                   onFinishCreateNote()
                 }}
-                paddingLeft={indent + 20}
+                paddingLeft={indent + INDENT_STEP + 8}
                 placeholder='Note name (end with / for a folder)'
               />
             </li>
@@ -687,7 +702,7 @@ function NotesTreeNode({
                   await onCreateFolder(node, name)
                   onFinishCreateFolder()
                 }}
-                paddingLeft={indent + 20}
+                paddingLeft={indent + INDENT_STEP + 8}
                 placeholder='Folder name'
               />
             </li>

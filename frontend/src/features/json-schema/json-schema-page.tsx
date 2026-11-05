@@ -8,6 +8,7 @@ import { getSourceLanguage, sourceLanguages } from '@/features/interface-docs/li
 import { CodePane } from '@/features/json-types/components/code-pane'
 import { SegmentedControl } from '@/features/json-types/components/segmented-control'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { useRetainedState } from '@/hooks/use-retained-state'
 
 import type { Draft } from './lib/schema'
 
@@ -48,7 +49,7 @@ async function loadJson() {
 export function JsonSchemaPage() {
   const [preferences, setPreferences] = useState(getStoredPreferences)
   // One draft per source: switching sources keeps what was typed in each.
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [drafts, setDrafts] = useRetainedState<Record<string, string>>('json-schema:drafts', {})
   const { copied, copy } = useCopyToClipboard()
 
   const { sourceId, rootName, draft, strict } = preferences
@@ -80,7 +81,7 @@ export function JsonSchemaPage() {
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>→ JSON Schema</h1>
+        <h1 className='text-xl font-semibold tracking-tight'>JSON Schema</h1>
         <SegmentedControl
           choices={SOURCES}
           label='Input'

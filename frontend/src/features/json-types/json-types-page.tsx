@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { useRetainedState } from '@/hooks/use-retained-state'
 
 import type { LanguageOptions, OptionValue } from './lib/languages'
 
@@ -35,7 +36,7 @@ async function loadJson() {
 /** Generates type definitions (TypeScript, Go, ...) from a JSON sample. */
 export function JsonTypesPage() {
   const [preferences, setPreferences] = useState(getStoredPreferences)
-  const [input, setInput] = useState(SAMPLE_JSON)
+  const [input, setInput] = useRetainedState('json-types:input', SAMPLE_JSON)
   const deferredInput = useDeferredValue(input)
   const { copied, copy } = useCopyToClipboard()
 
@@ -64,7 +65,7 @@ export function JsonTypesPage() {
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <header className='flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4'>
-        <h1 className='text-xl font-semibold tracking-tight'>JSON → Types</h1>
+        <h1 className='text-xl font-semibold tracking-tight'>JSON to Types</h1>
         <SegmentedControl
           choices={languages.map(({ id, label }) => ({ value: id, label }))}
           label='Language'
