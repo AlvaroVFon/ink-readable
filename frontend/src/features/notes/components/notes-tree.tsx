@@ -605,6 +605,7 @@ function NotesTreeNode({
             isActive={node.id === activeDocumentId}
             render={<Link to={`/notes/${node.id}`} />}
             style={{ paddingLeft: indent + 8 + CHEVRON_SLOT }}
+            tooltip={{ children: node.name, hidden: false }}
           >
             <FileText
               aria-hidden='true'
@@ -648,6 +649,7 @@ function NotesTreeNode({
               onSelectFolder(node.path)
             }}
             style={{ paddingLeft: indent + 8 }}
+            tooltip={{ children: node.name, hidden: false }}
           >
             <ChevronRight
               aria-hidden='true'
