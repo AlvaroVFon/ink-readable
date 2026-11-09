@@ -35,7 +35,7 @@ import {
 } from './lib/file-tree'
 import { useNotesWorkspaceContext } from './notes-workspace-context'
 
-type PendingAction = 'folder' | 'vault' | null
+type PendingAction = 'note' | 'folder' | 'vault' | null
 
 function toMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : 'Something went wrong'
@@ -59,7 +59,6 @@ export function NotesSidebar() {
     documentsById,
     isLoading,
     error,
-    createNote,
     createNamedNote,
     createFolder,
     createVault,
@@ -110,25 +109,8 @@ export function NotesSidebar() {
     [filteredTree, query],
   )
 
-  const handleCreateNote = async () => {
-    if (scope === null) {
-      return
-    }
-    setActionError(null)
-    try {
-      const document = await createNote(scope)
-      void navigate(`/notes/${document.id}`)
-    } catch (cause) {
-      setActionError(toMessage(cause))
-    }
-  }
-
   const handleSelectAction = (action: NewAction) => {
     setActionError(null)
-    if (action === 'note') {
-      void handleCreateNote()
-      return
-    }
     setPendingAction(action)
   }
 
@@ -139,6 +121,12 @@ export function NotesSidebar() {
       let document: Document
       if (pendingAction === 'vault') {
         document = await createVault(name)
+      } else if (pendingAction === 'note' && scope !== null) {
+        document = await createNamedNote({
+          vaultId: scope.vaultId,
+          basePath: scope.basePath,
+          name,
+        })
       } else if (pendingAction === 'folder' && scope !== null) {
         document = await createFolder({ vaultId: scope.vaultId, basePath: scope.basePath, name })
       } else {
@@ -157,16 +145,6 @@ export function NotesSidebar() {
   const cancelForm = () => {
     setPendingAction(null)
     setActionError(null)
-  }
-
-  const handleCreateNoteAt = async (node: FileTreeNode) => {
-    setActionError(null)
-    try {
-      const document = await createNote(createScopeFor(node))
-      void navigate(`/notes/${document.id}`)
-    } catch (cause) {
-      setActionError(toMessage(cause))
-    }
   }
 
   const handleCreateNamedNoteAt = async (node: FileTreeNode, name: string) => {
@@ -282,6 +260,19 @@ export function NotesSidebar() {
             onSelect={handleSelectAction}
           />
         </div>
+        {pendingAction === 'note' && (
+          <InlineNameForm
+            error={actionError}
+            isBusy={isSubmitting}
+            label='Note name'
+            onCancel={cancelForm}
+            onSubmit={(name) => {
+              void handleSubmitName(name)
+            }}
+            placeholder='Note name'
+            submitLabel='Create note'
+          />
+        )}
         {pendingAction === 'folder' && (
           <InlineNameForm
             error={actionError}
@@ -353,7 +344,6 @@ export function NotesSidebar() {
             nodes={filteredTree}
             onCreateFolder={handleCreateFolderAt}
             onCreateNamedNote={handleCreateNamedNoteAt}
-            onCreateNote={handleCreateNoteAt}
             onDelete={handleDelete}
             onMove={handleMove}
             onRename={handleRename}

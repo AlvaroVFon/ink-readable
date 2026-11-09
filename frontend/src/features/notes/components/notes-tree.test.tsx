@@ -102,7 +102,6 @@ type RenderTreeOptions = {
   nodes?: FileTreeNode[]
   onRename?: (node: FileTreeNode, name: string) => Promise<void>
   onDelete?: (node: FileTreeNode) => Promise<void>
-  onCreateNote?: (node: FileTreeNode) => Promise<void>
   onCreateNamedNote?: (node: FileTreeNode, name: string) => Promise<void>
   onCreateFolder?: (node: FileTreeNode, name: string) => Promise<void>
   onMove?: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
@@ -114,7 +113,6 @@ function renderTree({
   nodes = tree,
   onRename = vi.fn(),
   onDelete = vi.fn(),
-  onCreateNote = vi.fn(),
   onCreateNamedNote = vi.fn(),
   onCreateFolder = vi.fn(),
   onMove = vi.fn(),
@@ -133,7 +131,6 @@ function renderTree({
                   nodes={nodes}
                   onCreateFolder={onCreateFolder}
                   onCreateNamedNote={onCreateNamedNote}
-                  onCreateNote={onCreateNote}
                   onDelete={onDelete}
                   onMove={onMove}
                   onRename={onRename}
@@ -208,15 +205,20 @@ describe('NotesTree', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
   })
 
-  it('creates a sibling note from a document context menu', async () => {
-    const onCreateNote = vi.fn().mockResolvedValue(undefined)
-    renderTree({ onCreateNote })
+  it('asks for a name before creating a sibling note from the context menu', async () => {
+    const onCreateNamedNote = vi.fn().mockResolvedValue(undefined)
+    renderTree({ onCreateNamedNote })
 
     fireEvent.contextMenu(screen.getByRole('link', { name: 'alpha' }))
     fireEvent.click(screen.getByRole('button', { name: 'New note' }))
 
-    await waitFor(() => expect(onCreateNote).toHaveBeenCalledTimes(1))
-    expect(onCreateNote.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading/alpha.md' })
+    const input = screen.getByLabelText('New note name')
+    fireEvent.change(input, { target: { value: 'gamma' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onCreateNamedNote).toHaveBeenCalledTimes(1))
+    expect(onCreateNamedNote.mock.calls[0]?.[0]).toMatchObject({ path: '/Reading' })
+    expect(onCreateNamedNote.mock.calls[0]?.[1]).toBe('gamma')
   })
 
   it('shows an inline field and creates a folder from the context menu', async () => {
@@ -412,6 +414,50 @@ describe('NotesTree keyboard navigation', () => {
 
     await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1))
     expect(onRename.mock.calls[0]?.[1]).toBe('renamed')
+  })
+
+  it('keeps the tree focused after cancelling a rename with Escape', () => {
+    const { container } = renderTree()
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'r' })
+
+    const input = screen.getByLabelText('Note name')
+    fireEvent.keyDown(input, { key: 'Escape' })
+
+    expect(screen.queryByLabelText('Note name')).toBeNull()
+    expect(root).toHaveFocus()
+  })
+
+  it('keeps the tree focused after submitting a rename', async () => {
+    const onRename = vi.fn().mockResolvedValue(undefined)
+    const { container } = renderTree({ onRename })
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'r' })
+
+    const input = screen.getByLabelText('Note name')
+    fireEvent.change(input, { target: { value: 'renamed' } })
+    fireEvent.submit(input)
+
+    await waitFor(() => expect(onRename).toHaveBeenCalledTimes(1))
+    expect(root).toHaveFocus()
+  })
+
+  it('keeps the tree focused after cancelling a new note with Escape', () => {
+    const { container } = renderTree()
+    const root = focusTree(container)
+
+    fireEvent.keyDown(root, { key: 'j' })
+    fireEvent.keyDown(root, { key: 'a' })
+
+    const input = screen.getByLabelText('New note name')
+    fireEvent.keyDown(input, { key: 'Escape' })
+
+    expect(screen.queryByLabelText('New note name')).toBeNull()
+    expect(root).toHaveFocus()
   })
 
   it('deletes the cursor node with d', async () => {
