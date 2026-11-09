@@ -199,17 +199,47 @@ describe('NotesSidebar', () => {
     expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
   })
 
-  it('creates a sibling note from the context menu', async () => {
-    const createNote = vi.fn().mockResolvedValue(document)
-    mockWorkspace({ createNote })
+  it('asks for a name before creating a sibling note from the context menu', async () => {
+    const createNamedNote = vi.fn().mockResolvedValue(document)
+    mockWorkspace({ createNamedNote })
 
     renderSidebar()
 
     fireEvent.contextMenu(screen.getByRole('link', { name: 'alpha' }))
     fireEvent.click(screen.getByRole('button', { name: 'New note' }))
 
+    const input = screen.getByLabelText('New note name')
+    fireEvent.change(input, { target: { value: 'gamma' } })
+    fireEvent.submit(input)
+
     await waitFor(() =>
-      expect(createNote).toHaveBeenCalledWith({ vaultId: 'v1', basePath: '/Reading' }),
+      expect(createNamedNote).toHaveBeenCalledWith({
+        vaultId: 'v1',
+        basePath: '/Reading',
+        name: 'gamma',
+      }),
+    )
+  })
+
+  it('asks for a name before creating a note from the new menu', async () => {
+    const createNamedNote = vi.fn().mockResolvedValue(document)
+    mockWorkspace({ createNamedNote })
+
+    renderSidebar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create new' }))
+    fireEvent.click(screen.getByText('New note'))
+
+    const input = screen.getByLabelText('Note name')
+    fireEvent.change(input, { target: { value: 'gamma' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create note' }))
+
+    await waitFor(() =>
+      expect(createNamedNote).toHaveBeenCalledWith({
+        vaultId: 'v1',
+        basePath: '/Reading',
+        name: 'gamma',
+      }),
     )
   })
 

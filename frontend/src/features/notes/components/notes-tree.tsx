@@ -40,7 +40,6 @@ type NotesTreeProps = {
   onSelectFolder: (path: string) => void
   onRename: (node: FileTreeNode, name: string) => Promise<void>
   onDelete: (node: FileTreeNode) => Promise<void>
-  onCreateNote: (node: FileTreeNode) => Promise<void>
   onCreateNamedNote: (node: FileTreeNode, name: string) => Promise<void>
   onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
   onMove: (node: FileTreeNode, targetFolderPath: string) => Promise<void>
@@ -63,11 +62,11 @@ type NotesTreeNodeProps = {
   onRename: (node: FileTreeNode, name: string) => Promise<void>
   onToggle: (path: string) => void
   onContextMenu: (node: FileTreeNode, position: { x: number; y: number }) => void
-  onFinishRename: () => void
+  onFinishRename: (refocus?: boolean) => void
   onCreateFolder: (node: FileTreeNode, name: string) => Promise<void>
-  onFinishCreateFolder: () => void
+  onFinishCreateFolder: (refocus?: boolean) => void
   onCreateNamedNote: (node: FileTreeNode, name: string) => Promise<void>
-  onFinishCreateNote: () => void
+  onFinishCreateNote: (refocus?: boolean) => void
   canDropOn: (folder: FileTreeNode) => boolean
   onDragStart: (node: FileTreeNode) => void
   onDragEnd: () => void
@@ -117,6 +116,8 @@ function isTextEntry(target: EventTarget | null): boolean {
  * The tree is also keyboard driven (vim-like): `j`/`k` move a cursor, `h`/`l`
  * collapse/expand or open, `a`/`A` create a note/folder, `r` renames and `d`
  * deletes. `space e` toggles the sidebar and `space space` opens the finder.
+ * `Esc` only cancels an inline edit and keeps the cursor in the tree; `q`
+ * hands focus back to the editor.
  */
 export function NotesTree({
   nodes,
@@ -126,7 +127,6 @@ export function NotesTree({
   onSelectFolder,
   onRename,
   onDelete,
-  onCreateNote,
   onCreateNamedNote,
   onCreateFolder,
   onMove,
@@ -256,6 +256,29 @@ export function NotesTree({
     focusEditor()
   }
 
+  // Closing an inline edit should put DOM focus back on the tree so `j`/`k`
+  // keep working. Blurring (e.g. clicking another row) must not steal focus.
+  const finishRename = (refocus = false) => {
+    setRenamingPath(null)
+    if (refocus) {
+      containerRef.current?.focus()
+    }
+  }
+
+  const finishCreateNote = (refocus = false) => {
+    setCreatingNotePath(null)
+    if (refocus) {
+      containerRef.current?.focus()
+    }
+  }
+
+  const finishCreateFolder = (refocus = false) => {
+    setCreatingFolderPath(null)
+    if (refocus) {
+      containerRef.current?.focus()
+    }
+  }
+
   const startCreateNote = (node: FileTreeNode) => {
     setCreatingNotePath(node.type === 'folder' ? node.path : parentPath(node.path))
     setCursorPath(node.path)
@@ -373,6 +396,9 @@ export function NotesTree({
         }
         break
       case 'Escape':
+        // Cancel any pending leader; keep the cursor and focus in the tree.
+        leaderRef.current = false
+        break
       case 'q':
         focusEditor()
         break
@@ -450,15 +476,9 @@ export function NotesTree({
             }}
             onDragStart={handleDragStart}
             onDropOnFolder={handleDropOnFolder}
-            onFinishCreateFolder={() => {
-              setCreatingFolderPath(null)
-            }}
-            onFinishCreateNote={() => {
-              setCreatingNotePath(null)
-            }}
-            onFinishRename={() => {
-              setRenamingPath(null)
-            }}
+            onFinishCreateFolder={finishCreateFolder}
+            onFinishCreateNote={finishCreateNote}
+            onFinishRename={finishRename}
             onRename={onRename}
             onSelectFolder={onSelectFolder}
             onToggle={toggle}
@@ -477,12 +497,12 @@ export function NotesTree({
           onCreateFolder={() => {
             const node = menu.node
             setMenu(null)
-            setCreatingFolderPath(node.type === 'folder' ? node.path : parentPath(node.path))
+            startCreateFolder(node)
           }}
           onCreateNote={() => {
             const node = menu.node
             setMenu(null)
-            void onCreateNote(node)
+            startCreateNote(node)
           }}
           onDelete={() => {
             const node = menu.node
@@ -492,6 +512,7 @@ export function NotesTree({
           onRename={() => {
             const node = menu.node
             setMenu(null)
+            setCursorPath(node.path)
             setRenamingPath(node.path)
           }}
           x={menu.x}
@@ -581,7 +602,7 @@ function NotesTreeNode({
       onCancel={onFinishRename}
       onSubmit={async (name) => {
         await onRename(node, name)
-        onFinishRename()
+        onFinishRename(true)
       }}
       paddingLeft={indent + 8}
     />
@@ -686,7 +707,7 @@ function NotesTreeNode({
                   } else {
                     await onCreateNamedNote(node, trimmed)
                   }
-                  onFinishCreateNote()
+                  onFinishCreateNote(true)
                 }}
                 paddingLeft={indent + INDENT_STEP + 8}
                 placeholder='Note name (end with / for a folder)'
@@ -700,7 +721,7 @@ function NotesTreeNode({
                 onCancel={onFinishCreateFolder}
                 onSubmit={async (name) => {
                   await onCreateFolder(node, name)
-                  onFinishCreateFolder()
+                  onFinishCreateFolder(true)
                 }}
                 paddingLeft={indent + INDENT_STEP + 8}
                 placeholder='Folder name'
@@ -839,7 +860,7 @@ type InlineRenameProps = {
   nameLabel: string
   paddingLeft: number
   onSubmit: (name: string) => Promise<void>
-  onCancel: () => void
+  onCancel: (refocus?: boolean) => void
 }
 
 function InlineRename({
@@ -856,7 +877,7 @@ function InlineRename({
 
   const submit = async () => {
     if (trimmed === '' || isBusy || trimmed === initialName) {
-      onCancel()
+      onCancel(true)
       return
     }
     setIsBusy(true)
@@ -876,8 +897,11 @@ function InlineRename({
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
+      // Cancel here and keep the tree navigating; never let Esc reach the
+      // container handler (or the editor behind it).
       event.preventDefault()
-      onCancel()
+      event.stopPropagation()
+      onCancel(true)
     }
   }
 
@@ -892,7 +916,9 @@ function InlineRename({
         aria-label={nameLabel}
         className='h-7 text-sm'
         disabled={isBusy}
-        onBlur={onCancel}
+        onBlur={() => {
+          onCancel(false)
+        }}
         onChange={(event) => {
           setValue(event.target.value)
         }}
@@ -909,7 +935,7 @@ type InlineCreateNameProps = {
   placeholder: string
   paddingLeft: number
   onSubmit: (name: string) => Promise<void>
-  onCancel: () => void
+  onCancel: (refocus?: boolean) => void
 }
 
 /**
@@ -949,8 +975,11 @@ function InlineCreateName({
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
+      // Cancel here and keep the tree navigating; never let Esc reach the
+      // container handler (or the editor behind it).
       event.preventDefault()
-      onCancel()
+      event.stopPropagation()
+      onCancel(true)
     }
   }
 
@@ -965,7 +994,9 @@ function InlineCreateName({
         aria-label={label}
         className='h-7 text-sm'
         disabled={isBusy}
-        onBlur={onCancel}
+        onBlur={() => {
+          onCancel(false)
+        }}
         onChange={(event) => {
           setValue(event.target.value)
         }}
