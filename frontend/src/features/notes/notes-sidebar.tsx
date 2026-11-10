@@ -1,3 +1,4 @@
+import { ChevronsDownUp } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
 
@@ -23,7 +24,7 @@ import {
 import type { FileTreeNode } from './types'
 
 import { NotesNewMenu, type NewAction } from './components/notes-new-menu'
-import { NotesTree } from './components/notes-tree'
+import { NotesTree, type NotesTreeHandle } from './components/notes-tree'
 import {
   collectDocumentPaths,
   collectDocuments,
@@ -79,6 +80,7 @@ export function NotesSidebar() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [vaultPendingDelete, setVaultPendingDelete] = useState<FileTreeNode | null>(null)
   const searchRef = useRef<HTMLInputElement | null>(null)
+  const treeRef = useRef<NotesTreeHandle | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -108,6 +110,8 @@ export function NotesSidebar() {
     () => (query.trim() === '' ? new Set<string>() : new Set(collectFolderPaths(filteredTree))),
     [filteredTree, query],
   )
+  // While searching, matches are force-expanded so collapsing would be a no-op.
+  const canCollapseAll = query.trim() === '' && collectFolderPaths(filteredTree).length > 0
 
   const handleSelectAction = (action: NewAction) => {
     setActionError(null)
@@ -304,7 +308,21 @@ export function NotesSidebar() {
         )}
       </div>
 
-      <SidebarGroupLabel className='mb-1'>Notes</SidebarGroupLabel>
+      <div className='mb-1 flex h-8 items-center justify-between group-data-[collapsible=icon]:hidden'>
+        <SidebarGroupLabel className='h-full'>Notes</SidebarGroupLabel>
+        <Button
+          aria-label='Collapse all'
+          disabled={!canCollapseAll}
+          onClick={() => {
+            treeRef.current?.collapseAll()
+          }}
+          size='icon-xs'
+          title='Collapse all'
+          variant='ghost'
+        >
+          <ChevronsDownUp aria-hidden='true' />
+        </Button>
+      </div>
 
       <SidebarGroupContent className='group-data-[collapsible=icon]:hidden'>
         {isLoading && (
@@ -339,6 +357,7 @@ export function NotesSidebar() {
 
         {showTree && (
           <NotesTree
+            ref={treeRef}
             activeDocumentId={activeDocumentId}
             forceExpandedPaths={forceExpandedPaths}
             nodes={filteredTree}

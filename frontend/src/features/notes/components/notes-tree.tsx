@@ -2,6 +2,7 @@ import { ChevronRight, Database, FileText, Folder, FolderOpen } from 'lucide-rea
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -9,6 +10,7 @@ import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type Ref,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
@@ -19,7 +21,7 @@ import { cn } from '@/lib/utils'
 
 import type { FileTreeNode } from '../types'
 
-import { findNodeById, isVaultRoot, parentPath } from '../lib/file-tree'
+import { collectFolderPaths, findNodeById, isVaultRoot, parentPath } from '../lib/file-tree'
 import { resolveLeaderKey } from '../lib/leader-keys'
 import {
   findVisibleIndex,
@@ -31,7 +33,13 @@ import {
 } from '../lib/tree-navigation'
 import { useNotesVimContext } from '../notes-vim-context'
 
+/** Imperative actions the tree exposes to the sidebar toolbar. */
+export type NotesTreeHandle = {
+  collapseAll: () => void
+}
+
 type NotesTreeProps = {
+  ref?: Ref<NotesTreeHandle>
   nodes: FileTreeNode[]
   activeDocumentId: string | undefined
   selectedFolderPath: string | null
@@ -118,8 +126,12 @@ function isTextEntry(target: EventTarget | null): boolean {
  * deletes. `space e` toggles the sidebar and `space space` opens the finder.
  * `Esc` only cancels an inline edit and keeps the cursor in the tree; `q`
  * hands focus back to the editor.
+ *
+ * The sidebar drives "collapse all" through the imperative handle, since the
+ * collapse state is local to the tree.
  */
 export function NotesTree({
+  ref,
   nodes,
   activeDocumentId,
   selectedFolderPath,
@@ -145,6 +157,16 @@ export function NotesTree({
   const [draggingNode, setDraggingNode] = useState<FileTreeNode | null>(null)
   const [dragOverPath, setDragOverPath] = useState<string | null>(null)
   const [menu, setMenu] = useState<{ node: FileTreeNode; x: number; y: number } | null>(null)
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      collapseAll: () => {
+        setCollapsedPaths(new Set(collectFolderPaths(nodes)))
+      },
+    }),
+    [nodes],
+  )
 
   const isFolderExpanded = useCallback(
     (node: FileTreeNode) =>
