@@ -159,6 +159,68 @@ describe('NotesSidebar', () => {
     expect(screen.queryByRole('link', { name: 'beta' })).toBeNull()
   })
 
+  it('collapses every folder with the Collapse all action', () => {
+    mockWorkspace({
+      tree: [
+        {
+          id: 'v1',
+          name: 'Reading',
+          path: '/Reading',
+          vaultId: 'v1',
+          type: 'folder',
+          children: [
+            {
+              id: '/Reading/notes',
+              name: 'notes',
+              path: '/Reading/notes',
+              vaultId: 'v1',
+              type: 'folder',
+              children: [
+                {
+                  id: 'd2',
+                  name: 'beta',
+                  path: '/Reading/notes/beta.md',
+                  vaultId: 'v1',
+                  type: 'document',
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    renderSidebar()
+
+    expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }))
+
+    expect(screen.getByRole('button', { name: 'Reading' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'notes' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'beta' })).toBeNull()
+
+    // Folders keep their own state, so expanding the vault reveals the still
+    // collapsed folder inside it.
+    fireEvent.click(screen.getByRole('button', { name: 'Reading' }))
+    expect(screen.getByRole('button', { name: 'notes' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'beta' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'notes' }))
+    expect(screen.getByRole('link', { name: 'beta' })).toBeInTheDocument()
+  })
+
+  it('disables Collapse all while searching', () => {
+    mockWorkspace()
+
+    renderSidebar()
+
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'alpha' } })
+
+    expect(screen.getByRole('button', { name: 'Collapse all' })).toBeDisabled()
+  })
+
   it('keeps ancestors expanded while searching', () => {
     mockWorkspace({
       tree: [
