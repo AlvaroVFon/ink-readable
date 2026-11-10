@@ -14,7 +14,9 @@ export const editorTheme = EditorView.theme({
     height: '100%',
     backgroundColor: 'var(--background)',
     color: 'var(--foreground)',
-    fontSize: '0.95rem',
+    // `--note-zoom` is set by the notes editor so the toolbar stays put while
+    // the document text grows.
+    fontSize: 'calc(0.95rem * var(--note-zoom, 1))',
   },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': {
@@ -80,13 +82,13 @@ export const editorTheme = EditorView.theme({
     flexShrink: '0',
     alignItems: 'center',
     gap: '0.5rem',
-    minHeight: '1.75rem',
+    minHeight: 'calc(1.75rem * var(--note-zoom, 1))',
     padding: '0 0.75rem',
     backgroundColor: 'color-mix(in oklab, var(--muted) 85%, var(--background))',
     color: 'var(--muted-foreground)',
     borderTop: '1px solid var(--border)',
     fontFamily: 'var(--font-mono)',
-    fontSize: '0.75rem',
+    fontSize: 'calc(0.75rem * var(--note-zoom, 1))',
     letterSpacing: '0.02em',
     backdropFilter: 'blur(6px)',
   },

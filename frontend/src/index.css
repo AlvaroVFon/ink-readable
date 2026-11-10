@@ -358,7 +358,7 @@
   color: var(--foreground);
   /* `--doc-*` come from the document settings; without them the defaults apply. */
   font-family: var(--doc-font-body, inherit);
-  font-size: var(--doc-font-size, 0.95rem);
+  font-size: var(--doc-font-size, calc(0.95rem * var(--note-zoom, 1)));
   line-height: var(--doc-line-height, 1.75);
   overflow-wrap: break-word;
 }
@@ -817,7 +817,6 @@
   @page {
     size: A4;
     margin: 2cm;
-
   }
 
   body > *:not(.print-root) {
