@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Columns2, Eye, Pencil } from 'lucide-react'
+import { ArrowLeftRight, Columns2, Eye, Pencil, ZoomIn, ZoomOut } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ import type { SaveStatus } from './hooks/use-autosave'
 import type { ViewMode } from './types'
 
 import { NotesExportMenu } from './components/notes-export-menu'
+import { NOTE_ZOOM_MAX, NOTE_ZOOM_MIN, noteZoomLabel } from './lib/note-zoom'
 
 const VIEW_MODES = [
   { value: 'edit', label: 'Editor only', icon: Pencil },
@@ -38,6 +39,10 @@ type NotesToolbarProps = {
   onSwapPanes: () => void
   onExport: (format: ExportFormat) => void
   exportError: string | null
+  zoom: number
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onZoomReset: () => void
 }
 
 export function NotesToolbar({
@@ -49,6 +54,10 @@ export function NotesToolbar({
   onSwapPanes,
   onExport,
   exportError,
+  zoom,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
 }: NotesToolbarProps) {
   return (
     <div className='flex h-11 shrink-0 items-center gap-3 border-b px-3'>
@@ -68,11 +77,46 @@ export function NotesToolbar({
           {exportError}
         </span>
       )}
+      <div
+        aria-label='Note zoom'
+        className='ml-auto flex items-center gap-0.5'
+        role='group'
+      >
+        <Button
+          aria-label='Zoom out'
+          disabled={zoom <= NOTE_ZOOM_MIN}
+          onClick={onZoomOut}
+          size='icon-sm'
+          title='Zoom out'
+          variant='ghost'
+        >
+          <ZoomOut aria-hidden='true' />
+        </Button>
+        <Button
+          aria-label='Reset zoom'
+          className='min-w-12 text-xs tabular-nums'
+          onClick={onZoomReset}
+          size='sm'
+          title='Reset zoom'
+          variant='ghost'
+        >
+          {noteZoomLabel(zoom)}
+        </Button>
+        <Button
+          aria-label='Zoom in'
+          disabled={zoom >= NOTE_ZOOM_MAX}
+          onClick={onZoomIn}
+          size='icon-sm'
+          title='Zoom in'
+          variant='ghost'
+        >
+          <ZoomIn aria-hidden='true' />
+        </Button>
+      </div>
       {mode === 'split' && (
         <Button
           aria-label='Swap panes'
           aria-pressed={previewFirst}
-          className='ml-auto'
           onClick={onSwapPanes}
           size='icon-sm'
           title={previewFirst ? 'Editor on the left' : 'Preview on the left'}
@@ -83,7 +127,7 @@ export function NotesToolbar({
       )}
       <div
         aria-label='View mode'
-        className={cn('flex items-center gap-1', mode !== 'split' && 'ml-auto')}
+        className='flex items-center gap-1'
         role='group'
       >
         {VIEW_MODES.map(({ value, label, icon: Icon }) => (

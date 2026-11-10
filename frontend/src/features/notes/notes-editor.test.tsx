@@ -15,6 +15,7 @@ vi.mock('@/lib/api', () => ({
   updateDocumentContent: vi.fn().mockResolvedValue(undefined),
 }))
 
+import { NOTE_ZOOM_STORAGE_KEY } from './lib/note-zoom'
 import { NotesEditor } from './notes-editor'
 import { NotesVimProvider } from './notes-vim-context'
 
@@ -178,6 +179,95 @@ describe('NotesEditor pane order', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Editor only' }))
 
     expect(screen.queryByRole('button', { name: 'Swap panes' })).not.toBeInTheDocument()
+  })
+})
+
+function zoomRoot(container: HTMLElement): HTMLElement {
+  const root = container.querySelector<HTMLElement>('[data-note-zoom]')
+  if (root === null) {
+    throw new Error('editor root not found')
+  }
+  return root
+}
+
+describe('NotesEditor note zoom', () => {
+  beforeEach(() => {
+    useEditorConfigContext.mockReset()
+    window.localStorage.clear()
+  })
+
+  it('starts at 100% and exposes the zoom to the note content', () => {
+    const { container } = setup()
+
+    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(zoomRoot(container).style.getPropertyValue('--note-zoom')).toBe('1')
+  })
+
+  it('zooms in and out in 10% steps', () => {
+    const { container } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+    expect(screen.getByText('110%')).toBeInTheDocument()
+    expect(zoomRoot(container).style.getPropertyValue('--note-zoom')).toBe('1.1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom out' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom out' }))
+    expect(screen.getByText('90%')).toBeInTheDocument()
+  })
+
+  it('resets back to 100%', () => {
+    setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset zoom' }))
+
+    expect(screen.getByText('100%')).toBeInTheDocument()
+  })
+
+  it('stops at the minimum and maximum levels', () => {
+    setup()
+
+    const zoomOut = screen.getByRole('button', { name: 'Zoom out' })
+    for (let index = 0; index < 8; index += 1) {
+      fireEvent.click(zoomOut)
+    }
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(zoomOut).toBeDisabled()
+
+    const zoomIn = screen.getByRole('button', { name: 'Zoom in' })
+    for (let index = 0; index < 20; index += 1) {
+      fireEvent.click(zoomIn)
+    }
+    expect(screen.getByText('200%')).toBeInTheDocument()
+    expect(zoomIn).toBeDisabled()
+  })
+
+  it('zooms with Cmd/Ctrl shortcuts', () => {
+    setup()
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: '=' })
+    expect(screen.getByText('110%')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: '-' })
+    expect(screen.getByText('100%')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: '+', metaKey: true })
+    expect(screen.getByText('110%')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: '0' })
+    expect(screen.getByText('100%')).toBeInTheDocument()
+  })
+
+  it('remembers the zoom across notes', () => {
+    const { unmount } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+    unmount()
+
+    expect(window.localStorage.getItem(NOTE_ZOOM_STORAGE_KEY)).toBe('1.1')
+
+    setup()
+    expect(screen.getByText('110%')).toBeInTheDocument()
   })
 })
 

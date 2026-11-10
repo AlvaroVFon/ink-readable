@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 
 import type { Document } from '@/lib/types'
 
@@ -13,6 +13,7 @@ import { setVimLeaderHandlers } from './editor/vim'
 import { PrintableNote } from './export/printable-note'
 import { useExportNote } from './export/use-export-note'
 import { useAutosave } from './hooks/use-autosave'
+import { useNoteZoom } from './hooks/use-note-zoom'
 import { useScrollSync } from './hooks/use-scroll-sync'
 import { formatMarkdown } from './lib/format-markdown'
 import { getStoredPreviewFirst, storePreviewFirst } from './lib/pane-order'
@@ -32,6 +33,9 @@ type NotesEditorProps = {
  * The parent remounts this component per document id, so `document.content` is
  * the initial state and there is no external-content synchronization to worry
  * about.
+ *
+ * The note content (editor and preview) can be zoomed from the toolbar or with
+ * Cmd/Ctrl +, - and 0; the app chrome keeps its normal size.
  */
 export function NotesEditor({ document }: NotesEditorProps) {
   const [content, setContent] = useState(document.content)
@@ -40,6 +44,7 @@ export function NotesEditor({ document }: NotesEditorProps) {
   const previewRef = useRef<HTMLDivElement | null>(null)
 
   const { config } = useEditorConfigContext()
+  const { zoom, zoomIn, zoomOut, resetZoom } = useNoteZoom()
   const { status, saveNow } = useAutosave({ documentId: document.id, content })
   const { containerRef, scrollElement, requestMeasure, getContent, replaceContent, focus } =
     useCodeMirror({
@@ -143,8 +148,23 @@ export function NotesEditor({ document }: NotesEditorProps) {
     }
   }, [mode, requestMeasure])
 
+  // Changing the zoom only changes the font size, so the pane keeps its outer
+  // size and CodeMirror would not re-measure its cached line metrics by itself.
+  useEffect(() => {
+    requestMeasure()
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- re-measure when the zoom (font size) changes
+  }, [zoom, requestMeasure])
+
+  // CSS custom properties are missing from React's CSSProperties type.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const zoomStyle = { '--note-zoom': String(zoom) } as CSSProperties
+
   return (
-    <div className='flex min-h-0 flex-1 flex-col'>
+    <div
+      className='flex min-h-0 flex-1 flex-col'
+      data-note-zoom={zoom}
+      style={zoomStyle}
+    >
       <NotesToolbar
         exportError={exportError}
         mode={mode}
@@ -157,9 +177,13 @@ export function NotesEditor({ document }: NotesEditorProps) {
         }}
         onModeChange={setMode}
         onSwapPanes={togglePaneOrder}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onZoomReset={resetZoom}
         previewFirst={previewFirst}
         status={status}
         title={title}
+        zoom={zoom}
       />
       <div className={cn('grid min-h-0 flex-1', mode === 'split' ? 'grid-cols-2' : 'grid-cols-1')}>
         {/* The editor stays mounted in every mode: unmounting it detaches the
