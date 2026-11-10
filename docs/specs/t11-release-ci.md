@@ -34,8 +34,8 @@ adjunta a un GitHub Release **draft** (publicación manual del owner).
 ```yaml
 on: push: tags: ["desktop-v*"]
 jobs:   # matrix de 3 runners + targets:
-  macos-aarch64:  runs-on macos-14 → triple aarch64-apple-darwin → dmg/app
-  macos-x86_64:   runs-on macos-13/14 → triple x86_64-apple-darwin → dmg/app
+  macos-aarch64:  runs-on macos-15 → triple aarch64-apple-darwin → dmg/app
+  macos-x86_64:   runs-on macos-15-intel → triple x86_64-apple-darwin → dmg/app
   windows-x64:    runs-on windows-2022 → triple x86_64-pc-windows-msvc → msi/nsis
   linux-x64:      runs-on ubuntu-22.04 → triple x86_64-unknown-linux-gnu → deb/appimage
 ```
@@ -94,8 +94,9 @@ make sidecar && make tauri-build
 ## Nota de implementación (T11)
 
 - Workflow `.github/workflows/release-desktop.yml`, disparado por tags
-  `desktop-v*` (o manual). Matriz de 4 jobs: macOS arm64, macOS x86_64
-  (`macos-14`), Linux (`ubuntu-22.04`) y Windows (`windows-latest`).
+  `desktop-v*` (o manual). Matriz de 4 jobs: macOS arm64 (`macos-15`),
+  macOS x86_64 (`macos-15-intel`), Linux (`ubuntu-22.04`) y Windows
+  (`windows-latest`).
 - Pasos: pnpm/node + Go + Rust (`dtolnay/rust-toolchain` con el target del
   matrix) + `Swatinem/rust-cache`; deps de Linux por apt; sidecar con
   `./scripts/build-sidecar.sh --target <triple>` (`shell: bash`); luego

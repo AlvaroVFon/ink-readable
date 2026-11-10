@@ -101,10 +101,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # macOS 14 images were retired on 2026-11-02, so jobs on that label fail
+        # to be provisioned. macOS 15 is the oldest supported image and ships
+        # both flavours: arm64 (`macos-15`) and Intel (`macos-15-intel`), which
+        # lets each macOS job build its own target natively.
         include:
-          - os: macos-14
+          - os: macos-15
             target: aarch64-apple-darwin
-          - os: macos-14
+          - os: macos-15-intel
             target: x86_64-apple-darwin
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
